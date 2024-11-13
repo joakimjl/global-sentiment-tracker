@@ -1,9 +1,11 @@
 import requests
 import json
 
-"https://api.gdeltproject.org/api/v2/doc/doc?query=%22Trump%22%20sourcecountry:US%20sourcelang:English&format=json"
+#Example
+#"https://api.gdeltproject.org/api/v2/doc/doc?query=%22News%22%20sourcecountry:US%20sourcelang:English&format=json"
 
-def fetch_gdelt_data(query_term="Trump", source_country="US", source_lang="English", mode="artlist"):
+# TODO: look for other modes, fix max records, 
+def fetch_gdelt_data(query_term="News", source_country="US", source_lang="English", mode="artlist"):
     base_url = "https://api.gdeltproject.org/api/v2/doc/doc"
     
     query = f'"{query_term}" sourcecountry:{source_country} sourcelang:{source_lang}'
@@ -28,6 +30,7 @@ def fetch_gdelt_data(query_term="Trump", source_country="US", source_lang="Engli
         return None
 
 # Test usage
+# TODO:Need to decide on what generic search terms should be...
 if __name__ == "__main__":
     data = fetch_gdelt_data(query_term="Biden", source_country="US", source_lang="English", mode="artlist")
     if data:
