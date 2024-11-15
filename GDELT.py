@@ -6,7 +6,8 @@ import json
 
 # Context might be ideal only issue is designating origin country.
 # Resource: https://blog.gdeltproject.org/announcing-the-gdelt-context-2-0-api/
-def fetch_gdelt_data(query_term="News", source_country="China", source_lang="English", mode="artlist"):
+# TODO: Add all outlets to countries
+def fetch_gdelt_data(query_term="Newsletter", source_country="China", source_lang="English", mode="artlist"):
     #base_url = "https://api.gdeltproject.org/api/v2/doc/doc"
     base_url = "https://api.gdeltproject.org/api/v2/context/context"
     
