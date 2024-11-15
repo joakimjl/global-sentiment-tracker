@@ -1,13 +1,14 @@
 import requests
 import json
 
+
 #Example
 #"https://api.gdeltproject.org/api/v2/doc/doc?query=%22News%22%20sourcecountry:US%20sourcelang:English&format=json"
 
 # Context might be ideal only issue is designating origin country.
 # Resource: https://blog.gdeltproject.org/announcing-the-gdelt-context-2-0-api/
 # TODO: Add all outlets to countries
-def fetch_gdelt_data(query_term="Newsletter", source_country="China", source_lang="English", mode="artlist"):
+def fetch_gdelt_data(query_term="Newsletter", source_country="US", source_lang="English", mode="artlist"):
     #base_url = "https://api.gdeltproject.org/api/v2/doc/doc"
     base_url = "https://api.gdeltproject.org/api/v2/context/context"
     
@@ -41,6 +42,6 @@ def fetch_gdelt_data(query_term="Newsletter", source_country="China", source_lan
 # Test usage
 # TODO:Need to decide on what generic search terms should be...
 if __name__ == "__main__":
-    data = fetch_gdelt_data(query_term="jinping", source_country="China", source_lang="English", mode="artlist")
+    data = fetch_gdelt_data(query_term="Trump", source_country="US", source_lang="English", mode="artlist")
     if data:
         print(json.dumps(data, indent=2))
