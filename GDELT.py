@@ -3,7 +3,7 @@ import json
 
 
 #Example
-#"https://api.gdeltproject.org/api/v2/doc/doc?query=%22News%22%20sourcecountry:US%20sourcelang:English&format=json"
+#"https://api.gdeltproject.org/api/v2/doc/doc?query=%22Trump%22%20sourcecountry:US%20sourcelang:English&format=json"
 
 # Context might be ideal only issue is designating origin country.
 # Resource: https://blog.gdeltproject.org/announcing-the-gdelt-context-2-0-api/
