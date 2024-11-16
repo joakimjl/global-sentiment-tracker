@@ -63,6 +63,7 @@ Response data:
 def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=None, mode="artlist", format="JSON"):
     base_url = "https://api.gdeltproject.org/api/v2/doc/doc"
 
+    #Ensures only given values will be used, if null do not add.
     if source_country:
         source_country_query = 'sourcecountry:'+str(source_country)
     else: source_country_query = ''
