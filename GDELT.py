@@ -1,6 +1,6 @@
 import requests
 import json
-
+import nltk
 
 """
 def fetch_gdelt_data(query_term="Newsletter", source_country="US", source_lang="English", mode="artlist"):
@@ -86,7 +86,6 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
     
     # Send GET request
     response = requests.get(base_url, params=params, headers=headers)
-    print(response.url)
     if response.status_code == 200:
         
         data = json.loads(response.text)
@@ -95,9 +94,27 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
         print(f"Request failed with status code {response.status_code}")
         return None
 
+
+# Returns list of words
+def tokenize(title):
+    string_titles = ""
+    for title in titles:
+        string_titles += title
+    res = nltk.tokenize.word_tokenize(string_titles)
+    return res
+
+def get_titles(data):
+    titles = []
+    for ele in data['articles']:
+        titles.append(ele['title'])
+    return titles
+
+
 # Test usage
 # TODO:Need to decide on what generic search terms should be...
 if __name__ == "__main__":
-    data = fetch_gdelt_headline(query_term="Morale")
-    if data:
-        print(json.dumps(data, indent=2))
+    data = fetch_gdelt_headline(query_term="Morale", source_lang='English')
+    titles = get_titles(data)
+    print(tokenize(titles))
+    #if data:
+    #    print(json.dumps(data, indent=2))
