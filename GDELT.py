@@ -2,6 +2,7 @@ from nltk.sentiment import SentimentIntensityAnalyzer
 import requests
 import json
 import nltk
+from datetime import datetime
 
 """
 def fetch_gdelt_data(query_term="Newsletter", source_country="US", source_lang="English", mode="artlist"):
@@ -97,7 +98,7 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
 
 
 # Returns list of words
-def tokenize(title):
+def tokenize(titles):
     token_arr = []
     for title in titles:
         res = nltk.tokenize.word_tokenize(title)
@@ -115,19 +116,31 @@ def get_titles(data):
 def sentiment_check(sentence, sia):
     return(sia.polarity_scores(sentence))
 
+def get_gdelt_processed(query="economy", target_country="US", date=datetime.today()):
+    data = fetch_gdelt_headline(query_term=query, source_country=target_country, source_lang='English')
+    titles = get_titles(data)
+    tokens = tokenize(titles)
+    sia = SentimentIntensityAnalyzer()
+    sentiment_arr = []
+    for token in tokens:
+        sentiment_arr.append(sentiment_check(token, sia))
+    return sentiment_arr
 
 # Test usage
 # TODO:Need to decide on what generic search terms should be...
 if __name__ == "__main__":
+    print(get_gdelt_processed())
+    """
     data = fetch_gdelt_headline(query_term="Trump", source_country="Sweden", source_lang='English')
     titles = get_titles(data)
     tokens = tokenize(titles)
     sia = SentimentIntensityAnalyzer()
     sentiment_arr = []
     for token in tokens:
-        print(token)
+
+
         sentiment_arr.append(sentiment_check(tokens, sia))
-    print(sentiment_arr)
+    print(sentiment_arr)"""
 
     #if data:
     #    print(json.dumps(data, indent=2))
