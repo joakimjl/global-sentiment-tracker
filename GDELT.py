@@ -119,10 +119,10 @@ def sentiment_check(sentence, sia):
 def get_gdelt_processed(query="economy", target_country="US", date=datetime.today()):
     data = fetch_gdelt_headline(query_term=query, source_country=target_country, source_lang='English')
     titles = get_titles(data)
-    tokens = tokenize(titles)
+    #tokens = tokenize(titles)
     sia = SentimentIntensityAnalyzer()
     sentiment_arr = []
-    for token in tokens:
+    for token in titles:
         sentiment_arr.append(sentiment_check(token, sia))
     return sentiment_arr
 
