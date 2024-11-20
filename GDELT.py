@@ -122,12 +122,15 @@ def insert_data(sentiment, titles, tar_country, query):
     
     sent_arr = [e for k,e in sentiment[0].items()]
 
+    sent_arr = str(sent_arr).replace('[','(').replace(']',')')
+        
+
     cur = conn.cursor()
 
     cur.execute("INSERT INTO global_info \
                 (target_country,on_day,nation_headline,inter_headline,on_subject,\
-                objectivity,latest_processed ) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-    (tar_country,'2024',titles,sent_arr,query,0.5,'2024'))
+                sentiment,objectivity,latest_processed ) VALUES (%s, %s, %s, %s, %s, %s::sentiment, %s, %s)",
+    (tar_country,'2024',titles,None,query,sent_arr,0.5,'2024'))
 
     cur.execute("SELECT * FROM global_info;")
 
@@ -137,9 +140,17 @@ def insert_data(sentiment, titles, tar_country, query):
     cur.close()
     conn.close()
 
+
+
 # Test usage
 # TODO:Need to decide on what generic search terms should be...
 if __name__ == "__main__":
-    sentiment_arr, titles, target_country, query = get_gdelt_processed(query="house", target_country="UK")
-    insert_data(sentiment_arr, titles, target_country, query)
-
+    countries = ["US","UK","Germany","China","Japan","Australia","Ukraine","Russia"]
+    subjects = ["economy","housing","crime","inflation","immigration"]
+    count = 0
+    for subject in subjects:
+        for target in countries:
+            print(f"Starting {target} about {subject}: remaining: {len(countries)*len(subjects)-count}")
+            sentiment_arr, titles, target_country, query = get_gdelt_processed(query=subject, target_country=target)
+            insert_data(sentiment_arr, titles, target_country, query)
+            count += 1

@@ -14,7 +14,7 @@ CREATE TABLE global_info(
     sentiment sentiment,
     objectivity REAL,
     latest_processed TEXT,
-    PRIMARY KEY(target_country)
+    PRIMARY KEY(target_country,on_subject,on_day)
 )
 
 SELECT * FROM global_info
