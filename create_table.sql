@@ -40,3 +40,11 @@ VALUES (
     0.5,
     'NOW'
 )
+
+SELECT target_country, on_subject, on_day, array_length(nation_headline, 1) AS headlines
+FROM global_info
+GROUP BY on_subject,target_country,on_day
+ORDER BY target_country
+
+
+

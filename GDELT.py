@@ -2,7 +2,7 @@ from nltk.sentiment import SentimentIntensityAnalyzer
 import requests
 import json
 import nltk
-from datetime import datetime
+from datetime import datetime, timedelta
 import psycopg2
 from settings import POSTGRES_PASSWORD, POSTGRES_USER
 import pandas as pd
@@ -31,7 +31,7 @@ Response data:
 "language": 
 "sourcecountry":
 """
-def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=None, mode="artlist", format="JSON"):
+def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=None, mode="artlist", format="JSON", day=datetime.today()):
     base_url = "https://api.gdeltproject.org/api/v2/doc/doc"
 
     #Ensures only given values will be used, if null do not add.
@@ -44,11 +44,16 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
     else: source_lang_query = ''
 
     query = f'{query_term} {source_country_query} {source_lang_query}'
+
+    start_day = day-timedelta(days=1)
+    end_day = day
     
     params = {
         'query': query,
         'format': format,
-        'maxrecords':250
+        'maxrecords':250,
+        'STARTDATETIME':str(start_day.strftime('%Y%m%d%H%M%S')),
+        'ENDDATETIME':str(end_day.strftime('%Y%m%d%H%M%S'))
     }
 
     headers = { # Was needed for 429 error, might look for other solution
@@ -58,14 +63,14 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
     # Send GET request
     response = requests.get(base_url, params=params, headers=headers)
     if response.status_code == 200:
-        
-        data = json.loads(response.text)
-        prev = data['articles'][0]
-        for i in range(len(data)-1):
-            if data['articles'][i+1].title == prev.title:
-                print(data['articles'])
-                print(prev['articles'])
-            prev = data['articles'][i+1]
+        try :
+            data = json.loads(response.text)
+        except:
+            print(f"Data was empty at: {query_term} with country {source_country}. Ignoring")
+            return None
+        if data == {}:
+            print(f"Data was empty at: {query_term} with country {source_country}. Ignoring")
+            return None
         return data
     else:
         print(f"Request failed with status code {response.status_code}")
@@ -93,13 +98,17 @@ def sentiment_check(sentence, sia):
 
 def get_gdelt_processed(query="economy", target_country="US", date=datetime.today()):
     data = fetch_gdelt_headline(query_term=query, source_country=target_country, source_lang='English')
+    if data == None:
+        return None, None, None, None #Pretty ugly might find better fix.
     titles = get_titles(data)
     #tokens = tokenize(titles)
     sia = SentimentIntensityAnalyzer()
-    sentiment_arr = []
-    for token in titles:
-        sentiment_arr.append(sentiment_check(token, sia))
-    return sentiment_arr, titles, target_country, query
+    #sentiment_arr = []
+    #for token in tokens:
+    #    sentiment_arr.append(sentiment_check(token, sia))
+    
+    sentiment = sentiment_check(''.join(titles),sia)
+    return sentiment, titles, target_country, query
 
 """
 target_country: string,
@@ -120,7 +129,7 @@ def insert_data(sentiment, titles, tar_country, query):
                             host = "192.168.1.51",
                             port = "5432")
     
-    sent_arr = [e for k,e in sentiment[0].items()]
+    sent_arr = [e for k,e in sentiment.items()]
 
     sent_arr = str(sent_arr).replace('[','(').replace(']',')')
         
@@ -130,7 +139,7 @@ def insert_data(sentiment, titles, tar_country, query):
     cur.execute("INSERT INTO global_info \
                 (target_country,on_day,nation_headline,inter_headline,on_subject,\
                 sentiment,objectivity,latest_processed ) VALUES (%s, %s, %s, %s, %s, %s::sentiment, %s, %s)",
-    (tar_country,'2024',titles,None,query,sent_arr,0.5,'2024'))
+    (tar_country,str(datetime.today().strftime('%Y%m%d')),titles,None,query,sent_arr,0.5,str(datetime.today().strftime('%Y%m%d%H%M%S'))))
 
     cur.execute("SELECT * FROM global_info;")
 
@@ -152,5 +161,8 @@ if __name__ == "__main__":
         for target in countries:
             print(f"Starting {target} about {subject}: remaining: {len(countries)*len(subjects)-count}")
             sentiment_arr, titles, target_country, query = get_gdelt_processed(query=subject, target_country=target)
+            if sentiment_arr == None:
+                count += 1
+                continue
             insert_data(sentiment_arr, titles, target_country, query)
             count += 1
