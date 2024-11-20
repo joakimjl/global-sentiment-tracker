@@ -6,39 +6,6 @@ from datetime import datetime
 import psycopg2
 from settings import POSTGRES_PASSWORD, POSTGRES_USER
 import pandas as pd
-"""
-def fetch_gdelt_data(query_term="Newsletter", source_country="US", source_lang="English", mode="artlist"):
-    #base_url = "https://api.gdeltproject.org/api/v2/doc/doc"
-    base_url = "https://api.gdeltproject.org/api/v2/doc/doc"
-    
-    query = f'"{query_term}" sourcecountry:{source_country} sourcelang:{source_lang}'
-    query = f'"{query_term}"'
-    
-    params = {
-        'format': "json",
-        'timespan': "72H",
-        'query': query,
-        'searchlang': "english",
-        'maxrecords':200,
-        'sort':"DateDesc",
-    }
-
-    headers = { # Was needed for 429 error, might look for other solution
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
-    }
-    
-    # Send GET request
-    response = requests.get(base_url, params=params, headers=headers)
-    print(response.url)
-    if response.status_code == 200:
-        
-        data = json.loads(response.text)
-        return data
-    else:
-        print(f"Request failed with status code {response.status_code}")
-        return None
-""" 
-
 
 
 #Find KPI for display, decide how and when. If opinion changes on subject, should that be covered?
@@ -93,6 +60,12 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
     if response.status_code == 200:
         
         data = json.loads(response.text)
+        prev = data['articles'][0]
+        for i in range(len(data)-1):
+            if data['articles'][i+1].title == prev.title:
+                print(data['articles'])
+                print(prev['articles'])
+            prev = data['articles'][i+1]
         return data
     else:
         print(f"Request failed with status code {response.status_code}")
@@ -126,7 +99,7 @@ def get_gdelt_processed(query="economy", target_country="US", date=datetime.toda
     sentiment_arr = []
     for token in titles:
         sentiment_arr.append(sentiment_check(token, sia))
-    return [sentiment_arr, titles]
+    return sentiment_arr, titles, target_country, query
 
 """
 target_country: string,
@@ -140,23 +113,21 @@ latest_processed: string
 """
 
 
-def insert_data(sentiment, titles):
+def insert_data(sentiment, titles, tar_country, query):
     conn = psycopg2.connect(database = "postgres",
                             user = POSTGRES_USER,
                             password = POSTGRES_PASSWORD,
                             host = "192.168.1.51",
                             port = "5432")
     
-    table_name = "global_info"
+    sent_arr = [e for k,e in sentiment[0].items()]
 
     cur = conn.cursor()
 
     cur.execute("INSERT INTO global_info \
                 (target_country,on_day,nation_headline,inter_headline,on_subject,\
                 objectivity,latest_processed ) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-    ('USA','2024',titles,None,'economy',0.5,'2024'))
-
-    cur.execute("INSERT INTO global_info (target_country) VALUES ('TESTING');")
+    (tar_country,'2024',titles,sent_arr,query,0.5,'2024'))
 
     cur.execute("SELECT * FROM global_info;")
 
@@ -169,19 +140,6 @@ def insert_data(sentiment, titles):
 # Test usage
 # TODO:Need to decide on what generic search terms should be...
 if __name__ == "__main__":
-    res = get_gdelt_processed()
-    insert_data(res[0],res[1])
-    """
-    data = fetch_gdelt_headline(query_term="Trump", source_country="Sweden", source_lang='English')
-    titles = get_titles(data)
-    tokens = tokenize(titles)
-    sia = SentimentIntensityAnalyzer()
-    sentiment_arr = []
-    for token in tokens:
+    sentiment_arr, titles, target_country, query = get_gdelt_processed(query="house", target_country="UK")
+    insert_data(sentiment_arr, titles, target_country, query)
 
-
-        sentiment_arr.append(sentiment_check(tokens, sia))
-    print(sentiment_arr)"""
-
-    #if data:
-    #    print(json.dumps(data, indent=2))

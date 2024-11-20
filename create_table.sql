@@ -19,6 +19,8 @@ CREATE TABLE global_info(
 
 SELECT * FROM global_info
 
+DROP TABLE global_info
+
 INSERT INTO global_info(
     target_country,
     on_day,
