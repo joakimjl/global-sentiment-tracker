@@ -3,7 +3,9 @@ import requests
 import json
 import nltk
 from datetime import datetime
-
+import psycopg2
+from settings import POSTGRES_PASSWORD, POSTGRES_USER
+import pandas as pd
 """
 def fetch_gdelt_data(query_term="Newsletter", source_country="US", source_lang="English", mode="artlist"):
     #base_url = "https://api.gdeltproject.org/api/v2/doc/doc"
@@ -124,12 +126,51 @@ def get_gdelt_processed(query="economy", target_country="US", date=datetime.toda
     sentiment_arr = []
     for token in titles:
         sentiment_arr.append(sentiment_check(token, sia))
-    return sentiment_arr
+    return [sentiment_arr, titles]
+
+"""
+target_country: string,
+on_day: string,
+nation_headline: array<string>,
+inter_headline: array<string>,
+on_subject: string,
+sentiment: string,
+objectivity: float,
+latest_processed: string
+"""
+
+
+def insert_data(sentiment, titles):
+    conn = psycopg2.connect(database = "postgres",
+                            user = POSTGRES_USER,
+                            password = POSTGRES_PASSWORD,
+                            host = "192.168.1.51",
+                            port = "5432")
+    
+    table_name = "global_info"
+
+    cur = conn.cursor()
+
+    cur.execute("INSERT INTO global_info \
+                (target_country,on_day,nation_headline,inter_headline,on_subject,\
+                objectivity,latest_processed ) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+    ('USA','2024',titles,None,'economy',0.5,'2024'))
+
+    cur.execute("INSERT INTO global_info (target_country) VALUES ('TESTING');")
+
+    cur.execute("SELECT * FROM global_info;")
+
+    conn.commit()
+    
+    #print(cur.fetchall())
+    cur.close()
+    conn.close()
 
 # Test usage
 # TODO:Need to decide on what generic search terms should be...
 if __name__ == "__main__":
-    print(get_gdelt_processed())
+    res = get_gdelt_processed()
+    insert_data(res[0],res[1])
     """
     data = fetch_gdelt_headline(query_term="Trump", source_country="Sweden", source_lang='English')
     titles = get_titles(data)
