@@ -185,7 +185,7 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
     conn.close()
 
 
-"""Completes all tasks, separated for multithreading"""
+"""Completes all tasks for one row, separated for multithreading"""
 def fetch_and_insert_one():
     name = target
     if target in countries_map:
