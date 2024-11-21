@@ -179,7 +179,7 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
     cur = conn.cursor()
     cur.execute("INSERT INTO global_info \
                 (target_country,on_day,nation_headline,inter_headline,on_subject,\
-                sentiment,objectivity_national,objectivity_inter,latest_processed ) VALUES (%s, %s, %s, %s, %s, %s::sentiment[], %s::sentiment[], %s, %s, %s)",
+                national_sentiment,inter_sentiment,objectivity_national,objectivity_inter,latest_processed ) VALUES (%s, %s, %s, %s, %s, %s::sentiment[], %s::sentiment[], %s, %s, %s)",
     (tar_country,str(datetime.today().strftime('%Y%m%d')),titles,titles_inter,query,all_sentiment,all_sentiment_inter,0.5,0.5,str(datetime.today().strftime('%Y%m%d%H%M%S'))))
 
     conn.commit()
