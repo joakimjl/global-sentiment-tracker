@@ -43,10 +43,10 @@ VALUES (
     'NOW'
 )
 
-SELECT target_country, on_subject, on_day, array_length(nation_headline, 1) AS headlines
+SELECT target_country, on_subject, on_day, 
+array_length(headline_national, 1) AS head_nat, 
+array_length(headline_inter, 1) AS head_int
 FROM global_info
 GROUP BY on_subject,target_country,on_day
 ORDER BY target_country
-
-
 

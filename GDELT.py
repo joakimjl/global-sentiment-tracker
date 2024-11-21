@@ -169,8 +169,14 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
     register_composite(info,conn)
 
     for ele in sentiment:
-        sent = info.python_type(*ele.values())
-        all_sentiment.append(sent)
+        try:
+            sent = info.python_type(*ele.values())
+            all_sentiment.append(sent)
+        except:
+            print(ele)
+            print(all_sentiment)
+            print(info)
+            raise Exception("NoneType most likely")
 
     all_sentiment_inter = []
     for ele in sentiment_inter:
@@ -200,13 +206,14 @@ def fetch_and_insert_one(target, subject, remain_rows):
 # TODO:Add popularity relevance (Already in from hybrid search, better if we can add weights)
 # TODO:Fix large duping problem from GDELT data
 if __name__ == "__main__":
+    start_time = time.time()
     countries = ["US","UK","Germany","China","Japan","Australia","Ukraine","Russia"]
     countries_map = {
         "US":"America",
         "UK":"United Kingdom"}
     subjects = ["economy","housing","crime","inflation","immigration"]
     count = 0
-    max_concurrent = 20
+    max_concurrent = 40
     threads = []
     for target in countries:
         name = target
@@ -231,3 +238,9 @@ if __name__ == "__main__":
             threads.append(t)
             
             count += 1
+    while len(threads) != 0:
+        for t in threads:
+            if t.is_alive() == False:
+                threads.remove(t)
+        time.sleep(2)
+    print(f"Finished all, closing, total time: {time.time() - start_time}")
