@@ -10,6 +10,7 @@ from deep_translator import GoogleTranslator as Translator
 import re
 from psycopg.types.composite import CompositeInfo, register_composite
 from threading import Thread
+import time
 
 
 #Find KPI for display, decide how and when. If opinion changes on subject, should that be covered?
@@ -139,6 +140,8 @@ def get_gdelt_processed(query="economy", target_country="US", date=datetime.toda
     for title in titles:
         sentiment_arr.append(sia.polarity_scores(title))
 
+    if target_country[0] == "-":
+        target_country = target_country[1:]
     return sentiment_arr, titles, target_country, query
 
 """
@@ -203,6 +206,8 @@ if __name__ == "__main__":
         "UK":"United Kingdom"}
     subjects = ["economy","housing","crime","inflation","immigration"]
     count = 0
+    max_concurrent = 20
+    threads = []
     for target in countries:
         name = target
         if target in countries_map:
@@ -211,7 +216,18 @@ if __name__ == "__main__":
                 f"{name} housing", f"{name} crime",
                 f"{name} inflation", f"{name} immigration"]
         for subject in subjects:
+            while(len(threads) >= max_concurrent):
+                for t in threads:
+                    if t.is_alive() == False:
+                        threads.remove(t)
+                print("Waiting for threads")
+                for i in range(10):
+                    #print(".",end="")
+                    time.sleep(0.5)
+                
             remain_rows = len(countries)*len(subjects)-count
             t = Thread(target=fetch_and_insert_one, args=[target, subject, remain_rows])
             t.start()
+            threads.append(t)
+            
             count += 1
