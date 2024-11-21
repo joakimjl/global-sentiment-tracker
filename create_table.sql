@@ -50,3 +50,28 @@ FROM global_info
 GROUP BY on_subject,target_country,on_day
 ORDER BY target_country
 
+SELECT target_country, on_subject, on_day, 
+array_length(headline_national, 1) AS head_nat, 
+array_length(headline_inter, 1) AS head_int
+FROM global_info
+WHERE on_day = '20241119'
+GROUP BY on_subject,target_country,on_day
+ORDER BY target_country
+
+
+SELECT on_day, 
+array_length(headline_national, 1) AS head_nat, 
+array_length(headline_inter, 1) AS head_int
+FROM global_info
+WHERE on_day = '20241119'
+GROUP BY on_subject,target_country,on_day
+ORDER BY on_day
+
+SELECT target_country, on_day, count(target_country) 
+FROM global_info
+WHERE on_day = '20241119'
+GROUP BY (target_country, on_day)
+
+SELECT *
+FROM global_info
+WHERE on_subject = 'Japan crime'

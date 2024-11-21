@@ -56,7 +56,7 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
     params = {
         'query': query,
         'format': format,
-        'maxrecords':50,
+        'maxrecords':250,
         'STARTDATETIME':str(start_day.strftime('%Y%m%d%H%M%S')),
         'ENDDATETIME':str(end_day.strftime('%Y%m%d%H%M%S')),
         'SORT':"HybridRel"
@@ -114,6 +114,7 @@ def get_titles(data):
         
         batch = lang_batch[lang]
         if lang != 'English':#Translation not needed (English (US) and (UK) default)
+            time.sleep(1.01)
             try:
                 if lang == "Chinese":
                     #New one requires only for chinese (simplified or traditional)
@@ -129,8 +130,8 @@ def get_titles(data):
     return titles
 
 
-def get_gdelt_processed(query="economy", target_country="US", date=datetime.today()):
-    data = fetch_gdelt_headline(query_term=query, source_country=target_country)
+def get_gdelt_processed(query="economy", target_country="US", date=date.today()):
+    data = fetch_gdelt_headline(query_term=query, source_country=target_country, day=date)
     if data == None:
         return None, None, None, None #Pretty ugly might find better fix.
     titles = get_titles(data)
@@ -156,38 +157,42 @@ latest_processed: string
 """
 
 
-def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, query) -> None:
+def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, query, date) -> None:
     conn = psycopg.Connection.connect(dbname = "postgres",
                             user = POSTGRES_USER,
                             password = POSTGRES_PASSWORD,
                             host = "192.168.1.51",
                             port = "5432")
     
+    date=date-timedelta(days=1)
+                            
     #Gets type sentiment and makes the type in python, inserts into array
     all_sentiment = []
     info = CompositeInfo.fetch(conn, "sentiment")
     register_composite(info,conn)
 
-    for ele in sentiment:
-        try:
+    if sentiment:
+        for ele in sentiment:
             sent = info.python_type(*ele.values())
             all_sentiment.append(sent)
-        except:
-            print(ele)
-            print(all_sentiment)
-            print(info)
-            raise Exception("NoneType most likely")
+    else:
+        all_sentiment = None
+            
+
 
     all_sentiment_inter = []
-    for ele in sentiment_inter:
-        sent = info.python_type(*ele.values())
-        all_sentiment_inter.append(sent)
+    if sentiment_inter:
+        for ele in sentiment_inter:
+            sent = info.python_type(*ele.values())
+            all_sentiment_inter.append(sent)
+    else:
+        all_sentiment_inter = None 
 
     cur = conn.cursor()
     cur.execute("INSERT INTO global_info \
                 (target_country,on_day,headline_national,headline_inter,on_subject,\
                 sentiment_national,sentiment_inter,objectivity_national,objectivity_inter,latest_processed ) VALUES (%s, %s, %s, %s, %s, %s::sentiment[], %s::sentiment[], %s, %s, %s)",
-    (tar_country,str(datetime.today().strftime('%Y%m%d')),titles,titles_inter,query,all_sentiment,all_sentiment_inter,0.5,0.5,str(datetime.today().strftime('%Y%m%d%H%M%S'))))
+    (tar_country,str(date.strftime('%Y%m%d')),titles,titles_inter,query,all_sentiment,all_sentiment_inter,0.5,0.5,str(datetime.today().strftime('%Y%m%d%H%M%S'))))
 
     conn.commit()
     cur.close()
@@ -195,13 +200,13 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
 
 
 """Completes all tasks for one row, separated for multithreading"""
-def fetch_and_insert_one(target, subject, remain_rows):
+def fetch_and_insert_one(target, subject, remain_rows, on_day=date.today()):
     print(f"Starting {target} about {subject}: remaining: {remain_rows}")
-    sentiment_arr_nat, titles_nat, target_country, query = get_gdelt_processed(query=subject, target_country=target)
+    sentiment_arr_nat, titles_nat, target_country, query = get_gdelt_processed(query=subject, target_country=target, date=on_day)
     print("Finished national")
-    sentiment_arr_inter, titles_inter, target_country, query = get_gdelt_processed(query=subject, target_country=str("-"+target))
+    sentiment_arr_inter, titles_inter, target_country, query = get_gdelt_processed(query=subject, target_country=str("-"+target), date=on_day)
     print("Finished international")
-    insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, query)
+    insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, query, on_day)
 
 # TODO:Add popularity relevance (Already in from hybrid search, better if we can add weights)
 # TODO:Fix large duping problem from GDELT data
@@ -213,31 +218,42 @@ if __name__ == "__main__":
         "UK":"United Kingdom"}
     subjects = ["economy","housing","crime","inflation","immigration"]
     count = 0
-    max_concurrent = 40
+    max_concurrent = 3
     threads = []
-    for target in countries:
-        name = target
-        if target in countries_map:
-            name = countries_map[target]
-        subjects = [f"({name} economy OR {name} market)",
-                f"{name} housing", f"{name} crime",
-                f"{name} inflation", f"{name} immigration"]
-        for subject in subjects:
-            while(len(threads) >= max_concurrent):
-                for t in threads:
-                    if t.is_alive() == False:
-                        threads.remove(t)
-                print("Waiting for threads")
-                for i in range(10):
-                    #print(".",end="")
-                    time.sleep(0.5)
+
+    on_days = []
+    for i in range(2):
+        on_days.append(date.today()-timedelta(days=i+1))
+
+    #TODO: More function calls, less nesting
+    """Need to make this abomination prettier"""
+    for on_day in on_days:
+        for target in countries:
+            name = target
+            if target in countries_map:
+                name = countries_map[target]
+            subjects = [f"({name} economy OR {name} market)",
+                    f"{name} housing", f"{name} crime",
+                    f"{name} inflation", f"{name} immigration"]
+            for subject in subjects:
+                time.sleep(1)#Not to spam too much on API's (ESP Google translate)
+                #Due to once reaching google cap, either more than 5 per sec or 200k, should make 
+                #Class that counts, also the GDELT now...
+                while(len(threads) >= max_concurrent):
+                    for t in threads:
+                        if t.is_alive() == False:
+                            threads.remove(t)
+                    print("Waiting for threads")
+                    for i in range(10):
+                        #print(".",end="")
+                        time.sleep(0.5)
+                    
+                remain_rows = len(countries)*len(subjects)*len(on_days)-count
+                t = Thread(target=fetch_and_insert_one, args=[target, subject, remain_rows, on_day])
+                t.start()
+                threads.append(t)
                 
-            remain_rows = len(countries)*len(subjects)-count
-            t = Thread(target=fetch_and_insert_one, args=[target, subject, remain_rows])
-            t.start()
-            threads.append(t)
-            
-            count += 1
+                count += 1
     while len(threads) != 0:
         for t in threads:
             if t.is_alive() == False:
