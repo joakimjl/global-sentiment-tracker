@@ -57,7 +57,7 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
     params = {
         'query': query,
         'format': format,
-        'maxrecords':250,
+        'maxrecords':50,
         'STARTDATETIME':str(start_day.strftime('%Y%m%d%H%M%S')),
         'ENDDATETIME':str(end_day.strftime('%Y%m%d%H%M%S')),
         'SORT':"HybridRel"
@@ -178,8 +178,8 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
 
     cur = conn.cursor()
     cur.execute("INSERT INTO global_info \
-                (target_country,on_day,nation_headline,inter_headline,on_subject,\
-                national_sentiment,inter_sentiment,objectivity_national,objectivity_inter,latest_processed ) VALUES (%s, %s, %s, %s, %s, %s::sentiment[], %s::sentiment[], %s, %s, %s)",
+                (target_country,on_day,headline_national,headline_inter,on_subject,\
+                sentiment_national,sentiment_inter,objectivity_national,objectivity_inter,latest_processed ) VALUES (%s, %s, %s, %s, %s, %s::sentiment[], %s::sentiment[], %s, %s, %s)",
     (tar_country,str(datetime.today().strftime('%Y%m%d')),titles,titles_inter,query,all_sentiment,all_sentiment_inter,0.5,0.5,str(datetime.today().strftime('%Y%m%d%H%M%S'))))
 
     conn.commit()
