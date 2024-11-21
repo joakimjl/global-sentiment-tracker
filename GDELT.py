@@ -9,6 +9,7 @@ import pandas as pd
 from deep_translator import GoogleTranslator as Translator
 import re
 from psycopg.types.composite import CompositeInfo, register_composite
+from threading import Thread
 
 
 #Find KPI for display, decide how and when. If opinion changes on subject, should that be covered?
@@ -183,6 +184,27 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
     cur.close()
     conn.close()
 
+
+"""Completes all tasks, separated for multithreading"""
+def fetch_and_insert_one():
+    name = target
+    if target in countries_map:
+        name = countries_map[target]
+    subjects = [f"({name} economy OR {name} market)",
+            f"{name} housing", f"{name} crime",
+            f"{name} inflation", f"{name} immigration"]
+    for subject in subjects:
+        print(f"Starting {target} about {subject}: remaining: {len(countries)*len(subjects)-count}")
+        
+        sentiment_arr_nat, titles_nat, target_country, query = get_gdelt_processed(query=subject, target_country=target)
+        print("Finished national")
+        sentiment_arr_inter, titles_inter, target_country, query = get_gdelt_processed(query=subject, target_country=str("-"+target))
+        print("Finished international")
+        if sentiment_arr_nat == None:
+            count += 1
+            continue
+        insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, query)
+        count += 1
 
 # TODO:Add popularity relevance
 # TODO:Fix large duping problem from GDELT data
