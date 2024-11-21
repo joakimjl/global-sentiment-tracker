@@ -6,6 +6,8 @@ from datetime import datetime, timedelta
 import psycopg2
 from settings import POSTGRES_PASSWORD, POSTGRES_USER
 import pandas as pd
+from googletrans import Translator
+
 
 
 #Find KPI for display, decide how and when. If opinion changes on subject, should that be covered?
@@ -45,8 +47,8 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
 
     query = f'{query_term} {source_country_query} {source_lang_query}'
 
-    start_day = day-timedelta(days=1)
-    end_day = day
+    start_day = day-timedelta(days=3)
+    end_day = day-timedelta(days=2)
     
     params = {
         'query': query,
@@ -87,17 +89,37 @@ def tokenize(titles):
         token_arr.append(res)
     return token_arr
 
-def get_titles(data):
+#Language given from gedelt is "Chinese" and google needs "Chinese (PRC) or (Taiwan)"
+#Portuguese (Portugal) (Brazil)
+def get_titles(data): #TODO: Fix batch translation for languages.
+    translator = Translator()
     titles = []
     for ele in data['articles']:
-        titles.append(ele['title'])
+        if ele['language'] != 'English':
+            try:
+                if ele['language'] == "Chinese":
+                    #Defaulting to PRC and Brazil due to population
+                    ele['language'] = "Chinese (PRC)"
+                elif ele['language'] == "Portugese":
+                    ele['language'] = "Portuguese (Brazil)"
+                ele = translator.translate(ele['title'], src=ele['language']).text
+            except:
+                try:
+                    ele = translator.translate(ele['title'])
+                    ele = ele.text
+                except:
+                    ele = None
+        else:
+            ele = ele['title']
+        if ele:
+            titles.append(ele)
     return titles
 
 def sentiment_check(sentence, sia):
     return(sia.polarity_scores(sentence))
 
 def get_gdelt_processed(query="economy", target_country="US", date=datetime.today()):
-    data = fetch_gdelt_headline(query_term=query, source_country=target_country, source_lang='English')
+    data = fetch_gdelt_headline(query_term=query, source_country=target_country)
     if data == None:
         return None, None, None, None #Pretty ugly might find better fix.
     titles = get_titles(data)
@@ -132,7 +154,6 @@ def insert_data(sentiment, titles, tar_country, query):
     sent_arr = [e for k,e in sentiment.items()]
 
     sent_arr = str(sent_arr).replace('[','(').replace(']',')')
-        
 
     cur = conn.cursor()
 
@@ -141,11 +162,7 @@ def insert_data(sentiment, titles, tar_country, query):
                 sentiment,objectivity,latest_processed ) VALUES (%s, %s, %s, %s, %s, %s::sentiment, %s, %s)",
     (tar_country,str(datetime.today().strftime('%Y%m%d')),titles,None,query,sent_arr,0.5,str(datetime.today().strftime('%Y%m%d%H%M%S'))))
 
-    cur.execute("SELECT * FROM global_info;")
-
     conn.commit()
-    
-    #print(cur.fetchall())
     cur.close()
     conn.close()
 
@@ -154,6 +171,7 @@ def insert_data(sentiment, titles, tar_country, query):
 # Test usage
 # TODO:Need to decide on what generic search terms should be...
 if __name__ == "__main__":
+
     countries = ["US","UK","Germany","China","Japan","Australia","Ukraine","Russia"]
     subjects = ["economy","housing","crime","inflation","immigration"]
     count = 0
