@@ -21,9 +21,6 @@ from psycopg.types.composite import CompositeInfo, register_composite
 # TODO: Countries maybe needed, find optimal way to store data, most likely FK to country table and group by
 # TODO: Add translation, check on ex, Swedish, Danish, Norweigan, Tagalog, German.
 """
-Cleaner code functioning old kept for now. Headline sentiment will be analysed,
-
-
 Response data:
 "url": 
 "url_mobile": 
