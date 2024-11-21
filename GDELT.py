@@ -185,6 +185,7 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
 
 
 # TODO:Add popularity relevance
+# TODO:Fix large duping problem from GDELT data
 if __name__ == "__main__":
     countries = ["US","UK","Germany","China","Japan","Australia","Ukraine","Russia"]
     countries_map = {
