@@ -2,8 +2,10 @@ CREATE TYPE sentiment AS(
     neg real,
     neu real,
     pos real,
-    tot real
+    compound real
 )
+
+DROP TABLE global_info
 
 CREATE TABLE global_info(
     target_country TEXT,
@@ -11,15 +13,15 @@ CREATE TABLE global_info(
     nation_headline TEXT[],
     inter_headline TEXT[],
     on_subject TEXT,
-    sentiment sentiment,
-    objectivity REAL,
+    national_sentiment sentiment[],
+    inter_sentiment sentiment[],
+    objectivity_national REAL,
+    objectivity_inter REAL,
     latest_processed TEXT,
     PRIMARY KEY(target_country,on_subject,on_day)
 )
 
 SELECT * FROM global_info
-
-DROP TABLE global_info
 
 INSERT INTO global_info(
     target_country,
@@ -36,7 +38,7 @@ VALUES (
     ARRAY ['test','test2'],
     ARRAY ['test','test2'],
     'econmoy',
-    ROW(0.5,0.5,0.5,0.5)::sentiment,
+    ARRAY[ROW(0.5,0.5,0.5,0.5)::sentiment,ROW(0.5,0.5,0.5,0.5)::sentiment],
     0.5,
     'NOW'
 )

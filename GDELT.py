@@ -2,12 +2,13 @@ from nltk.sentiment import SentimentIntensityAnalyzer
 import requests
 import json
 import nltk
-from datetime import datetime, timedelta
-import psycopg2
+from datetime import datetime, timedelta, date
+import psycopg
 from settings import POSTGRES_PASSWORD, POSTGRES_USER
 import pandas as pd
-from googletrans import Translator
-
+from deep_translator import GoogleTranslator as Translator
+import re
+from psycopg.types.composite import CompositeInfo, register_composite
 
 
 #Find KPI for display, decide how and when. If opinion changes on subject, should that be covered?
@@ -33,12 +34,15 @@ Response data:
 "language": 
 "sourcecountry":
 """
-def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=None, mode="artlist", format="JSON", day=datetime.today()):
+def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=None, mode="artlist", format="JSON", day=date.today()):
     base_url = "https://api.gdeltproject.org/api/v2/doc/doc"
 
     #Ensures only given values will be used, if null do not add.
     if source_country:
-        source_country_query = 'sourcecountry:'+str(source_country)
+        if source_country[0] == "-":#Supporting to only get other countries as sources
+            source_country_query = '-sourcecountry:'+str(source_country[1:])
+        else:
+            source_country_query = 'sourcecountry:'+str(source_country)
     else: source_country_query = ''
 
     if source_lang:
@@ -47,16 +51,18 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
 
     query = f'{query_term} {source_country_query} {source_lang_query}'
 
-    start_day = day-timedelta(days=3)
-    end_day = day-timedelta(days=2)
+    start_day = day-timedelta(days=1)
+    end_day = day
     
     params = {
         'query': query,
         'format': format,
         'maxrecords':250,
         'STARTDATETIME':str(start_day.strftime('%Y%m%d%H%M%S')),
-        'ENDDATETIME':str(end_day.strftime('%Y%m%d%H%M%S'))
+        'ENDDATETIME':str(end_day.strftime('%Y%m%d%H%M%S')),
+        'SORT':"HybridRel"
     }
+
 
     headers = { # Was needed for 429 error, might look for other solution
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
@@ -64,6 +70,7 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
     
     # Send GET request
     response = requests.get(base_url, params=params, headers=headers)
+    
     if response.status_code == 200:
         try :
             data = json.loads(response.text)
@@ -78,7 +85,6 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
         print(f"Request failed with status code {response.status_code}")
         return None
 
-
 # Returns list of words
 def tokenize(titles):
     token_arr = []
@@ -91,32 +97,38 @@ def tokenize(titles):
 
 #Language given from gedelt is "Chinese" and google needs "Chinese (PRC) or (Taiwan)"
 #Portuguese (Portugal) (Brazil)
-def get_titles(data): #TODO: Fix batch translation for languages.
-    translator = Translator()
+def get_titles(data):
+
+    print("Translating")
+    
     titles = []
+    lang_batch = {}
+    #Batch languages
     for ele in data['articles']:
-        if ele['language'] != 'English':
-            try:
-                if ele['language'] == "Chinese":
-                    #Defaulting to PRC and Brazil due to population
-                    ele['language'] = "Chinese (PRC)"
-                elif ele['language'] == "Portugese":
-                    ele['language'] = "Portuguese (Brazil)"
-                ele = translator.translate(ele['title'], src=ele['language']).text
-            except:
-                try:
-                    ele = translator.translate(ele['title'])
-                    ele = ele.text
-                except:
-                    ele = None
+        if ele['language'] not in lang_batch:
+            lang_batch[ele['language']] = [ele['title']]
         else:
-            ele = ele['title']
-        if ele:
+            lang_batch[ele['language']].append(ele['title'])
+    
+    #Translation in batches
+    for lang in lang_batch:
+        
+        batch = lang_batch[lang]
+        if lang != 'English':#Translation not needed (English (US) and (UK) default)
+            try:
+                if lang == "Chinese":
+                    #New one requires only for chinese (simplified or traditional)
+                    lang = "Chinese (simplified)"
+
+                batch = Translator(source=lang.lower(), target='en').translate_batch(batch)
+            except:
+                print(f'BATCH FOR {lang} FAILED WITH {len(batch)} ARTICLES')
+
+        for ele in batch:
             titles.append(ele)
+    
     return titles
 
-def sentiment_check(sentence, sia):
-    return(sia.polarity_scores(sentence))
 
 def get_gdelt_processed(query="economy", target_country="US", date=datetime.today()):
     data = fetch_gdelt_headline(query_term=query, source_country=target_country)
@@ -125,12 +137,11 @@ def get_gdelt_processed(query="economy", target_country="US", date=datetime.toda
     titles = get_titles(data)
     #tokens = tokenize(titles)
     sia = SentimentIntensityAnalyzer()
-    #sentiment_arr = []
-    #for token in tokens:
-    #    sentiment_arr.append(sentiment_check(token, sia))
-    
-    sentiment = sentiment_check(''.join(titles),sia)
-    return sentiment, titles, target_country, query
+    sentiment_arr = []
+    for title in titles:
+        sentiment_arr.append(sia.polarity_scores(title))
+
+    return sentiment_arr, titles, target_country, query
 
 """
 target_country: string,
@@ -144,43 +155,62 @@ latest_processed: string
 """
 
 
-def insert_data(sentiment, titles, tar_country, query):
-    conn = psycopg2.connect(database = "postgres",
+def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, query) -> None:
+    conn = psycopg.Connection.connect(dbname = "postgres",
                             user = POSTGRES_USER,
                             password = POSTGRES_PASSWORD,
                             host = "192.168.1.51",
                             port = "5432")
     
-    sent_arr = [e for k,e in sentiment.items()]
+    #Gets type sentiment and makes the type in python, inserts into array
+    all_sentiment = []
+    info = CompositeInfo.fetch(conn, "sentiment")
+    register_composite(info,conn)
 
-    sent_arr = str(sent_arr).replace('[','(').replace(']',')')
+    for ele in sentiment:
+        sent = info.python_type(*ele.values())
+        all_sentiment.append(sent)
+
+    all_sentiment_inter = []
+    for ele in sentiment_inter:
+        sent = info.python_type(*ele.values())
+        all_sentiment_inter.append(sent)
 
     cur = conn.cursor()
-
     cur.execute("INSERT INTO global_info \
                 (target_country,on_day,nation_headline,inter_headline,on_subject,\
-                sentiment,objectivity,latest_processed ) VALUES (%s, %s, %s, %s, %s, %s::sentiment, %s, %s)",
-    (tar_country,str(datetime.today().strftime('%Y%m%d')),titles,None,query,sent_arr,0.5,str(datetime.today().strftime('%Y%m%d%H%M%S'))))
+                sentiment,objectivity_national,objectivity_inter,latest_processed ) VALUES (%s, %s, %s, %s, %s, %s::sentiment[], %s::sentiment[], %s, %s, %s)",
+    (tar_country,str(datetime.today().strftime('%Y%m%d')),titles,titles_inter,query,all_sentiment,all_sentiment_inter,0.5,0.5,str(datetime.today().strftime('%Y%m%d%H%M%S'))))
 
     conn.commit()
     cur.close()
     conn.close()
 
 
-
-# Test usage
-# TODO:Need to decide on what generic search terms should be...
+# TODO:Add popularity relevance
 if __name__ == "__main__":
-
     countries = ["US","UK","Germany","China","Japan","Australia","Ukraine","Russia"]
+    countries_map = {
+        "US":"America",
+        "UK":"United Kingdom"}
     subjects = ["economy","housing","crime","inflation","immigration"]
     count = 0
-    for subject in subjects:
-        for target in countries:
+    for target in countries:
+        name = target
+        if target in countries_map:
+            name = countries_map[target]
+        subjects = [f"({name} economy OR {name} market)",
+                f"{name} housing", f"{name} crime",
+                f"{name} inflation", f"{name} immigration"]
+        for subject in subjects:
             print(f"Starting {target} about {subject}: remaining: {len(countries)*len(subjects)-count}")
-            sentiment_arr, titles, target_country, query = get_gdelt_processed(query=subject, target_country=target)
-            if sentiment_arr == None:
+            
+            sentiment_arr_nat, titles_nat, target_country, query = get_gdelt_processed(query=subject, target_country=target)
+            print("Finished national")
+            sentiment_arr_inter, titles_inter, target_country, query = get_gdelt_processed(query=subject, target_country=str("-"+target))
+            print("Finished international")
+            if sentiment_arr_nat == None:
                 count += 1
                 continue
-            insert_data(sentiment_arr, titles, target_country, query)
+            insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, query)
             count += 1
