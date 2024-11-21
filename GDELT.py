@@ -186,27 +186,15 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
 
 
 """Completes all tasks for one row, separated for multithreading"""
-def fetch_and_insert_one():
-    name = target
-    if target in countries_map:
-        name = countries_map[target]
-    subjects = [f"({name} economy OR {name} market)",
-            f"{name} housing", f"{name} crime",
-            f"{name} inflation", f"{name} immigration"]
-    for subject in subjects:
-        print(f"Starting {target} about {subject}: remaining: {len(countries)*len(subjects)-count}")
-        
-        sentiment_arr_nat, titles_nat, target_country, query = get_gdelt_processed(query=subject, target_country=target)
-        print("Finished national")
-        sentiment_arr_inter, titles_inter, target_country, query = get_gdelt_processed(query=subject, target_country=str("-"+target))
-        print("Finished international")
-        if sentiment_arr_nat == None:
-            count += 1
-            continue
-        insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, query)
-        count += 1
+def fetch_and_insert_one(target, subject, remain_rows):
+    print(f"Starting {target} about {subject}: remaining: {remain_rows}")
+    sentiment_arr_nat, titles_nat, target_country, query = get_gdelt_processed(query=subject, target_country=target)
+    print("Finished national")
+    sentiment_arr_inter, titles_inter, target_country, query = get_gdelt_processed(query=subject, target_country=str("-"+target))
+    print("Finished international")
+    insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, query)
 
-# TODO:Add popularity relevance
+# TODO:Add popularity relevance (Already in from hybrid search, better if we can add weights)
 # TODO:Fix large duping problem from GDELT data
 if __name__ == "__main__":
     countries = ["US","UK","Germany","China","Japan","Australia","Ukraine","Russia"]
@@ -223,14 +211,7 @@ if __name__ == "__main__":
                 f"{name} housing", f"{name} crime",
                 f"{name} inflation", f"{name} immigration"]
         for subject in subjects:
-            print(f"Starting {target} about {subject}: remaining: {len(countries)*len(subjects)-count}")
-            
-            sentiment_arr_nat, titles_nat, target_country, query = get_gdelt_processed(query=subject, target_country=target)
-            print("Finished national")
-            sentiment_arr_inter, titles_inter, target_country, query = get_gdelt_processed(query=subject, target_country=str("-"+target))
-            print("Finished international")
-            if sentiment_arr_nat == None:
-                count += 1
-                continue
-            insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, query)
+            remain_rows = len(countries)*len(subjects)-count
+            t = Thread(target=fetch_and_insert_one, args=[target, subject, remain_rows])
+            t.start()
             count += 1
