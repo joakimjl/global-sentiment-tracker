@@ -21,7 +21,7 @@ out_file.close()
 
 """
 
-in_file = open("dumpedjson.json","r")
+in_file = open("json_files\dumpedjson.json","r")
 
 res = json.load(in_file)
 
@@ -79,12 +79,13 @@ for i in range(len(res)):
             if "Domain" in temp_res[j]:
                 res_dict["domain_auth"] = str(temp_res[j+2])
 
-        if res_dict["domain"] != "Twitter":
+        if res_dict["domain"] != "Twitter" and res_dict["domain"] != "":
             res_arr.append(res_dict)
 
-print(*res_arr, sep="\n")
 
-out_file = open("cn_cleaned.json","w")
+print(len(res_arr))
+
+out_file = open("json_files\cn_cleaned.json","w")
 
 json.dump(res_arr,out_file,indent=1)
 
