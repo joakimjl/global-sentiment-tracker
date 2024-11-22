@@ -10,6 +10,8 @@ docker-compose.yaml
 # C extensions
 *.so
 
+siterelevancecsvs/
+
 postgresql-42.7.4.jar
 
 # Distribution / packaging
