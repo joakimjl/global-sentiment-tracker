@@ -78,10 +78,12 @@ for i in range(len(res)):
 
             if "Domain" in temp_res[j]:
                 res_dict["domain_auth"] = str(temp_res[j+2])
-
-        if res_dict["domain"] != "Twitter" and res_dict["domain"] != "":
+        if res_dict["domain_auth"] == "" or res_dict["domain"] == "nytimes.com":
+            continue
+        if res_dict["domain"] != "bbc.com" and int(res_dict["domain_auth"]) >= 60:
             res_arr.append(res_dict)
 
+res_arr = sorted(res_arr, key=lambda d: d['domain_auth'])[::-1]
 
 print(len(res_arr))
 

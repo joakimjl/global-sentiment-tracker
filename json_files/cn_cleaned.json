@@ -8,20 +8,12 @@
   "domain_auth": "91"
  },
  {
-  "domain": "ecns.cn",
-  "facebook_fol": "1.4M",
-  "twitter_fol": "635.2K",
+  "domain": "globaltimes.cn",
+  "facebook_fol": "77.5M",
+  "twitter_fol": "1.9M",
   "insta_fol": "",
-  "freq_post": "3posts/day",
-  "domain_auth": "85"
- },
- {
-  "domain": "chinadigitaltimes.net",
-  "facebook_fol": "13.2K",
-  "twitter_fol": "237.9K",
-  "insta_fol": "690",
-  "freq_post": "4posts/day",
-  "domain_auth": "70"
+  "freq_post": "5posts/week",
+  "domain_auth": "89"
  },
  {
   "domain": "english.news.cn",
@@ -32,62 +24,6 @@
   "domain_auth": "86"
  },
  {
-  "domain": "globaltimes.cn",
-  "facebook_fol": "77.5M",
-  "twitter_fol": "1.9M",
-  "insta_fol": "",
-  "freq_post": "5posts/week",
-  "domain_auth": "89"
- },
- {
-  "domain": "english.chinamil.com.cn",
-  "facebook_fol": "",
-  "twitter_fol": "343",
-  "insta_fol": "",
-  "freq_post": "",
-  "domain_auth": "75"
- },
- {
-  "domain": "technode.com",
-  "facebook_fol": "",
-  "twitter_fol": "18.3K",
-  "insta_fol": "",
-  "freq_post": "15posts/week",
-  "domain_auth": "82"
- },
- {
-  "domain": "chinafilminsider.com",
-  "facebook_fol": "9.6K",
-  "twitter_fol": "5.1K",
-  "insta_fol": "",
-  "freq_post": "1post/month",
-  "domain_auth": "58"
- },
- {
-  "domain": "china-briefing.com",
-  "facebook_fol": "993",
-  "twitter_fol": "6.6K",
-  "insta_fol": "",
-  "freq_post": "",
-  "domain_auth": "63"
- },
- {
-  "domain": "carnewschina.com",
-  "facebook_fol": "25K",
-  "twitter_fol": "1.9K",
-  "insta_fol": "",
-  "freq_post": "30posts/year",
-  "domain_auth": "64"
- },
- {
-  "domain": "chinachristiandaily.com",
-  "facebook_fol": "15.2K",
-  "twitter_fol": "",
-  "insta_fol": "",
-  "freq_post": "4posts/week",
-  "domain_auth": "49"
- },
- {
   "domain": "cgtn.com",
   "facebook_fol": "120M",
   "twitter_fol": "13M",
@@ -96,20 +32,12 @@
   "domain_auth": "85"
  },
  {
-  "domain": "bbc.com",
-  "facebook_fol": "59.7M",
-  "twitter_fol": "15.2M",
-  "insta_fol": "28M",
-  "freq_post": "2posts/week",
-  "domain_auth": "94"
- },
- {
-  "domain": "thediplomat.com",
-  "facebook_fol": "845.9K",
-  "twitter_fol": "236.6K",
+  "domain": "ecns.cn",
+  "facebook_fol": "1.4M",
+  "twitter_fol": "635.2K",
   "insta_fol": "",
-  "freq_post": "4posts/week",
-  "domain_auth": "84"
+  "freq_post": "3posts/day",
+  "domain_auth": "85"
  },
  {
   "domain": "rand.org",
@@ -120,68 +48,44 @@
   "domain_auth": "84"
  },
  {
-  "domain": "china-underground.com",
-  "facebook_fol": "2.4K",
-  "twitter_fol": "1.3K",
+  "domain": "thediplomat.com",
+  "facebook_fol": "845.9K",
+  "twitter_fol": "236.6K",
   "insta_fol": "",
-  "freq_post": "1post/week",
-  "domain_auth": "54"
+  "freq_post": "4posts/week",
+  "domain_auth": "84"
  },
  {
-  "domain": "chinainternetwatch.com",
-  "facebook_fol": "4.3K",
-  "twitter_fol": "9K",
+  "domain": "technode.com",
+  "facebook_fol": "",
+  "twitter_fol": "18.3K",
+  "insta_fol": "",
+  "freq_post": "15posts/week",
+  "domain_auth": "82"
+ },
+ {
+  "domain": "english.chinamil.com.cn",
+  "facebook_fol": "",
+  "twitter_fol": "343",
   "insta_fol": "",
   "freq_post": "",
-  "domain_auth": "59"
+  "domain_auth": "75"
  },
  {
-  "domain": "chinaglobalsouth.com",
-  "facebook_fol": "212.1K",
-  "twitter_fol": "25.7K",
+  "domain": "chinadigitaltimes.net",
+  "facebook_fol": "13.2K",
+  "twitter_fol": "237.9K",
+  "insta_fol": "690",
+  "freq_post": "4posts/day",
+  "domain_auth": "70"
+ },
+ {
+  "domain": "carnewschina.com",
+  "facebook_fol": "25K",
+  "twitter_fol": "1.9K",
   "insta_fol": "",
   "freq_post": "30posts/year",
-  "domain_auth": "1"
- },
- {
-  "domain": "uscnpm.org",
-  "facebook_fol": "",
-  "twitter_fol": "7.2K",
-  "insta_fol": "57.3K",
-  "freq_post": "1post/week",
-  "domain_auth": "44"
- },
- {
-  "domain": "china-environment-news.net",
-  "facebook_fol": "",
-  "twitter_fol": "",
-  "insta_fol": "",
-  "freq_post": "7posts/week",
-  "domain_auth": "2"
- },
- {
-  "domain": "justrecently.wordpress.com",
-  "facebook_fol": "",
-  "twitter_fol": "331",
-  "insta_fol": "",
-  "freq_post": "12posts/year",
-  "domain_auth": "28"
- },
- {
-  "domain": "nytimes.com",
-  "facebook_fol": "18.2M",
-  "twitter_fol": "55.4M",
-  "insta_fol": "",
-  "freq_post": "3posts/day",
-  "domain_auth": "95"
- },
- {
-  "domain": "list.juwai.com",
-  "facebook_fol": "16.8K",
-  "twitter_fol": "2.8K",
-  "insta_fol": "1.6K",
-  "freq_post": "7posts/year",
-  "domain_auth": "57"
+  "domain_auth": "64"
  },
  {
   "domain": "chinafile.com",
@@ -192,51 +96,11 @@
   "domain_auth": "63"
  },
  {
-  "domain": "beijingbulletin.com",
-  "facebook_fol": "2.2K",
-  "twitter_fol": "389",
-  "insta_fol": "",
-  "freq_post": "30posts/day",
-  "domain_auth": "27"
- },
- {
-  "domain": "chinaentertainmentnews.com",
-  "facebook_fol": "27.1K",
-  "twitter_fol": "7.1K",
-  "insta_fol": "",
-  "freq_post": "6posts/day",
-  "domain_auth": "37"
- },
- {
-  "domain": "youngchinabiz.com",
-  "facebook_fol": "203",
-  "twitter_fol": "1.5K",
+  "domain": "china-briefing.com",
+  "facebook_fol": "993",
+  "twitter_fol": "6.6K",
   "insta_fol": "",
   "freq_post": "",
-  "domain_auth": "37"
- },
- {
-  "domain": "wildeastfootball.net",
-  "facebook_fol": "620",
-  "twitter_fol": "6.4K",
-  "insta_fol": "",
-  "freq_post": "1post/month",
-  "domain_auth": "50"
- },
- {
-  "domain": "chinaww2.com",
-  "facebook_fol": "17.6K",
-  "twitter_fol": "19K",
-  "insta_fol": "",
-  "freq_post": "",
-  "domain_auth": "32"
- },
- {
-  "domain": "chinacopyrightandmedia.wordpress.com",
-  "facebook_fol": "",
-  "twitter_fol": "",
-  "insta_fol": "",
-  "freq_post": "",
-  "domain_auth": "59"
+  "domain_auth": "63"
  }
 ]
