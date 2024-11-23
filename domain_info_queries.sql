@@ -15,4 +15,8 @@ CREATE TABLE domain_info(
 
 DROP TABLE domain_info
 
-SELECT count(domain) FROM domain_info
+SELECT * FROM domain_info
+
+SELECT count(domain) 
+FROM domain_info
+WHERE domain_weight != 0
