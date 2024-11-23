@@ -12,3 +12,7 @@ CREATE TABLE domain_info(
     domain_auth INTEGER,
     PRIMARY KEY (domain)
 )
+
+DROP TABLE domain_info
+
+SELECT count(domain) FROM domain_info

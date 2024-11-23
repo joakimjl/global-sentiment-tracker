@@ -12,6 +12,8 @@ docker-compose.yaml
 
 siterelevancecsvs/
 
+site_country_mention/
+
 postgresql-42.7.4.jar
 
 # Distribution / packaging
