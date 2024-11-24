@@ -31,6 +31,7 @@ UNNEST(di.country_mentions) AS cm(country_code, count)
 WHERE di.domain_weight > 0.5
   AND cm.count > 100000
   AND cm.country_code = 'CH'
+  AND di.domain LIKE '%.cn'
 GROUP BY di.domain
 
 
