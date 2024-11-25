@@ -55,6 +55,7 @@ def insert_domain_info(values,connection):
         domain_auth INTEGER,
         PRIMARY KEY (domain)
     )"""
+
     columns = "(domain,country_code,country_mentions,domain_weight,change_date,domain_auth)"
     geric_sql_insert("domain_info", columns, values, columns_count=6, connection=connection)
 
@@ -73,21 +74,8 @@ def fetch_composite(name) -> CompositeInfo:
     return info
 
 def domain_consolidate():
-    file_temp = open("json_files/cn_cleaned.json","r")
-
-    cn_data = json.load(file_temp)
-
-    file_temp.close()
-
-    path = "siterelevancecsvs/"
-    
-    f = []
-    for (dirpath, dirnames, filenames) in walk(path):
-        f.extend(filenames)
-        break
-
-    info = fetch_composite("country_mentions")
     data_mapped = {}
+    info = fetch_composite("country_mentions")
     time_str = str(datetime.today().strftime('%Y%m%d%H%M%S'))
 
     file = open("site_country_mention/bq-results-20241122-230741-1732317007922.json","r")
@@ -101,6 +89,13 @@ def domain_consolidate():
             data_mapped[mapping["domain"]] = (mapping["domain"],None,[info.python_type(mapping["countrycode"],mapping["cnt"])],0,time_str,None)
 
     file.close()
+
+    path = "siterelevancecsvs/"
+    
+    f = []
+    for (dirpath, dirnames, filenames) in walk(path):
+        f.extend(filenames)
+        break
     
     for file_name in f:
         with open(path+file_name,'r') as file:
@@ -124,6 +119,11 @@ def domain_consolidate():
                                             weight,#Rank 1-10000 (10k still high ish)
                                             time_str,
                                             data_mapped[domain][5])
+
+
+    file_temp = open("json_files/cn_cleaned.json","r")
+    cn_data = json.load(file_temp)
+    file_temp.close()
 
     for ele in cn_data:
         try:

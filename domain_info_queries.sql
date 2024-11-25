@@ -13,27 +13,23 @@ CREATE TABLE domain_info(
     PRIMARY KEY (domain)
 )
 
-DROP TABLE domain_info
-
 SELECT * FROM domain_info
 
 SELECT di.*
 FROM domain_info di,
 UNNEST(di.country_mentions) AS cm(country_code, count)
-WHERE di.domain_weight > 0.5
-  AND cm.count > 1500
+WHERE di.domain_weight > 0.8
+  AND cm.count > 150000
 GROUP BY di.domain
 
 
 SELECT di.*
 FROM domain_info di,
 UNNEST(di.country_mentions) AS cm(country_code, count)
-WHERE di.domain_weight > 0.5
-  AND cm.count > 100000
-  AND cm.country_code = 'CH'
-  AND di.domain LIKE '%.cn'
+WHERE cm.count > 100000
+  AND cm.country_code = 'CN'
+  AND di.domain_weight >= 0.5
 GROUP BY di.domain
-
 
 
 SELECT count(country_code) FROM domain_info
