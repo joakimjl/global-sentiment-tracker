@@ -24,7 +24,7 @@ import numpy as np
 # TODO: Add translation, check on ex, Swedish, Danish, Norweigan, Tagalog, German.
 
 class TranslatorSyncer():
-    def __init__(self, max_concurrent=5, max_chars=90000) -> None:
+    def __init__(self, max_concurrent=5, max_chars=990000) -> None:
         self.total_active = 0
         self.started_time_map = {}
         self.chars = 0
