@@ -41,7 +41,7 @@ class TranslatorSyncer():
 
     def started(self):
         while (len(self.started_time_map) > self.max_con or self.chars >= self.max_chars):
-            print(f"Thread waiting due to: {len(self.started_time_map)} > {self.max_con} or {self.chars} >= {self.max_chars}")
+            #print(f"Thread waiting due to: {len(self.started_time_map)} > {self.max_con} or {self.chars} >= {self.max_chars}")
             time.sleep(1)
         self.started_time_map[self.id] = time.time()
         given_id = self.id
@@ -156,20 +156,22 @@ def get_domains(country):
         cur.execute("SELECT di.*\
             FROM domain_info di,\
             UNNEST(di.country_mentions) AS cm(country_code, count)\
-            WHERE cm.count > 150000\
+            WHERE cm.count > 100000\
             AND cm.country_code != %s\
-            AND di.domain_weight >= %s\
+            OR di.domain_weight >= %s\
+            AND cm.country_code != %s\
             GROUP BY di.domain",
-            (country,0.71))
+            (country,0.70))
     else:
         cur.execute("SELECT di.*\
             FROM domain_info di,\
             UNNEST(di.country_mentions) AS cm(country_code, count)\
-            WHERE cm.count > 150000\
+            WHERE cm.count > 100000\
             AND cm.country_code = %s\
-            AND di.domain_weight >= %s\
+            OR di.domain_weight >= %s\
+            AND cm.country_code = %s\
             GROUP BY di.domain",
-            (country,0.71))
+            (country,0.70))
 
     res = cur.fetchall()
     cur.close()
@@ -223,7 +225,7 @@ def get_gdelt_processed(query="economy", target_country="US", date=date.today(),
             kept += 1
         idx += 1
 
-    print(f'Kept: {kept} removed: {idx-kept}')
+    print(f'{target_country} kept: {kept} removed: {idx-kept} about {query}')
     titles = get_titles(data,syncer)
     #tokens = tokenize(titles)
     sia = SentimentIntensityAnalyzer()
@@ -272,7 +274,6 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
     if sentiment:
         for model_data in sentiment:
             if model_data == None:
-                print("None")
                 continue
             temp_arr = []
             for ele in model_data:
@@ -290,7 +291,6 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
     if sentiment_inter:
         for model_data in sentiment_inter:
             if model_data == None:
-                print("None")
                 continue
             temp_arr = []
             for ele in model_data:
@@ -319,10 +319,10 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
     print(f"Starting {target} about {subject}: remaining: {remain_rows}")
     sentiment_arr_nat, titles_nat, target_country, query = get_gdelt_processed(
         query=subject, target_country=target, date=on_day, roberta=roberta, syncer=syncer)
-    print("Finished national")
+    print(f"Finished national {target}")
     sentiment_arr_inter, titles_inter, target_country, query = get_gdelt_processed(
         query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer)
-    print("Finished international")
+    print(f"Finished international {target}")
     insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, query, on_day)
 
 # TODO:Add popularity relevance (Already in from hybrid search, better if we can add weights)
@@ -336,12 +336,12 @@ if __name__ == "__main__":
         "US":"America",
         "UK":"United Kingdom"}
     count = 0
-    max_concurrent = 8
+    max_concurrent = 10
     threads = []
 
     on_days = []
     for i in range(1):
-        on_days.append(date.today()-timedelta(days=i+89))
+        on_days.append(date.today()-timedelta(days=i+88))
 
     #TODO: More function calls, less nesting
     """Need to make this abomination prettier"""

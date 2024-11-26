@@ -24,6 +24,12 @@ CREATE TABLE global_info(
 
 SELECT * FROM global_info
 
+
+SELECT * 
+FROM global_info
+GROUP BY target_country,on_day,on_subject
+
+
 SELECT target_country, count(target_country) 
 FROM global_info
 GROUP BY target_country
