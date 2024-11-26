@@ -24,6 +24,10 @@ CREATE TABLE global_info(
 
 SELECT * FROM global_info
 
+SELECT target_country, count(target_country) 
+FROM global_info
+GROUP BY target_country
+
 SELECT target_country, on_subject, on_day, 
 array_length(headline_national, 1) AS head_nat, 
 array_length(headline_inter, 1) AS head_int

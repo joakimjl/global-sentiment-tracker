@@ -41,7 +41,6 @@ class TranslatorSyncer():
 
     def started(self):
         while (len(self.started_time_map) > self.max_con or self.chars >= self.max_chars):
-            print(self.started_time_map)
             print(f"Thread waiting due to: {len(self.started_time_map)} > {self.max_con} or {self.chars} >= {self.max_chars}")
             time.sleep(1)
         self.started_time_map[self.id] = time.time()
@@ -349,9 +348,12 @@ if __name__ == "__main__":
     for on_day in on_days:
         for target in countries:
             name = target
+            first_string = f"({name} economy OR {name} market)"
             if target in countries_map:
+                name_2 = name
                 name = countries_map[target]
-            subjects = [f"({name} economy OR {name} market)",
+                first_string = f"({name} economy OR {name} market OR {name_2} economy OR {name_2} market)"
+            subjects = [first_string,
                     f"{name} housing", f"{name} crime",
                     f"{name} inflation", f"{name} immigration"]
             for subject in subjects:
