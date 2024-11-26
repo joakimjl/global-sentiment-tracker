@@ -347,7 +347,7 @@ if __name__ == "__main__":
 
     on_days = []
     for i in range(1):
-        on_days.append(date.today()-timedelta(days=i+87))
+        on_days.append(date.today()-timedelta(days=i+82))
 
     #TODO: More function calls, less nesting
     """Need to make this abomination prettier"""
