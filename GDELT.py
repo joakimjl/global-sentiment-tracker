@@ -156,7 +156,7 @@ def get_domains(country):
         cur.execute("SELECT di.*\
             FROM domain_info di,\
             UNNEST(di.country_mentions) AS cm(country_code, count)\
-            WHERE cm.count > 200000\
+            WHERE cm.count > 300000\
             AND cm.country_code != %s\
             OR di.domain_weight >= %s\
             AND cm.country_code != %s\
