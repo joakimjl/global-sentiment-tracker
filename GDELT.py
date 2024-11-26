@@ -156,7 +156,7 @@ def get_domains(country):
         cur.execute("SELECT di.*\
             FROM domain_info di,\
             UNNEST(di.country_mentions) AS cm(country_code, count)\
-            WHERE cm.count > 100000\
+            WHERE cm.count > 200000\
             AND cm.country_code != %s\
             OR di.domain_weight >= %s\
             AND cm.country_code != %s\
@@ -166,7 +166,7 @@ def get_domains(country):
         cur.execute("SELECT di.*\
             FROM domain_info di,\
             UNNEST(di.country_mentions) AS cm(country_code, count)\
-            WHERE cm.count > 100000\
+            WHERE cm.count > 300000\
             AND cm.country_code = %s\
             OR di.domain_weight >= %s\
             AND cm.country_code = %s\
@@ -226,7 +226,7 @@ def get_gdelt_processed(query="economy", target_country="US", date=date.today(),
         idx += 1
 
     print(f'{target_country} kept: {kept} removed: {idx-kept} about {query}')
-    titles = get_titles(data,syncer)
+    titles = get_titles(kept_data,syncer)
     #tokens = tokenize(titles)
     sia = SentimentIntensityAnalyzer()
     sentiment_arr = []
@@ -341,7 +341,7 @@ if __name__ == "__main__":
 
     on_days = []
     for i in range(1):
-        on_days.append(date.today()-timedelta(days=i+88))
+        on_days.append(date.today()-timedelta(days=i+87))
 
     #TODO: More function calls, less nesting
     """Need to make this abomination prettier"""
@@ -364,7 +364,7 @@ if __name__ == "__main__":
                     for t in threads:
                         if t.is_alive() == False:
                             threads.remove(t)
-                    print("Waiting for threads")
+                    #print("Waiting for threads")
                     for i in range(10):
                         #print(".",end="")
                         time.sleep(0.5)
