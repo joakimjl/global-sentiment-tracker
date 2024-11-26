@@ -11,6 +11,7 @@ from threading import Thread
 import time
 from roberta_model import GST_Roberta
 import numpy as np
+from country_codes import country_codes_map
 
 
 #Find KPI for display, decide how and when. If opinion changes on subject, should that be covered?
@@ -150,28 +151,33 @@ def get_domains(country):
                             host = "192.168.1.51",
                             port = "5432")
 
+    country_code = country
+    if country in country_codes_map:
+        country_code = country_codes_map[country]
+    
+
     cur = connection.cursor()
 
     if country[0] == '-':
         cur.execute("SELECT di.*\
             FROM domain_info di,\
             UNNEST(di.country_mentions) AS cm(country_code, count)\
-            WHERE cm.count > 300000\
-            AND cm.country_code != %s\
-            OR di.domain_weight >= %s\
-            AND cm.country_code != %s\
+            WHERE (cm.count > 300000\
+            AND cm.country_code != %s )\
+            OR (di.domain_weight >= %s\
+            AND cm.country_code != %s )\
             GROUP BY di.domain",
-            (country,0.70))
+            (country_code,0.70,country_code))
     else:
         cur.execute("SELECT di.*\
             FROM domain_info di,\
             UNNEST(di.country_mentions) AS cm(country_code, count)\
-            WHERE cm.count > 300000\
-            AND cm.country_code = %s\
-            OR di.domain_weight >= %s\
-            AND cm.country_code = %s\
+            WHERE (cm.count > 300000\
+            AND cm.country_code = %s )\
+            OR (di.domain_weight >= %s\
+            AND cm.country_code = %s )\
             GROUP BY di.domain",
-            (country,0.70))
+            (country_code,0.70,country_code))
 
     res = cur.fetchall()
     cur.close()
@@ -189,7 +195,7 @@ def get_titles(data,syncer):
     headline_dict = {}
     domain_dict = {}
     #Batch languages
-    for ele in data['articles']:
+    for ele in data:
         if ele['language'] not in headline_dict:
             headline_dict[ele['language']] = [ele['title']]
             domain_dict[ele['language']] = [ele['domain']]
@@ -221,7 +227,7 @@ def get_gdelt_processed(query="economy", target_country="US", date=date.today(),
     kept_data = []
     for arr in data['articles']:
         if arr['domain'] in valid_domains:
-            kept_data.append(data['articles'])
+            kept_data.append(arr)
             kept += 1
         idx += 1
 
