@@ -68,15 +68,14 @@ CREATE TYPE count_sentiment AS(
     positive INTEGER
 )
 
+
 --Count days sentiment.
-
-
 WITH day_info AS(
 SELECT UNNEST(headline_national) AS headline,
     UNNEST(sentiment_national[1:1]) AS senti,
     UNNEST(sentiment_national[2:2]) AS senti_second
 FROM global_info
-WHERE on_day = '20240904'),
+WHERE on_day = '20240901'),
 
 total_sentiment AS (SELECT 
     CASE
@@ -89,29 +88,54 @@ total_sentiment AS (SELECT
         WHEN tanh((senti_second).pos - (senti_second).neg) >= 0.05 THEN 'positive'
         ELSE 'neutral'
     END::label_senti AS roberto_polarity
-FROM day_info),
+FROM day_info)
 
+SELECT 
+    SUM((vader_res).negative) AS vader_negative,
+    SUM((vader_res).neutral) AS vader_neutral,
+    SUM((vader_res).positive) AS vader_positive,
+    SUM((rober_res).negative) AS rober_negative,
+    SUM((rober_res).neutral) AS rober_neutral,
+    SUM((rober_res).positive) AS rober_positive
+FROM (
+    SELECT senti_count_func(vader_compound) AS vader_res,
+    senti_count_func(roberto_polarity) AS rober_res
+    FROM total_sentiment
+) AS subquery;
 
-do $$
+--Probably overengineered, could be simpler but is fast atleast
+CREATE OR REPLACE function senti_count_func(input label_senti) returns count_sentiment as $$
+
 DECLARE 
-    i INTEGER := 0;
-    name_col TEXT := 'count_seti_';
-    temp_num TEXT;
-    final_name_col TEXT;
+    negative_count INTEGER := 0;
+    neutral_count INTEGER := 0;
+    positive_count INTEGER := 0;
 
+BEGIN
+    CASE
+        WHEN input = 'negative' THEN negative_count := negative_count + 1;
+        WHEN input = 'positive' THEN positive_count := positive_count + 1;
+    ELSE neutral_count := neutral_count + 1;
+    END CASE;
+RETURN(ROW(negative_count,neutral_count,positive_count)::count_sentiment);
+END;
+$$ language plpgsql;
+
+/*
 BEGIN
     WHILE i <= 3 LOOP
         name_col := 'count_seti_';
         i := i+1;
         temp_num := CAST(i AS TEXT);
         name_col := CONCAT(name_col, temp_num);
-        raise notice 'Name %', name_col;
-        
-    END LOOP;
-END;
-$$;
+        raise notice 'Name % %', input, res;
 
-SELECT * FROM count_seti_1
+    END LOOP;
+    RETURN res;
+END;
+$$ language plpgsql;*/
+
+
 
 
 
