@@ -12,6 +12,7 @@ import time
 from roberta_model import GST_Roberta
 import numpy as np
 from country_codes import country_codes_map
+from country_list import countries, countries_map
 
 
 #Find KPI for display, decide how and when. If opinion changes on subject, should that be covered?

@@ -1,20 +1,11 @@
 import psycopg
-import requests
 import json
 from os import walk
 import math
 from datetime import datetime, timedelta, date
 from settings import POSTGRES_PASSWORD, POSTGRES_USER
 from psycopg.types.composite import CompositeInfo, register_composite
-
-def connect():
-    connection = psycopg.Connection.connect(dbname = "postgres",
-                            user = POSTGRES_USER,
-                            password = POSTGRES_PASSWORD,
-                            host = "192.168.1.51",
-                            port = "5432")
-
-    return connection
+from data_form_querying import connect
 
 def geric_sql_insert(table, columns, values, columns_count=6, connection=None):
     """Takes in table and query, SQL injection protection only needed if users are allowed to query

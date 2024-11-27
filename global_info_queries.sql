@@ -68,6 +68,8 @@ CREATE TYPE count_sentiment AS(
     positive INTEGER
 )
 
+SELECT * FROM global_info
+
 
 --Count days sentiment.
 WITH day_info AS(
@@ -75,7 +77,7 @@ SELECT UNNEST(headline_national) AS headline,
     UNNEST(sentiment_national[1:1]) AS senti,
     UNNEST(sentiment_national[2:2]) AS senti_second
 FROM global_info
-WHERE on_day = '20240901'),
+WHERE on_day = '20240904' AND on_subject = 'America housing'),
 
 total_sentiment AS (SELECT 
     CASE
