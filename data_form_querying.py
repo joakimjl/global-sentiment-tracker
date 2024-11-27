@@ -28,13 +28,13 @@ def count_query(day, on_subject, conn=None): #str(date.strftime('%Y%m%d'))
         UNNEST(sentiment_national[1:1]) AS senti,\
         UNNEST(sentiment_national[2:2]) AS senti_second\
     FROM global_info\
-    WHERE on_day = %s AND on_subject = %s),\
+    WHERE on_day = %s ),\
 \
     total_sentiment AS (SELECT \
         CASE\
             WHEN (senti).compound <= -0.05 THEN 'negative'\
             WHEN (senti).compound >= 0.05 THEN 'positive'\
-            ELSE 'neutral'\
+            ELSE %s\
         END::label_senti AS vader_compound,\
         CASE\
             WHEN tanh((senti_second).pos - (senti_second).neg) <= -0.05 THEN 'negative'\
@@ -54,7 +54,7 @@ def count_query(day, on_subject, conn=None): #str(date.strftime('%Y%m%d'))
         SELECT senti_count_func(vader_compound) AS vader_res,\
         senti_count_func(roberto_polarity) AS rober_res\
         FROM total_sentiment\
-    ) AS subquery;", (str(day.strftime('%Y%m%d')),on_subject)
+    ) AS subquery;", (str(day.strftime('%Y%m%d')),'neutral')
     )
     return(cur.fetchall())
 
@@ -66,12 +66,12 @@ if __name__ == "__main__":
 
     conn = connect()
 
-    for i in range(100):
+    for i in range(1):
         for country in countries:
             if country in countries_map:
                 country = countries_map[country]
             res = count_query(date, f"{country} housing", conn)
-            #print(res)
+            print(res)
 
     conn.close()
 
