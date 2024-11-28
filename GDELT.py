@@ -385,8 +385,8 @@ if __name__ == "__main__":
     threads = []
 
     on_days = []
-    for i in range(10):
-        on_days.append(date.today()-timedelta(days=89-i))
+    for i in range(79):
+        on_days.append(date.today()-timedelta(days=80-i))
 
     #TODO: More function calls, less nesting
     """Need to make this abomination prettier"""

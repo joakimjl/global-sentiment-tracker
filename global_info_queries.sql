@@ -25,10 +25,41 @@ CREATE TABLE global_info(
     PRIMARY KEY(target_country,on_subject,on_day)
 )
 
-SELECT * 
+
+
+SELECT target_country,
+    sum(senti_count_nat[1]) as vader_nat,
+    sum(senti_count_nat[2]) as rober_nat,
+    sum(senti_count_int[1]) as vader_int,
+    sum(senti_count_int[2]) as rober_int,
+    count(on_subject)
 FROM global_info
-WHERE target_country = 'US'
-AND on_day = '2024-08-30'
+GROUP BY target_country
+
+--To create my own sum for count_sentiment
+CREATE OR REPLACE AGGREGATE sum(count_sentiment)
+(
+    sfunc = test_sum_state,
+    stype = count_sentiment,
+    initcond = '(0,0,0)'
+);
+CREATE OR REPLACE function test_sum_state(
+    state count_sentiment,
+    next count_sentiment
+) RETURNS count_sentiment AS $$
+DECLARE 
+    negative_count INTEGER := 0;
+    neutral_count INTEGER := 0;
+    positive_count INTEGER := 0;
+BEGIN
+    negative_count := ($1).negative + ($2).negative;
+    neutral_count := ($1).neutral + ($2).neutral;
+    positive_count := ($1).positive + ($2).positive;
+    RETURN ROW(negative_count, neutral_count, positive_count)::count_sentiment;
+END;
+$$ language plpgsql;
+
+
 
 --working unnest query for sentiments
 SELECT UNNEST(headline_national) AS headline,
