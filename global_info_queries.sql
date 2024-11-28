@@ -19,6 +19,8 @@ CREATE TABLE global_info(
     sentiment_national sentiment[][],
     sentiment_inter sentiment[][],
     sentiment_count_res count_sentiment[],
+    senti_count_nat count_sentiment[],
+    senti_count_int count_sentiment[],
     latest_processed DATE,
     PRIMARY KEY(target_country,on_subject,on_day)
 )
@@ -26,8 +28,7 @@ CREATE TABLE global_info(
 SELECT * 
 FROM global_info
 WHERE target_country = 'US'
-AND on_day = '20240129'
-AND on_subject = 'America housing'
+AND on_day = '2024-08-30'
 
 --working unnest query for sentiments
 SELECT UNNEST(headline_national) AS headline,

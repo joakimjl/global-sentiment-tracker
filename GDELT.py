@@ -13,6 +13,7 @@ from roberta_model import GST_Roberta
 import numpy as np
 from country_codes import country_codes_map
 from country_list import countries, countries_map
+import math
 
 
 #Find KPI for display, decide how and when. If opinion changes on subject, should that be covered?
@@ -277,22 +278,45 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
             articles.append(arti.python_type(*pair))
         all_articles.append(articles)
 
+    senti_count = CompositeInfo.fetch(conn, "count_sentiment")
+    register_composite(senti_count,conn)
+
+    senti_count_arr_nat = []
+
+    #TODO: make these two functions into one as it should've been
     all_sentiment = []
     if sentiment:
         for model_data in sentiment:
             if model_data == None:
                 continue
             temp_arr = []
+            temp_arr_count = [0]*3
             for ele in model_data:
                 if type(ele) == np.ndarray:
                     sent = info.python_type(*ele.tolist(), 
                                             (ele.tolist()[2]-ele.tolist()[0])/(ele.tolist()[1]+1) )
+                    polarity = math.tanh(ele.tolist()[2] - ele.tolist()[0])
+                    if polarity <= -0.05:
+                        temp_arr_count[0] += 1
+                    elif polarity >= 0.05:
+                        temp_arr_count[2] += 1
+                    else:
+                        temp_arr_count[1] += 1
                 else:
                     sent = info.python_type(*ele.values())
+                    if [val for val in ele.values()][3] <= -0.05:
+                        temp_arr_count[0] += 1
+                    elif [val for val in ele.values()][3] >= 0.05:
+                        temp_arr_count[2] += 1
+                    else:
+                        temp_arr_count[1] += 1
                 temp_arr.append(sent)
             all_sentiment.append(temp_arr)
+            senti_count_arr_nat.append(senti_count.python_type(*temp_arr_count))
     else:
         all_sentiment = None 
+
+    senti_count_arr_int = []
 
     all_sentiment_inter = []
     if sentiment_inter:
@@ -300,25 +324,37 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
             if model_data == None:
                 continue
             temp_arr = []
+            temp_arr_count = [0]*3
             for ele in model_data:
                 if type(ele) == np.ndarray:
                     sent = info.python_type(*ele.tolist(), 
                                             (ele.tolist()[2]-ele.tolist()[0])/(ele.tolist()[1]+1) )
+                    polarity = math.tanh(ele.tolist()[2] - ele.tolist()[0])
+                    if polarity <= -0.05:
+                        temp_arr_count[0] += 1
+                    elif polarity >= 0.05:
+                        temp_arr_count[2] += 1
+                    else:
+                        temp_arr_count[1] += 1
                 else:
                     sent = info.python_type(*ele.values())
+                    if [val for val in ele.values()][3] <= -0.05:
+                        temp_arr_count[0] += 1
+                    elif [val for val in ele.values()][3] >= 0.05:
+                        temp_arr_count[2] += 1
+                    else:
+                        temp_arr_count[1] += 1
                 temp_arr.append(sent)
             all_sentiment_inter.append(temp_arr)
+            senti_count_arr_int.append(senti_count.python_type(*temp_arr_count))
     else:
         all_sentiment_inter = None 
-
-    #senti_count = CompositeInfo.fetch(conn, "count_sentiment")
-    #register_composite(senti_count,conn)
 
     cur = conn.cursor()
     cur.execute("INSERT INTO global_info \
                 (target_country,on_day,headline_national,headline_inter,on_subject,\
-                sentiment_national,sentiment_inter,latest_processed ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-    (tar_country,date,all_articles[0],all_articles[1],query,all_sentiment,all_sentiment_inter,datetime.today()))
+                sentiment_national,sentiment_inter,senti_count_nat,senti_count_int,latest_processed ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+    (tar_country,date,all_articles[0],all_articles[1],query,all_sentiment,all_sentiment_inter,senti_count_arr_nat,senti_count_arr_int,datetime.today()))
 
     conn.commit()
     cur.close()
@@ -349,8 +385,8 @@ if __name__ == "__main__":
     threads = []
 
     on_days = []
-    for i in range(2):
-        on_days.append(date.today()-timedelta(days=90-i))
+    for i in range(10):
+        on_days.append(date.today()-timedelta(days=89-i))
 
     #TODO: More function calls, less nesting
     """Need to make this abomination prettier"""
