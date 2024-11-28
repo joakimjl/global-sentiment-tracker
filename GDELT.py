@@ -35,7 +35,7 @@ class TranslatorSyncer():
         self.max_chars = max_chars
 
     def finished(self, id):
-        sleep_time = time.time()-self.started_time_map[id]-0.95
+        sleep_time = self.started_time_map[id]-time.time()+1.05
         sleep_time = min(sleep_time, 0)
         sleep_time = max(sleep_time, 1)
         time.sleep(sleep_time)
@@ -311,17 +311,20 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
     else:
         all_sentiment_inter = None 
 
+    #senti_count = CompositeInfo.fetch(conn, "count_sentiment")
+    #register_composite(senti_count,conn)
+
     cur = conn.cursor()
     cur.execute("INSERT INTO global_info \
                 (target_country,on_day,headline_national,headline_inter,on_subject,\
                 sentiment_national,sentiment_inter,latest_processed ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-    (tar_country,str(date.strftime('%Y%m%d')),all_articles[0],all_articles[1],query,all_sentiment,all_sentiment_inter,str(datetime.today().strftime('%Y%m%d%H%M%S'))))
+    (tar_country,date,all_articles[0],all_articles[1],query,all_sentiment,all_sentiment_inter,datetime.today()))
 
     conn.commit()
     cur.close()
     conn.close()
 
-def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=date.today()):
+def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=date.today(), short_subject=None):
     """Completes all tasks for one row, separated for multithreading"""
     print(f"Starting {target} about {subject}: remaining: {remain_rows}")
     sentiment_arr_nat, titles_nat, target_country, query = get_gdelt_processed(
@@ -330,9 +333,8 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
     sentiment_arr_inter, titles_inter, target_country, query = get_gdelt_processed(
         query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer)
     print(f"Finished international {target}")
-    insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, query, on_day)
+    insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, short_subject, on_day)
 
-# TODO:Add popularity relevance (Already in from hybrid search, better if we can add weights)
 # TODO:Fix large duping problem from GDELT data
 if __name__ == "__main__":
     syncer = TranslatorSyncer()
@@ -347,8 +349,8 @@ if __name__ == "__main__":
     threads = []
 
     on_days = []
-    for i in range(1):
-        on_days.append(date.today()-timedelta(days=i+82))
+    for i in range(2):
+        on_days.append(date.today()-timedelta(days=90-i))
 
     #TODO: More function calls, less nesting
     """Need to make this abomination prettier"""
@@ -363,7 +365,10 @@ if __name__ == "__main__":
             subjects = [first_string,
                     f"{name} housing", f"{name} crime",
                     f"{name} inflation", f"{name} immigration"]
-            for subject in subjects:
+            short_subjects = ["economy","housing","crime","inflation","immigration"]
+            for i in range(len(subjects)):
+                subject = subjects[i]
+                short_subject = short_subjects[i]
                 time.sleep(1)#Not to spam too much on API's (ESP Google translate)
                 #Due to once reaching google cap, either more than 5 per sec or 200k, should make 
                 #Class that counts, also the GDELT now...
@@ -377,7 +382,7 @@ if __name__ == "__main__":
                         time.sleep(0.5)
                     
                 remain_rows = len(countries)*len(subjects)*len(on_days)-count
-                t = Thread(target=fetch_and_insert_one, args=[target, subject, remain_rows, roberta, syncer, on_day])
+                t = Thread(target=fetch_and_insert_one, args=[target, subject, remain_rows, roberta, syncer, on_day, short_subject])
                 t.start()
                 threads.append(t)
                 

@@ -12,13 +12,14 @@ CREATE TYPE article AS(
 
 CREATE TABLE global_info(
     target_country TEXT,
-    on_day TEXT,
+    on_day DATE,
     headline_national article[],
     headline_inter article[],
     on_subject TEXT,
     sentiment_national sentiment[][],
     sentiment_inter sentiment[][],
-    latest_processed TEXT,
+    sentiment_count_res count_sentiment[],
+    latest_processed DATE,
     PRIMARY KEY(target_country,on_subject,on_day)
 )
 
