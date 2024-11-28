@@ -36,7 +36,7 @@ class TranslatorSyncer():
         self.max_chars = max_chars
 
     def finished(self, id):
-        sleep_time = self.started_time_map[id]-time.time()+1.05
+        sleep_time = self.started_time_map[id]-time.time()+1.5
         sleep_time = min(sleep_time, 0)
         sleep_time = max(sleep_time, 1)
         time.sleep(sleep_time)
@@ -385,8 +385,8 @@ if __name__ == "__main__":
     threads = []
 
     on_days = []
-    for i in range(79):
-        on_days.append(date.today()-timedelta(days=80-i))
+    for i in range(6):
+        on_days.append(date.today()-timedelta(days=71-i))
 
     #TODO: More function calls, less nesting
     """Need to make this abomination prettier"""
