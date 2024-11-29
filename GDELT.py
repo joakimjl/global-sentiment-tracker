@@ -85,7 +85,7 @@ def check_exists(country, subject, day):
     
     res = cur.fetchall()
 
-    if res[0][0] != 0:
+    if res[0][0] == 0:
         return False
     return True
 
