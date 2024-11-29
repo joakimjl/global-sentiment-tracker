@@ -15,7 +15,6 @@ from country_codes import country_codes_map
 from country_list import countries, countries_map
 import math
 
-
 #Find KPI for display, decide how and when. If opinion changes on subject, should that be covered?
 
 #Example
@@ -69,6 +68,26 @@ class TranslatorSyncer():
         self.finished(id)
 
         return(batch)
+
+def check_exists(country, subject, day):
+    connection = psycopg.Connection.connect(dbname = "postgres",
+                            user = POSTGRES_USER,
+                            password = POSTGRES_PASSWORD,
+                            host = CONNECT_IP_REMOTE,
+                            port = CONNECT_PORT_REMOTE)
+    
+    cur = connection.cursor()
+    
+    cur.execute(
+        "SELECT count(*) FROM global_info\
+        WHERE on_subject = %s AND target_country = %s AND on_day = %s",
+        (subject, country, day))
+    
+    res = cur.fetchall()
+
+    if res[0][0] != 0:
+        return False
+    return True
 
 def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=None, mode="artlist", format="JSON", day=date.today()):
     """
@@ -151,7 +170,7 @@ def get_domains(country):
                             user = POSTGRES_USER,
                             password = POSTGRES_PASSWORD,
                             host = CONNECT_IP_REMOTE,
-                            port = CONNECET_PORT_REMOTE)
+                            port = CONNECT_PORT_REMOTE)
 
     country_code = country
     if country in country_codes_map:
@@ -362,6 +381,9 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
 
 def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=date.today(), short_subject=None):
     """Completes all tasks for one row, separated for multithreading"""
+    if not check_exists(target, subject, on_day):
+        raise Exception(f"{target} on {subject} on {on_day} already in database")
+        
     print(f"Starting {target} about {subject}: remaining: {remain_rows}")
     sentiment_arr_nat, titles_nat, target_country, query = get_gdelt_processed(
         query=subject, target_country=target, date=on_day, roberta=roberta, syncer=syncer)

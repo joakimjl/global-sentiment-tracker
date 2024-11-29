@@ -25,7 +25,7 @@ CREATE TABLE global_info(
     PRIMARY KEY(target_country,on_subject,on_day)
 )
 
-SELECT * FROM global_info
+SELECT count(*) FROM global_info
 
 SELECT target_country,
     sum(senti_count_nat[1]) as vader_nat,
