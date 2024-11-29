@@ -7,3 +7,5 @@ load_dotenv(dotenv_path)
 
 POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD")
 POSTGRES_USER = os.environ.get("POSTGRES_USER")
+CONNECT_IP_REMOTE = os.environ.get("CONNECT_IP_REMOTE")
+CONNECT_PORT_REMOTE = os.environ.get("CONNECT_PORT_REMOTE")
