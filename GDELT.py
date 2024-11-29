@@ -381,7 +381,7 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
 
 def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=date.today(), short_subject=None):
     """Completes all tasks for one row, separated for multithreading"""
-    if not check_exists(target, subject, on_day):
+    if check_exists(target, subject, on_day):
         raise Exception(f"{target} on {subject} on {on_day} already in database")
         
     print(f"Starting {target} about {subject}: remaining: {remain_rows}")
