@@ -4,7 +4,7 @@ import json
 import nltk
 from datetime import datetime, timedelta, date
 import psycopg
-from settings import POSTGRES_PASSWORD, POSTGRES_USER, CONNECT_IP_REMOTE, CONNECT_PORT_REMOTE
+from settings import POSTGRES_PASSWORD, POSTGRES_USER, CONNECT_IP_REMOTE, CONNECT_PORT_REMOTE 
 from deep_translator import GoogleTranslator as Translator
 from psycopg.types.composite import CompositeInfo, register_composite
 from threading import Thread
@@ -151,7 +151,7 @@ def get_domains(country):
                             user = POSTGRES_USER,
                             password = POSTGRES_PASSWORD,
                             host = CONNECT_IP_REMOTE,
-                            port = CONNECET_PORT_REMOTE)
+                            port = CONNECT_PORT_REMOTE)
 
     country_code = country
     if country in country_codes_map:
@@ -258,7 +258,7 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
                             user = POSTGRES_USER,
                             password = POSTGRES_PASSWORD,
                             host = CONNECT_IP_REMOTE,
-                            port = CONNECT_PORT_REMOTE)
+                            port = CONNECT_PORT_REMOTE) 
     
     date=date-timedelta(days=1)
                             
@@ -385,8 +385,8 @@ if __name__ == "__main__":
     threads = []
 
     on_days = []
-    for i in range(6):
-        on_days.append(date.today()-timedelta(days=71-i))
+    for i in range(75):
+        on_days.append(date.today()-timedelta(days=75-i))
 
     #TODO: More function calls, less nesting
     """Need to make this abomination prettier"""
