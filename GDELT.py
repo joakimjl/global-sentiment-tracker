@@ -4,7 +4,7 @@ import json
 import nltk
 from datetime import datetime, timedelta, date
 import psycopg
-from settings import POSTGRES_PASSWORD, POSTGRES_USER
+from settings import POSTGRES_PASSWORD, POSTGRES_USER, CONNECT_IP_REMOTE, CONNECT_PORT_REMOTE
 from deep_translator import GoogleTranslator as Translator
 from psycopg.types.composite import CompositeInfo, register_composite
 from threading import Thread
@@ -36,7 +36,7 @@ class TranslatorSyncer():
         self.max_chars = max_chars
 
     def finished(self, id):
-        sleep_time = self.started_time_map[id]-time.time()+1.5
+        sleep_time = self.started_time_map[id]-time.time()+2
         sleep_time = min(sleep_time, 0)
         sleep_time = max(sleep_time, 1)
         time.sleep(sleep_time)
@@ -150,8 +150,8 @@ def get_domains(country):
     connection = psycopg.Connection.connect(dbname = "postgres",
                             user = POSTGRES_USER,
                             password = POSTGRES_PASSWORD,
-                            host = "192.168.1.51",
-                            port = "5432")
+                            host = CONNECT_IP_REMOTE,
+                            port = CONNECET_PORT_REMOTE)
 
     country_code = country
     if country in country_codes_map:
@@ -257,8 +257,8 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
     conn = psycopg.Connection.connect(dbname = "postgres",
                             user = POSTGRES_USER,
                             password = POSTGRES_PASSWORD,
-                            host = "192.168.1.51",
-                            port = "5432")
+                            host = CONNECT_IP_REMOTE,
+                            port = CONNECT_PORT_REMOTE)
     
     date=date-timedelta(days=1)
                             
@@ -381,7 +381,7 @@ if __name__ == "__main__":
         "US":"America",
         "UK":"United Kingdom"}
     count = 0
-    max_concurrent = 10
+    max_concurrent = 2
     threads = []
 
     on_days = []
@@ -429,3 +429,4 @@ if __name__ == "__main__":
                 threads.remove(t)
         time.sleep(2)
     print(f"Finished all, closing, total time: {time.time() - start_time}")
+
