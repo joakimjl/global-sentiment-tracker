@@ -78,6 +78,8 @@ def check_exists(country, subject, day):
     
     cur = connection.cursor()
 
+    day = day-timedelta(day=1) #Start day is what is inserted always
+
     cur.execute(
         "SELECT count(*) FROM global_info\
         WHERE on_subject = %s AND target_country = %s AND on_day = %s",
@@ -278,6 +280,8 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
                             password = POSTGRES_PASSWORD,
                             host = CONNECT_IP_REMOTE,
                             port = CONNECT_PORT_REMOTE) 
+    
+    date=date-timedelta(days=1) #Inserting on start day
                             
     #Gets type sentiment and makes the type in python, inserts into array
     all_sentiment = []
