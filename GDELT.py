@@ -77,16 +77,14 @@ def check_exists(country, subject, day):
                             port = CONNECT_PORT_REMOTE)
     
     cur = connection.cursor()
-    print(country)
-    print(subject)
-    print(day)
+
     cur.execute(
         "SELECT count(*) FROM global_info\
         WHERE on_subject = %s AND target_country = %s AND on_day = %s",
         (subject, country, day))
     
     res = cur.fetchall()
-    print(res)
+
     if res[0][0] == 0:
         return False
     return True
@@ -381,11 +379,12 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
     cur.close()
     conn.close()
 
-def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=date.today(), short_subject=None):
+def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=date.today(), short_subject="Any Subject"):
     """Completes all tasks for one row, separated for multithreading"""
     already_in_db = check_exists(target, short_subject, on_day)
     if already_in_db: 
-        raise Exception(f"{target} on {short_subject} on {on_day} already in database")
+        print(f"{target} on {short_subject} on {on_day} already in database")
+        return
     try:
 
         print(f"Starting {target} about {subject}: remaining: {remain_rows}")
@@ -398,6 +397,7 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
         insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, short_subject, on_day)
     except Exception as error:
         print(f"{error} \n Continuing anyway but {target} on {subject} on {on_day} not inserted")
+    return True
 
 # TODO:Fix large duping problem from GDELT data
 if __name__ == "__main__":
@@ -413,8 +413,8 @@ if __name__ == "__main__":
     threads = []
 
     on_days = []
-    for i in range(75):
-        on_days.append(date.today()-timedelta(days=75-i))
+    for i in range(80):
+        on_days.append(date.today()-timedelta(days=80-i))
 
     #TODO: More function calls, less nesting
     """Need to make this abomination prettier"""
