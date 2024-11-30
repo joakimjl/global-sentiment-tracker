@@ -422,7 +422,7 @@ if __name__ == "__main__":
         "US":"America",
         "UK":"United Kingdom"}
     count = 0
-    max_concurrent = 5
+    max_concurrent = 1
     threads = []
 
     on_days = []
