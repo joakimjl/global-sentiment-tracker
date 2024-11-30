@@ -78,7 +78,7 @@ def check_exists(country, subject, day):
     
     cur = connection.cursor()
 
-    day = day-timedelta(day=1) #Start day is what is inserted always
+    day = day-timedelta(days=1) #Start day is what is inserted always
 
     cur.execute(
         "SELECT count(*) FROM global_info\
