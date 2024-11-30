@@ -38,6 +38,7 @@ class TranslatorSyncer():
         sleep_time = self.started_time_map[id]-time.time()+2
         sleep_time = min(sleep_time, 0)
         sleep_time = max(sleep_time, 1)
+        print(f"Sleeping for: {sleep_time}")
         time.sleep(sleep_time)
         del self.started_time_map[id]
 
