@@ -36,9 +36,10 @@ class TranslatorSyncer():
 
     def finished(self, id):
         sleep_time = self.started_time_map[id]-time.time()+2
+        if sleep_time <= -100:
+            print(f"It took LONG: {sleep_time}")
         sleep_time = min(sleep_time, 0)
         sleep_time = max(sleep_time, 1)
-        print(f"Sleeping for: {sleep_time}")
         time.sleep(sleep_time)
         del self.started_time_map[id]
 
@@ -421,7 +422,7 @@ if __name__ == "__main__":
         "US":"America",
         "UK":"United Kingdom"}
     count = 0
-    max_concurrent = 2
+    max_concurrent = 5
     threads = []
 
     on_days = []
