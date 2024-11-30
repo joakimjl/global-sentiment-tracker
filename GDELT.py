@@ -77,14 +77,16 @@ def check_exists(country, subject, day):
                             port = CONNECT_PORT_REMOTE)
     
     cur = connection.cursor()
-    
+    print(country)
+    print(subject)
+    print(day)
     cur.execute(
         "SELECT count(*) FROM global_info\
         WHERE on_subject = %s AND target_country = %s AND on_day = %s",
         (subject, country, day))
     
     res = cur.fetchall()
-
+    print(res)
     if res[0][0] == 0:
         return False
     return True
@@ -381,8 +383,9 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
 
 def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=date.today(), short_subject=None):
     """Completes all tasks for one row, separated for multithreading"""
-    if check_exists(target, subject, on_day):
-        raise Exception(f"{target} on {subject} on {on_day} already in database")
+    already_in_db = check_exists(target, short_subject, on_day)
+    if already_in_db: 
+        raise Exception(f"{target} on {short_subject} on {on_day} already in database")
     try:
 
         print(f"Starting {target} about {subject}: remaining: {remain_rows}")
