@@ -84,7 +84,7 @@ def check_exists(country, subject, day):
         (subject, country, day))
     
     res = cur.fetchall()
-
+    print((res, subject, country, day))
     if res[0][0] == 0:
         return False
     return True
@@ -370,14 +370,17 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
         all_sentiment_inter = None 
 
     cur = conn.cursor()
-    cur.execute("INSERT INTO global_info \
+    res1 = cur.execute("INSERT INTO global_info \
                 (target_country,on_day,headline_national,headline_inter,on_subject,\
                 sentiment_national,sentiment_inter,senti_count_nat,senti_count_int,latest_processed ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
     (tar_country,date,all_articles[0],all_articles[1],query,all_sentiment,all_sentiment_inter,senti_count_arr_nat,senti_count_arr_int,datetime.today()))
 
-    conn.commit()
+    res2 = conn.commit()
     cur.close()
     conn.close()
+
+    print(f"Insert results: {res1} {res2}")
+    return True
 
 def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=date.today(), short_subject="Any Subject"):
     """Completes all tasks for one row, separated for multithreading"""
@@ -390,11 +393,16 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
         print(f"Starting {target} about {subject}: remaining: {remain_rows}")
         sentiment_arr_nat, titles_nat, target_country, query = get_gdelt_processed(
             query=subject, target_country=target, date=on_day, roberta=roberta, syncer=syncer)
+        if query = None:
+           return False 
         print(f"Finished national {target}")
         sentiment_arr_inter, titles_inter, target_country, query = get_gdelt_processed(
             query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer)
+        if query = None:
+           return False
         print(f"Finished international {target}")
         insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, short_subject, on_day)
+        print()
     except Exception as error:
         print(f"{error} \n Continuing anyway but {target} on {subject} on {on_day} not inserted")
     return True
