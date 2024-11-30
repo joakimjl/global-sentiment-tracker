@@ -45,11 +45,12 @@ class TranslatorSyncer():
 
     def started(self):
         while (len(self.started_time_map) > self.max_con or self.chars >= self.max_chars):
-            #print(f"Thread waiting due to: {len(self.started_time_map)} > {self.max_con} or {self.chars} >= {self.max_chars}")
+            print(f"Thread waiting due to: {len(self.started_time_map)} > {self.max_con} or {self.chars} >= {self.max_chars}")
             time.sleep(1)
         self.started_time_map[self.id] = time.time()
         given_id = self.id
         self.id += 1
+        print("Starting a translation",end="... ")
         return given_id
     
     def batch_process(self,batch,lang):
