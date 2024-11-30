@@ -393,12 +393,12 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
         print(f"Starting {target} about {subject}: remaining: {remain_rows}")
         sentiment_arr_nat, titles_nat, target_country, query = get_gdelt_processed(
             query=subject, target_country=target, date=on_day, roberta=roberta, syncer=syncer)
-        if query = None:
+        if query == None:
            return False 
         print(f"Finished national {target}")
         sentiment_arr_inter, titles_inter, target_country, query = get_gdelt_processed(
             query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer)
-        if query = None:
+        if query == None:
            return False
         print(f"Finished international {target}")
         insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, short_subject, on_day)
