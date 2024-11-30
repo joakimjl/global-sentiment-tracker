@@ -278,8 +278,6 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
                             password = POSTGRES_PASSWORD,
                             host = CONNECT_IP_REMOTE,
                             port = CONNECT_PORT_REMOTE) 
-    
-    date=date-timedelta(days=1)
                             
     #Gets type sentiment and makes the type in python, inserts into array
     all_sentiment = []
