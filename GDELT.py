@@ -399,6 +399,7 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
         print(f"{error} \n Continuing anyway but {target} on {subject} on {on_day} not inserted")
     return True
 
+
 # TODO:Fix large duping problem from GDELT data
 if __name__ == "__main__":
     syncer = TranslatorSyncer()
