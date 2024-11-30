@@ -50,7 +50,6 @@ class TranslatorSyncer():
         self.started_time_map[self.id] = time.time()
         given_id = self.id
         self.id += 1
-        print("Starting a translation",end="... ")
         return given_id
     
     def batch_process(self,batch,lang):
