@@ -430,17 +430,17 @@ if __name__ == "__main__":
     start_time = time.time()
     countries = ["US","UK","Germany","China","Japan","Australia","Ukraine","Russia"] 
     countries_map = {
-        "US":"America",
+        "US":"America", 
         "UK":"United Kingdom"}
     count = 0
-    max_concurrent = 1
+    max_concurrent = 2
     threads = []
 
     on_days = []
-    for i in range(74):
-        on_days.append(date.today()-timedelta(days=74-i))
+    for i in range(20):# Currently on 2024-11-15(5 done) (Latest) and 2024-09-21 (4 done)
+        on_days.append(date.today()-timedelta(days=20-i))
 
-    #TODO: More function calls, less nesting
+    #TODO: More function calls, less nesting 
     """Need to make this abomination prettier"""
     for on_day in on_days:
         for target in countries:
