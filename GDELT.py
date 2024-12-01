@@ -53,6 +53,7 @@ class TranslatorSyncer():
         return given_id
     
     def batch_process(self,batch,lang):
+        error_count = 0
         id = self.started()
         num_chars = len("".join(batch))
         self.chars += num_chars
@@ -64,6 +65,9 @@ class TranslatorSyncer():
             batch = Translator(source=lang.lower(), target='en').translate_batch(batch)
         except:
             print(f'BATCH FOR {lang} FAILED WITH {len(batch)} ARTICLES')
+            error_count += 1
+            if error_count > 3:
+                return False
 
         self.chars -= num_chars
 
@@ -234,6 +238,8 @@ def get_titles(data,syncer):
         domain_batch = domain_dict[lang]
         if lang != 'English':#Translation not needed (English (US) and (UK) default)
             batch = syncer.batch_process(batch,lang)
+            if batch == False:
+                return False
 
         for i in range(len(batch)):
             ele = batch[i]
@@ -258,6 +264,8 @@ def get_gdelt_processed(query="economy", target_country="US", date=date.today(),
 
     print(f'{target_country} kept: {kept} removed: {idx-kept} about {query}')
     titles = get_titles(kept_data,syncer)
+    if titles == False:
+        return False, False, False, False
     #tokens = tokenize(titles)
     sia = SentimentIntensityAnalyzer()
     sentiment_arr = []
@@ -374,16 +382,15 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
         all_sentiment_inter = None 
 
     cur = conn.cursor()
-    res1 = cur.execute("INSERT INTO global_info \
+    cur.execute("INSERT INTO global_info \
                 (target_country,on_day,headline_national,headline_inter,on_subject,\
                 sentiment_national,sentiment_inter,senti_count_nat,senti_count_int,latest_processed ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
     (tar_country,date,all_articles[0],all_articles[1],query,all_sentiment,all_sentiment_inter,senti_count_arr_nat,senti_count_arr_int,datetime.today()))
 
-    res2 = conn.commit()
+    conn.commit()
     cur.close()
     conn.close()
 
-    print(f"Insert results: {res1} {res2}")
     return True
 
 def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=date.today(), short_subject="Any Subject"):
@@ -399,14 +406,18 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
             query=subject, target_country=target, date=on_day, roberta=roberta, syncer=syncer)
         if query == None:
            return False 
+        if query == False:
+            return False
         print(f"Finished national {target}")
         sentiment_arr_inter, titles_inter, target_country, query = get_gdelt_processed(
             query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer)
         if query == None:
            return False
+        if query == False:
+            return False
         print(f"Finished international {target}")
         insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, short_subject, on_day)
-        print()
+        print(f"Inserted sucessfully: {target} on {subject} on {on_day}")
     except Exception as error:
         print(f"{error} \n Continuing anyway but {target} on {subject} on {on_day} not inserted")
     return True
