@@ -25,9 +25,8 @@ CREATE TABLE global_info(
     PRIMARY KEY(target_country,on_subject,on_day)
 )
 
-SELECT * FROM global_info
-WHERE target_country = 'Ukraine'
-AND on_day = '2024-09-17'
+SELECT count(*), on_day FROM global_info
+GROUP BY on_day
 
 
 SELECT target_country,

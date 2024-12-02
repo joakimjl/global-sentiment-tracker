@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+node_modules/
+
 #Docker yaml
 *.yaml
 docker-compose.yaml

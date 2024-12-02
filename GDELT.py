@@ -433,12 +433,12 @@ if __name__ == "__main__":
         "US":"America", 
         "UK":"United Kingdom"}
     count = 0
-    max_concurrent = 2
+    max_concurrent = 6
     threads = []
 
     on_days = []
-    for i in range(20):# Currently on 2024-11-15(5 done) (Latest) and 2024-09-21 (4 done)
-        on_days.append(date.today()-timedelta(days=20-i))
+    for i in range(16):# Currently on 2024-11-15(5 done) (Latest) and 2024-09-21 (4 done)
+        on_days.append(date.today()-timedelta(days=45-i))
 
     #TODO: More function calls, less nesting 
     """Need to make this abomination prettier"""
