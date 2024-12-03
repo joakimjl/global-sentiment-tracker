@@ -25,8 +25,14 @@ CREATE TABLE global_info(
     PRIMARY KEY(target_country,on_subject,on_day)
 )
 
-SELECT count(*), on_day FROM global_info
-GROUP BY on_day
+WITH article AS (
+    SELECT 
+    UNNEST(headline_national) AS headline,
+    on_day
+    FROM global_info)
+
+SELECT count(headline) AS headline_amount
+FROM article
 
 
 SELECT target_country,

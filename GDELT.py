@@ -437,8 +437,8 @@ if __name__ == "__main__":
     threads = []
 
     on_days = []
-    for i in range(16):# Currently on 2024-11-15(5 done) (Latest) and 2024-09-21 (4 done)
-        on_days.append(date.today()-timedelta(days=45-i))
+    for i in range(40):# Currently on 2024-11-15(5 done) (Latest) and 2024-09-21 (4 done)
+        on_days.append(date.today()-timedelta(days=65-i))
 
     #TODO: More function calls, less nesting 
     """Need to make this abomination prettier"""
