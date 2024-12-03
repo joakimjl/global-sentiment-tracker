@@ -13,13 +13,7 @@ fetch('/UN_Geodata_stylized.geojson')
     .then(response => response.json())
     .then(geojsonData => {
         geojsonData.features.forEach(feature => {
-/*             if (feature.properties.iso2cd == "US") {
-                console.log(feature);
-            }
-            console.log(feature); */
             const coordType = feature.geometry.type;
-
-            /* if (coordinates.length < 3) return; */
 
             if (coordType == "Polygon") {
                 const coordinates = feature.geometry.coordinates[0];
@@ -72,15 +66,34 @@ function latLonToVector3(lat, lon, radius) {
 }
 
 const geometry = new THREE.SphereGeometry( 1.96, 64, 64 ); 
-const material = new THREE.MeshPhysicalMaterial( { color: 0x1010ff } ); 
+const material = new THREE.MeshPhysicalMaterial( { color: 0x3030ff } ); 
 const sphere = new THREE.Mesh( geometry, material );
 
 const pointLight = new THREE.PointLight({ color: 0xffffff }, 30,100);
-pointLight.position.x = -9;
-pointLight.position.z = 0;
+pointLight.position.x = 9;
+pointLight.position.z = 9;
+
+scene.add(pointLight);
+
+const pointLight1 = new THREE.PointLight({ color: 0xffffff }, 30,100);
+pointLight1.position.x = -9;
+pointLight1.position.z = -9;
+
+scene.add(pointLight1);
+
+const pointLight2 = new THREE.PointLight({ color: 0xffffff }, 30,100);
+pointLight2.position.x = -9;
+pointLight2.position.z = 9;
+
+scene.add(pointLight2);
+
+const pointLight3 = new THREE.PointLight({ color: 0xffffff }, 30,100);
+pointLight3.position.x = 9;
+pointLight3.position.z = -9;
+
+scene.add(pointLight3);
 
 scene.add(sphere);
-scene.add(pointLight);
 
 camera.position.z = 5;
 const controls = new OrbitControls(camera, renderer.domElement);
