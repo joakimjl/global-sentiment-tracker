@@ -10,6 +10,18 @@ CREATE TYPE article AS(
     domain TEXT
 )
 
+CREATE TYPE count_sentiment AS(
+    negative INTEGER,
+    neutral INTEGER,
+    positive INTEGER
+)
+
+CREATE TYPE label_senti AS ENUM(
+    'negative',
+    'neutral',
+    'positive'
+)
+
 CREATE TABLE global_info(
     target_country TEXT,
     on_day DATE,
@@ -25,6 +37,8 @@ CREATE TABLE global_info(
     PRIMARY KEY(target_country,on_subject,on_day)
 )
 
+
+
 WITH article AS (
     SELECT 
     UNNEST(headline_national) AS headline,
@@ -33,6 +47,11 @@ WITH article AS (
 
 SELECT count(headline) AS headline_amount
 FROM article
+
+SELECT * FROM global_info
+
+SELECT * FROM pg_catalog.pg_tables 
+WHERE schemaname='public';
 
 
 SELECT target_country,
@@ -51,6 +70,7 @@ CREATE OR REPLACE AGGREGATE sum(count_sentiment)
     stype = count_sentiment,
     initcond = '(0,0,0)'
 );
+
 CREATE OR REPLACE function test_sum_state(
     state count_sentiment,
     next count_sentiment
@@ -66,7 +86,6 @@ BEGIN
     RETURN ROW(negative_count, neutral_count, positive_count)::count_sentiment;
 END;
 $$ language plpgsql;
-
 
 
 --working unnest query for sentiments
@@ -97,17 +116,8 @@ SELECT avg((senti).neg) AS vader_negative,
 FROM day_info
  */
 
-CREATE TYPE label_senti AS ENUM(
-    'negative',
-    'neutral',
-    'positive'
-)
 
-CREATE TYPE count_sentiment AS(
-    negative INTEGER,
-    neutral INTEGER,
-    positive INTEGER
-)
+
 
 SELECT * FROM global_info
 

@@ -12,6 +12,7 @@ document.body.appendChild(renderer.domElement);
 
 const radius = 2;
 
+function fetchGeo(){
 fetch('/UN_Geodata_simplified.geojson')
     .then(response => response.json())
     .then(geojsonData => {
@@ -78,6 +79,9 @@ fetch('/UN_Geodata_simplified.geojson')
             }
         });
     });
+}
+
+fetchGeo();
 
 function latLonToVector3(lat, lon, radius) {
     const phi = (90 - lat) * (Math.PI / 180);

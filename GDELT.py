@@ -191,7 +191,7 @@ def get_domains(country):
         cur.execute("SELECT di.*\
             FROM domain_info di,\
             UNNEST(di.country_mentions) AS cm(country_code, count)\
-            WHERE (cm.count > 300000\
+            WHERE (cm.count > 1300000\
             AND cm.country_code != %s )\
             OR (di.domain_weight >= %s\
             AND cm.country_code != %s )\
@@ -201,7 +201,7 @@ def get_domains(country):
         cur.execute("SELECT di.*\
             FROM domain_info di,\
             UNNEST(di.country_mentions) AS cm(country_code, count)\
-            WHERE (cm.count > 300000\
+            WHERE (cm.count > 1300000\
             AND cm.country_code = %s )\
             OR (di.domain_weight >= %s\
             AND cm.country_code = %s )\
@@ -437,8 +437,8 @@ if __name__ == "__main__":
     threads = []
 
     on_days = []
-    for i in range(40):# Currently on 2024-11-15(5 done) (Latest) and 2024-09-21 (4 done)
-        on_days.append(date.today()-timedelta(days=65-i))
+    for i in range(40):
+        on_days.append(date.today()-timedelta(days=i))
 
     #TODO: More function calls, less nesting 
     """Need to make this abomination prettier"""
