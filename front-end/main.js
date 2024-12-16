@@ -74,7 +74,9 @@ fetch('/UN_Geodata_stylized.geojson')
 
                     const country = new THREE.Mesh(geometry, material);
                     country.name = feature.properties.iso2cd
-                    scene.add(country);
+                    if (typeof(country.name) != "undefined") {
+                        scene.add(country);
+                    }
                 }
             }
         });
