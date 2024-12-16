@@ -13,7 +13,7 @@ document.body.appendChild(renderer.domElement);
 const radius = 2;
 
 function fetchGeo(){
-fetch('/UN_Geodata_simplified.geojson')
+fetch('/UN_Geodata_stylized.geojson')
     .then(response => response.json())
     .then(geojsonData => {
         geojsonData.features.forEach(feature => {
