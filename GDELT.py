@@ -1,10 +1,11 @@
+import boto3.session
 from nltk.sentiment import SentimentIntensityAnalyzer
 import requests
 import json
 import nltk
 from datetime import datetime, timedelta, date
 import psycopg
-from settings import POSTGRES_PASSWORD, POSTGRES_USER, CONNECT_IP_REMOTE, CONNECT_PORT_REMOTE 
+from settings import POSTGRES_PASSWORD, POSTGRES_USER, CONNECT_IP_REMOTE, CONNECT_PORT_REMOTE, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 from deep_translator import GoogleTranslator as Translator
 from psycopg.types.composite import CompositeInfo, register_composite
 from threading import Thread
@@ -14,6 +15,10 @@ import numpy as np
 from country_codes import country_codes_map
 from country_list import countries, countries_map
 import math
+import boto3
+import base64
+
+
 
 #Find KPI for display, decide how and when. If opinion changes on subject, should that be covered?
 
@@ -26,16 +31,20 @@ import math
 # TODO: Add translation, check on ex, Swedish, Danish, Norweigan, Tagalog, German.
 
 class TranslatorSyncer():
-    def __init__(self, max_concurrent=5, max_chars=990000) -> None:
+    def __init__(self, max_concurrent=15, max_chars=990000) -> None:
         self.total_active = 0
         self.started_time_map = {}
         self.chars = 0
         self.id = 0
         self.max_con = max_concurrent
         self.max_chars = max_chars
+        self.total_time = 0
+        self.total_requests = 0
 
     def finished(self, id):
         sleep_time = self.started_time_map[id]-time.time()+2
+        self.total_time -= self.started_time_map[id]-time.time()
+        self.total_requests += 1
         if sleep_time <= -100:
             print(f"It took LONG: {sleep_time}")
         sleep_time = min(sleep_time, 0)
@@ -52,6 +61,22 @@ class TranslatorSyncer():
         self.id += 1
         return given_id
     
+    def fetch_from_lambda(self,batch,lang):
+        session = boto3.session.Session(region_name='eu-west-1')
+        aws_lambda = session.client('lambda')
+        payload = {"batch":batch, "lang": lang}
+        payload = json.dumps(payload).encode("utf-8")
+        res = aws_lambda.invoke(
+            FunctionName='gst-translate-function',
+            InvocationType='RequestResponse',
+            LogType='None',
+            Payload=payload,
+        )
+
+        res = json.loads(json.loads(res['Payload'].read()))
+
+        return res
+
     def batch_process(self,batch,lang):
         error_count = 0
         id = self.started()
@@ -62,7 +87,8 @@ class TranslatorSyncer():
                 #New one requires only for chinese (simplified or traditional)
                 lang = "Chinese (simplified)"
 
-            batch = Translator(source=lang.lower(), target='en').translate_batch(batch)
+            #batch = Translator(source=lang.lower(), target='en').translate_batch(batch)
+            batch = self.fetch_from_lambda(batch,lang)
         except:
             print(f'BATCH FOR {lang} FAILED WITH {len(batch)} ARTICLES')
             error_count += 1
@@ -72,6 +98,8 @@ class TranslatorSyncer():
         self.chars -= num_chars
 
         self.finished(id)
+
+        print(f"Total req: {self.total_requests}, total time: {self.total_time}, avg time: {self.total_requests/(self.total_time+0.001)}")
 
         return(batch)
 
@@ -433,12 +461,12 @@ if __name__ == "__main__":
         "US":"America", 
         "UK":"United Kingdom"}
     count = 0
-    max_concurrent = 6
+    max_concurrent = 15
     threads = []
 
     on_days = []
-    for i in range(40):
-        on_days.append(date.today()-timedelta(days=i))
+    for i in range(1):
+        on_days.append(date.today()-timedelta(days=i+3))
 
     #TODO: More function calls, less nesting 
     """Need to make this abomination prettier"""
@@ -457,7 +485,7 @@ if __name__ == "__main__":
             for i in range(len(subjects)):
                 subject = subjects[i]
                 short_subject = short_subjects[i]
-                time.sleep(1)#Not to spam too much on API's (ESP Google translate)
+                time.sleep(2)#Not to spam too much on API's (ESP Google translate)
                 #Due to once reaching google cap, either more than 5 per sec or 200k, should make 
                 #Class that counts, also the GDELT now...
                 while(len(threads) >= max_concurrent):
