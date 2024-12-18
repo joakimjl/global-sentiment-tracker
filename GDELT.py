@@ -16,7 +16,7 @@ from country_codes import country_codes_map
 from country_list import countries, countries_map
 import math
 import boto3
-import base64
+import asyncio
 
 
 
@@ -87,8 +87,8 @@ class TranslatorSyncer():
                 #New one requires only for chinese (simplified or traditional)
                 lang = "Chinese (simplified)"
 
-            #batch = Translator(source=lang.lower(), target='en').translate_batch(batch)
-            batch = self.fetch_from_lambda(batch,lang)
+            batch = Translator(source=lang.lower(), target='en').translate_batch(batch)
+            #batch = self.fetch_from_lambda(batch,lang)
         except:
             print(f'BATCH FOR {lang} FAILED WITH {len(batch)} ARTICLES')
             error_count += 1
@@ -99,7 +99,7 @@ class TranslatorSyncer():
 
         self.finished(id)
 
-        print(f"Total req: {self.total_requests}, total time: {self.total_time}, avg time: {self.total_requests/(self.total_time+0.001)}")
+        print(f"Total req: {self.total_requests}, total time: {self.total_time}, avg time: {self.total_time/(self.total_requests+0.001)}")
 
         return(batch)
 
@@ -242,7 +242,7 @@ def get_domains(country):
 
     return res
 
-def get_titles(data,syncer):
+async def get_titles(data,syncer):
     #Language given from gedelt is "Chinese" and google needs "Chinese (PRC) or (Taiwan)"
     #Portuguese (Portugal) (Brazil)
 
@@ -273,7 +273,6 @@ def get_titles(data,syncer):
             ele = batch[i]
             domain = domain_batch[i]
             titles.append([ele,domain])
-    
     return titles
 
 def get_gdelt_processed(query="economy", target_country="US", date=date.today(), roberta=None, syncer=None):
@@ -291,10 +290,10 @@ def get_gdelt_processed(query="economy", target_country="US", date=date.today(),
         idx += 1
 
     print(f'{target_country} kept: {kept} removed: {idx-kept} about {query}')
-    titles = get_titles(kept_data,syncer)
-    if titles == False:
-        return False, False, False, False
-    #tokens = tokenize(titles)
+    
+    return kept_data
+
+def process_titles(query="economy", target_country="US", date=date.today(), roberta=None, syncer=None, titles=None) :
     sia = SentimentIntensityAnalyzer()
     sentiment_arr = []
     vader = []
@@ -421,29 +420,39 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
 
     return True
 
-def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=date.today(), short_subject="Any Subject"):
+async def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=date.today(), short_subject="Any Subject"):
     """Completes all tasks for one row, separated for multithreading"""
     already_in_db = check_exists(target, short_subject, on_day)
     if already_in_db: 
         print(f"{target} on {short_subject} on {on_day} already in database")
         return
     try:
-
+        count = 0
         print(f"Starting {target} about {subject}: remaining: {remain_rows}")
-        sentiment_arr_nat, titles_nat, target_country, query = get_gdelt_processed(
+        data_nat = get_gdelt_processed(
             query=subject, target_country=target, date=on_day, roberta=roberta, syncer=syncer)
-        if query == None:
-           return False 
-        if query == False:
-            return False
-        print(f"Finished national {target}")
-        sentiment_arr_inter, titles_inter, target_country, query = get_gdelt_processed(
+        data_inter = get_gdelt_processed(
             query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer)
-        if query == None:
-           return False
-        if query == False:
+        titles_nat = await get_titles(data_nat,syncer)
+        titles_inter = await get_titles(data_inter,syncer)
+        while count < 20:
+            count += 1
+            print(f"international: {titles_inter.cr_running} national {titles_inter.cr_running}")
+            time.sleep(1)
+        if titles_nat == None:
+           return False 
+        if titles_nat == False:
             return False
-        print(f"Finished international {target}")
+        
+        if titles_inter == None:
+           return False
+        if titles_inter == False:
+            return False
+        
+        sentiment_arr_nat, titles_nat, target_country, query = process_titles(
+                target_country=target, date=on_day, roberta=roberta, syncer=syncer, titles=titles_nat) 
+        sentiment_arr_inter, titles_inter, target_country, query = process_titles(
+                query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer, titles=titles_inter) 
         insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, short_subject, on_day)
         print(f"Inserted sucessfully: {target} on {subject} on {on_day}")
     except Exception as error:
@@ -461,12 +470,12 @@ if __name__ == "__main__":
         "US":"America", 
         "UK":"United Kingdom"}
     count = 0
-    max_concurrent = 15
+    max_concurrent = 1
     threads = []
 
     on_days = []
     for i in range(1):
-        on_days.append(date.today()-timedelta(days=i+3))
+        on_days.append(date.today()-timedelta(days=i+7))
 
     #TODO: More function calls, less nesting 
     """Need to make this abomination prettier"""
@@ -498,9 +507,10 @@ if __name__ == "__main__":
                         time.sleep(0.5)
                     
                 remain_rows = len(countries)*len(subjects)*len(on_days)-count
-                t = Thread(target=fetch_and_insert_one, args=[target, subject, remain_rows, roberta, syncer, on_day, short_subject])
-                t.start()
-                threads.append(t)
+                asyncio.run(fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day, short_subject))
+                #t = Thread(target=fetch_and_insert_one, args=[target, subject, remain_rows, roberta, syncer, on_day, short_subject])
+                #t.start()
+                #threads.append(t)
                 
                 count += 1
     while len(threads) != 0:
