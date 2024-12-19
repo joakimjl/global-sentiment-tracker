@@ -37,7 +37,25 @@ CREATE TABLE global_info(
     PRIMARY KEY(target_country,on_subject,on_day)
 )
 
+CREATE TYPE article_v2 AS(
+    title TEXT,
+    domain TEXT,
+    source_country TEXT
+)
 
+CREATE TABLE global_info_hourly(
+    target_country TEXT,
+    on_time timestamp ,
+    headline_national article_v2[],
+    headline_inter article_v2[],
+    sentiment_national sentiment[][],
+    sentiment_inter sentiment[][],
+    sentiment_count_res count_sentiment[],
+    senti_count_nat count_sentiment[],
+    senti_count_int count_sentiment[],
+    latest_processed timestamp,
+    PRIMARY KEY(target_country,on_time)
+)
 
 WITH article AS (
     SELECT 

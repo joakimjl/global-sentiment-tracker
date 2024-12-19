@@ -16,7 +16,7 @@ from country_codes import country_codes_map
 from country_list import countries, countries_map
 import math
 import boto3
-import asyncio
+import random
 
 
 
@@ -40,6 +40,13 @@ class TranslatorSyncer():
         self.max_chars = max_chars
         self.total_time = 0
         self.total_requests = 0
+        self.all_batch_done = False
+        self.total_batches = {}
+        self.last_added_time = None
+        self.finished_batches = {}
+        self._started_process = False
+        self._big_batch_lock = False
+        self._wait_queue = [99999999999]
 
     def finished(self, id):
         sleep_time = self.started_time_map[id]-time.time()+2
@@ -103,7 +110,59 @@ class TranslatorSyncer():
 
         return(batch)
 
-def check_exists(country, subject, day):
+    def big_batch(self,batch,lang):
+        time.sleep(random.random()*0.1)
+        queue_position = -1
+        while self._big_batch_lock == True or queue_position != min(self._wait_queue):
+            if queue_position == -1:
+                queue_position = len(self._wait_queue)
+                self._wait_queue.append(queue_position)
+            time_to_wait = 0.01+random.random()*0.4
+            time.sleep(time_to_wait)
+            
+        #print("Free")
+        self._big_batch_lock = True
+        if lang in self.total_batches:
+            start = len(self.total_batches[lang])
+            for ele in batch:
+                self.total_batches[lang].append(ele)
+            end = len(self.total_batches[lang])
+        else:
+            start = 0
+            self.total_batches[lang] = batch
+            end = len(self.total_batches[lang])
+        
+        self.last_added_time = time.time()
+        #print("Let go")
+        if queue_position != -1:
+            self._wait_queue[queue_position] = 9999999 #Might find better fix
+
+        self._big_batch_lock = False
+
+        return [start, end]
+    
+    def big_batch_process(self):
+        if self._started_process == False:
+            self._started_process = True
+            print(f"Big Batching now total of {len(self.total_batches)} batches")
+            count = 1
+            for lang,batch in self.total_batches.items():
+                print(f"Batch nr: {count}/{len(self.total_batches)} batches has {len(batch)} in language: {lang}")
+                titles = self.batch_process(batch,lang)
+                self.finished_batches[lang] = titles
+                time.sleep(1)
+                count += 1
+            self.all_batch_done = True
+    
+    def retrive_translation(self,start,end,lang):
+        if not self.all_batch_done:
+            return False
+        res = []
+        for i in range(start,end):
+            res.append(self.finished_batches[lang][i])
+        return res
+
+def check_exists(country, subject, day, is_hourly=False):
     connection = psycopg.Connection.connect(dbname = "postgres",
                             user = POSTGRES_USER,
                             password = POSTGRES_PASSWORD,
@@ -112,12 +171,22 @@ def check_exists(country, subject, day):
     
     cur = connection.cursor()
 
-    day = day-timedelta(days=1) #Start day is what is inserted always
+    if is_hourly:
+        day = day-timedelta(hours=1)
+    else:
+        day = day-timedelta(days=1) #Start day is what is inserted always
 
-    cur.execute(
-        "SELECT count(*) FROM global_info\
-        WHERE on_subject = %s AND target_country = %s AND on_day = %s",
-        (subject, country, day))
+    if not is_hourly:
+        cur.execute(
+            "SELECT count(*) FROM global_info\
+            WHERE on_subject = %s AND target_country = %s AND on_day = %s",
+            (subject, country, day))
+
+    if is_hourly:
+        cur.execute(
+            "SELECT count(*) FROM global_info_hourly\
+            WHERE target_country = %s AND on_time = %s",
+            (country, day))
     
     res = cur.fetchall()
     print((res, subject, country, day))
@@ -125,7 +194,7 @@ def check_exists(country, subject, day):
         return False
     return True
 
-def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=None, mode="artlist", format="JSON", day=date.today()):
+def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=None, mode="artlist", format="JSON", day=date.today(), is_hourly=False):
     """
     Response data:
     "url": 
@@ -153,11 +222,12 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
         source_lang_query = 'sourcelang:'+str(source_lang)
     else: source_lang_query = ''
 
-    domainis = "domainis:" + "(yahoo.com OR nyntimes.com OR aftonbladet.se OR cgtn.com OR vnexpress.net OR sky.it OR haberturk.com)"
-
+    #domainis = "domainis:" + "(yahoo.com OR nyntimes.com OR aftonbladet.se OR cgtn.com OR vnexpress.net OR sky.it OR haberturk.com)"
     query = f'{query_term} {source_country_query} {source_lang_query}'
 
     start_day = day-timedelta(days=1)
+    if is_hourly:
+        start_day = day-timedelta(hours=1)
     end_day = day
     
     params = {
@@ -168,7 +238,6 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
         'ENDDATETIME':str(end_day.strftime('%Y%m%d%H%M%S')),
         'SORT':"HybridRel",
     }
-
 
     headers = { # Was needed for 429 error, might look for other solution
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
@@ -242,7 +311,7 @@ def get_domains(country):
 
     return res
 
-async def get_titles(data,syncer):
+def get_titles(res,data,syncer,index):
     #Language given from gedelt is "Chinese" and google needs "Chinese (PRC) or (Taiwan)"
     #Portuguese (Portugal) (Brazil)
 
@@ -251,32 +320,66 @@ async def get_titles(data,syncer):
     titles = []
     headline_dict = {}
     domain_dict = {}
+    source_dict = {}
+    index_dict = {}
     #Batch languages
     for ele in data:
         if ele['language'] not in headline_dict:
             headline_dict[ele['language']] = [ele['title']]
             domain_dict[ele['language']] = [ele['domain']]
+            source_dict[ele['language']] = [ele['sourcecountry']]
         else:
             headline_dict[ele['language']].append(ele['title'])
             domain_dict[ele['language']].append(ele['domain'])
+            source_dict[ele['language']].append(ele['sourcecountry'])
     
     #Translation in batches
+    
+    eng_location = -1
+    count = 0
+    eng_batch = None
     for lang in headline_dict:
         batch = headline_dict[lang]
         domain_batch = domain_dict[lang]
+        source_batch = source_dict[lang]
         if lang != 'English':#Translation not needed (English (US) and (UK) default)
-            batch = syncer.batch_process(batch,lang)
-            if batch == False:
-                return False
+            index_dict[lang] = syncer.big_batch(batch,lang)
+        else:
+            eng_location = count
+            eng_batch = headline_dict[lang]
+        count += 1
 
+    total_batch = []
+    while syncer.all_batch_done == False:
+        time.sleep(50)
+        #print(f"Time to wait: {40 + syncer.last_added_time - time.time()}")
+        if syncer.last_added_time <= time.time()-40:
+            syncer.big_batch_process()
+    
+    count = 0
+    lang_arr = []
+    for lang_key, index_range in index_dict.items():
+        if count == eng_location:
+            total_batch.append(eng_batch)
+            lang_arr.append("English")
+        total_batch.append(syncer.retrive_translation(index_range[0],index_range[1],lang_key))
+        lang_arr.append(lang_key)
+        count += 1
+
+    j = 0
+    for batch in total_batch:
         for i in range(len(batch)):
             ele = batch[i]
-            domain = domain_batch[i]
-            titles.append([ele,domain])
+            domain = domain_dict[lang_arr[j]]
+            source = source_dict[lang_arr[j]]
+            titles.append([ele,domain,source])
+        j += 1
+    
+    res[index] = titles
     return titles
 
-def get_gdelt_processed(query="economy", target_country="US", date=date.today(), roberta=None, syncer=None):
-    data = fetch_gdelt_headline(query_term=query, source_country=target_country, day=date)
+def get_gdelt_processed(query="economy", target_country="US", date=date.today(), roberta=None, syncer=None, is_hourly=False):
+    data = fetch_gdelt_headline(query_term=query, source_country=target_country, day=date, is_hourly=is_hourly)
     if data == None:
         return None, None, None, None #Pretty ugly might find better fix.
     valid_domains = [res[0] for res in get_domains(target_country)]
@@ -311,7 +414,7 @@ def process_titles(query="economy", target_country="US", date=date.today(), robe
         target_country = target_country[1:]
     return sentiment_arr, titles, target_country, query
 
-def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, query, date) -> None:
+def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, query, date, is_hourly=False) -> None:
     conn = psycopg.Connection.connect(dbname = "postgres",
                             user = POSTGRES_USER,
                             password = POSTGRES_PASSWORD,
@@ -319,6 +422,7 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
                             port = CONNECT_PORT_REMOTE) 
     
     date=date-timedelta(days=1) #Inserting on start day
+        
                             
     #Gets type sentiment and makes the type in python, inserts into array
     all_sentiment = []
@@ -408,37 +512,56 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
     else:
         all_sentiment_inter = None 
 
-    cur = conn.cursor()
-    cur.execute("INSERT INTO global_info \
-                (target_country,on_day,headline_national,headline_inter,on_subject,\
-                sentiment_national,sentiment_inter,senti_count_nat,senti_count_int,latest_processed ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-    (tar_country,date,all_articles[0],all_articles[1],query,all_sentiment,all_sentiment_inter,senti_count_arr_nat,senti_count_arr_int,datetime.today()))
+    if not is_hourly:
+        cur = conn.cursor()
+        cur.execute("INSERT INTO global_info \
+                    (target_country,on_day,headline_national,headline_inter,on_subject,\
+                    sentiment_national,sentiment_inter,senti_count_nat,senti_count_int,latest_processed ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+        (tar_country,date,all_articles[0],all_articles[1],query,all_sentiment,all_sentiment_inter,senti_count_arr_nat,senti_count_arr_int,datetime.today()))
 
+    if is_hourly:
+        cur = conn.cursor()
+        cur.execute("INSERT INTO global_info_hourly \
+                    (target_country,on_time,headline_national,headline_inter,\
+                    sentiment_national,sentiment_inter,senti_count_nat,senti_count_int,latest_processed ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+        (tar_country,date,all_articles[0],all_articles[1],all_sentiment,all_sentiment_inter,senti_count_arr_nat,senti_count_arr_int,datetime.today()))
     conn.commit()
     cur.close()
     conn.close()
 
     return True
 
-async def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=date.today(), short_subject="Any Subject"):
+def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=date.today(), short_subject="Any Subject", is_hourly=False):
     """Completes all tasks for one row, separated for multithreading"""
-    already_in_db = check_exists(target, short_subject, on_day)
+    already_in_db = check_exists(target, short_subject, on_day, is_hourly=is_hourly)
+    inside_threads = []
     if already_in_db: 
         print(f"{target} on {short_subject} on {on_day} already in database")
         return
     try:
-        count = 0
         print(f"Starting {target} about {subject}: remaining: {remain_rows}")
         data_nat = get_gdelt_processed(
-            query=subject, target_country=target, date=on_day, roberta=roberta, syncer=syncer)
+            query=subject, target_country=target, date=on_day, roberta=roberta, syncer=syncer, is_hourly=is_hourly)
         data_inter = get_gdelt_processed(
-            query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer)
-        titles_nat = await get_titles(data_nat,syncer)
-        titles_inter = await get_titles(data_inter,syncer)
-        while count < 20:
-            count += 1
-            print(f"international: {titles_inter.cr_running} national {titles_inter.cr_running}")
-            time.sleep(1)
+            query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer, is_hourly=is_hourly)
+        title_arr = [None] * 2
+        if data_nat[0] == None:
+            return False
+        t = Thread(target=get_titles, args=[title_arr, data_nat, syncer, 0])
+        t.start()
+        inside_threads.append(t)
+        if data_inter[0] == None:
+            return False
+        t = Thread(target=get_titles, args=[title_arr, data_inter, syncer, 1])
+        t.start()
+        inside_threads.append(t)
+        #titles_inter =  asyncio.run(get_titles(data_inter,syncer))
+        while inside_threads[0].is_alive() or inside_threads[0].is_alive():
+            #print(f"international: {title_arr[1]},{inside_threads[1]} national: {title_arr[0]},{inside_threads[0]}")
+            time.sleep(5)
+
+        titles_nat = title_arr[0]
+        titles_inter = title_arr[1]
         if titles_nat == None:
            return False 
         if titles_nat == False:
@@ -453,7 +576,7 @@ async def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on
                 target_country=target, date=on_day, roberta=roberta, syncer=syncer, titles=titles_nat) 
         sentiment_arr_inter, titles_inter, target_country, query = process_titles(
                 query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer, titles=titles_inter) 
-        insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, short_subject, on_day)
+        insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, short_subject, on_day, is_hourly=is_hourly)
         print(f"Inserted sucessfully: {target} on {subject} on {on_day}")
     except Exception as error:
         print(f"{error} \n Continuing anyway but {target} on {subject} on {on_day} not inserted")
@@ -468,20 +591,29 @@ if __name__ == "__main__":
     countries = ["US","UK","Germany","China","Japan","Australia","Ukraine","Russia"] 
     countries_map = {
         "US":"America", 
-        "UK":"United Kingdom"}
+        "UK":"United Kingdom",
+        "Germany":"Federal Republic of Germany"}
     count = 0
-    max_concurrent = 1
+    max_concurrent = 30
     threads = []
 
     on_days = []
-    for i in range(1):
-        on_days.append(date.today()-timedelta(days=i+7))
+    is_hourly = True
+    if is_hourly:
+        for i in range(1):
+            cur_hour = datetime.today()-timedelta(hours=i+1)
+            cur_hour = cur_hour.replace(minute=0,second=0)
+            on_days.append(cur_hour)
+    else:
+        for i in range(1):
+            on_days.append(date.today()-timedelta(days=i+7))
 
     #TODO: More function calls, less nesting 
     """Need to make this abomination prettier"""
     for on_day in on_days:
         for target in countries:
             name = target
+            name_2 = None
             first_string = f"({name} economy OR {name} market)"
             if target in countries_map:
                 name_2 = name
@@ -491,6 +623,11 @@ if __name__ == "__main__":
                     f"{name} housing", f"{name} crime",
                     f"{name} inflation", f"{name} immigration"]
             short_subjects = ["economy","housing","crime","inflation","immigration"]
+            if is_hourly:
+                if name_2 != None:
+                    subjects = [f"({name} OR {name_2})"]
+                else:
+                    subjects = [{name}]
             for i in range(len(subjects)):
                 subject = subjects[i]
                 short_subject = short_subjects[i]
@@ -507,10 +644,10 @@ if __name__ == "__main__":
                         time.sleep(0.5)
                     
                 remain_rows = len(countries)*len(subjects)*len(on_days)-count
-                asyncio.run(fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day, short_subject))
-                #t = Thread(target=fetch_and_insert_one, args=[target, subject, remain_rows, roberta, syncer, on_day, short_subject])
-                #t.start()
-                #threads.append(t)
+                #asyncio.run(fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day, short_subject))
+                t = Thread(target=fetch_and_insert_one, args=[target, subject, remain_rows, roberta, syncer, on_day, short_subject, True])
+                t.start()
+                threads.append(t)
                 
                 count += 1
     while len(threads) != 0:
