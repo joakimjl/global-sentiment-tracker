@@ -57,7 +57,7 @@ CREATE TABLE global_info_hourly(
     PRIMARY KEY(target_country,on_time)
 )
 
-SELECT * FROM global_info_hourly
+SELECT * FROM global_info_hourly WHERE on_time >= '2024-12-21'
 
 WITH article AS (
     SELECT 

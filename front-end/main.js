@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { clamp, randInt } from 'three/src/math/MathUtils';
 import { TessellateModifier } from 'three/examples/jsm/modifiers/TessellateModifier.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -83,7 +84,7 @@ fetch('/UN_Geodata_stylized.geojson')
     });
 }
 
-fetchGeo();
+//fetchGeo();
 
 function latLonToVector3(lat, lon, radius) {
     const phi = (90 - lat) * (Math.PI / 180);
@@ -97,7 +98,7 @@ function latLonToVector3(lat, lon, radius) {
 
 const geometrySphere = new THREE.SphereGeometry( 2, 64, 64 ); 
 const materialSphere = new THREE.MeshPhysicalMaterial( { color: 0x3030ff } ); 
-const sphere = new THREE.Mesh( geometrySphere, materialSphere );
+//const sphere = new THREE.Mesh( geometrySphere, materialSphere );
 
 for (let index = 0; index < 3; index++) {
     const newLight = new THREE.PointLight({color: 0xFFFFFF}, 50, 30);
@@ -124,10 +125,43 @@ function onPointerMove( event ) {
 
 camera.position.z = 5;
 const controls = new OrbitControls(camera, renderer.domElement);
-scene.add(sphere);
+//scene.add(sphere);
 
 var intersects = raycaster.intersectObjects( scene.children );
 var hoveredMesh;
+
+// Instantiate a loader
+const loader = new GLTFLoader();
+
+// Load a glTF resource
+loader.load(
+	// resource URL
+	'planet_2.gltf',
+	// called when the resource is loaded
+	function ( gltf ) {
+
+		scene.add( gltf.scene );
+
+		gltf.animations; // Array<THREE.AnimationClip>
+		gltf.scene; // THREE.Group
+		gltf.scenes; // Array<THREE.Group>
+		gltf.cameras; // Array<THREE.Camera>
+		gltf.asset; // Object
+
+	},
+	// called while loading is progressing
+	function ( xhr ) {
+
+		console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+
+	},
+	// called when loading has errors
+	function ( error ) {
+
+		console.log( error );
+
+	}
+);
 
 function animate() {
     raycaster.setFromCamera( pointer, camera );
@@ -147,6 +181,8 @@ window.addEventListener( 'pointermove', onPointerMove );
 window.addEventListener('click', (e) => {
     console.log(hoveredMesh)
 
+
+    /* 
     const exporter = new GLTFExporter();
 
     console.log(scene.toJSON)
@@ -166,5 +202,5 @@ window.addEventListener('click', (e) => {
             console.log( 'An error happened' );
 
         }
-    );
+    ); */
 });
