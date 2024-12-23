@@ -13,10 +13,11 @@ import time
 from roberta_model import GST_Roberta
 import numpy as np
 from country_codes import country_codes_map
-from country_list import countries, countries_map
+from country_list import countries, countries_map, subjects_given
 import math
 import boto3
 import random
+import re
 
 
 
@@ -209,7 +210,7 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
     
     
     base_url = "https://api.gdeltproject.org/api/v2/doc/doc"
-
+    
     #Ensures only given values will be used, if null do not add.
     if source_country:
         if source_country[0] == "-":#Supporting to only get other countries as sources
@@ -223,42 +224,71 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
     else: source_lang_query = ''
 
     #domainis = "domainis:" + "(yahoo.com OR nyntimes.com OR aftonbladet.se OR cgtn.com OR vnexpress.net OR sky.it OR haberturk.com)"
-    query = f'{query_term} {source_country_query} {source_lang_query}'
 
-    start_day = day-timedelta(days=1)
-    if is_hourly:
-        start_day = day-timedelta(hours=1)
-    end_day = day
-    
-    params = {
-        'query': query,
-        'format': format,
-        'maxrecords':250,
-        'STARTDATETIME':str(start_day.strftime('%Y%m%d%H%M%S')),
-        'ENDDATETIME':str(end_day.strftime('%Y%m%d%H%M%S')),
-        'SORT':"HybridRel",
-    }
+    #Length must be between 5 and 74 inclusive
+    split_terms = query_term.split(" OR ")
+    res = []
+    prep_queries = ["("]
+    for i in range(len(split_terms)):
 
-    headers = { # Was needed for 429 error, might look for other solution
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
-    }
+        if (len(prep_queries[-1]) + len(split_terms[i]) + 4) <= 60:
+            if len(prep_queries[-1]) >= 4:
+                prep_queries[-1] += " OR " + split_terms[i]
+            else:
+                prep_queries[-1] += split_terms[i]
+        else:
+            prep_queries[-1] += ")"
+            prep_queries.append("(" + split_terms[i])
+    if split_terms[-1][-1] != ")" and "OR" in split_terms[-1]:
+        split_terms[-1] += ")"
+    for query_batch in prep_queries:
+        query = f'{query_batch} {source_country_query} {source_lang_query}'
+
+        start_day = day-timedelta(days=1)
+        if is_hourly:
+            start_day = day-timedelta(hours=1)
+        end_day = day
+        
+        params = {
+            'query': query,
+            'format': format,
+            'maxrecords':250,
+            'STARTDATETIME':str(start_day.strftime('%Y%m%d%H%M%S')),
+            'ENDDATETIME':str(end_day.strftime('%Y%m%d%H%M%S')),
+        }
+
+        headers = { # Was needed for 429 error, might look for other solution
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
+        }
+        
+        # Send GET request
+        response = requests.get(base_url, params=params, headers=headers)
+        
+        if response.status_code == 200:
+            try :
+                data = json.loads(response.text)
+            except:
+                print(f"Data was empty at: {query_batch} with country {source_country}. Ignoring")
+                #return None
+            if data == {}:
+                print(f"Data was empty at: {query_batch} with country {source_country}. Ignoring")
+                #return None
+            else:
+                res.append(data)
+        else:
+            print(f"Request failed with status code {response.status_code}")
+            #return None
+        time.sleep(0.2)
+    temp_res = []
+    all_titles = []
+    for arr in res:
+        for i in range(len(arr['articles'])):
+            article = arr['articles'][i]
+            if article['title'] not in all_titles:
+                temp_res.append(article)
+                all_titles.append(article['title'])
     
-    # Send GET request
-    response = requests.get(base_url, params=params, headers=headers)
-    
-    if response.status_code == 200:
-        try :
-            data = json.loads(response.text)
-        except:
-            print(f"Data was empty at: {query_term} with country {source_country}. Ignoring")
-            return None
-        if data == {}:
-            print(f"Data was empty at: {query_term} with country {source_country}. Ignoring")
-            return None
-        return data
-    else:
-        print(f"Request failed with status code {response.status_code}")
-        return None
+    return temp_res
 
 def tokenize(titles):
     # Returns list of words
@@ -288,22 +318,22 @@ def get_domains(country):
         cur.execute("SELECT di.*\
             FROM domain_info di,\
             UNNEST(di.country_mentions) AS cm(country_code, count)\
-            WHERE (cm.count > 1300000\
+            WHERE (cm.count > 3300000\
             AND cm.country_code != %s )\
             OR (di.domain_weight >= %s\
             AND cm.country_code != %s )\
             GROUP BY di.domain",
-            (country_code,0.70,country_code))
+            (country_code,0.76,country_code))
     else:
         cur.execute("SELECT di.*\
             FROM domain_info di,\
             UNNEST(di.country_mentions) AS cm(country_code, count)\
-            WHERE (cm.count > 1300000\
+            WHERE (cm.count > 3300000\
             AND cm.country_code = %s )\
             OR (di.domain_weight >= %s\
             AND cm.country_code = %s )\
             GROUP BY di.domain",
-            (country_code,0.70,country_code))
+            (country_code,0.76,country_code))
 
     res = cur.fetchall()
     cur.close()
@@ -350,10 +380,10 @@ def get_titles(res,data,syncer,index):
         count += 1
 
     total_batch = []
-    while syncer.all_batch_done == False:
+    while syncer.all_batch_done == False:       
         time.sleep(50)
         #print(f"Time to wait: {40 + syncer.last_added_time - time.time()}")
-        if syncer.last_added_time <= time.time()-40:
+        if syncer.last_added_time <= time.time()-90:
             syncer.big_batch_process()
     
     count = 0
@@ -365,13 +395,16 @@ def get_titles(res,data,syncer,index):
         total_batch.append(syncer.retrive_translation(index_range[0],index_range[1],lang_key))
         lang_arr.append(lang_key)
         count += 1
+    if count == 0 and eng_location != -1:
+        lang_arr.append("English")
+        total_batch.append(eng_batch)
 
     j = 0
     for batch in total_batch:
         for i in range(len(batch)):
             ele = batch[i]
-            domain = domain_dict[lang_arr[j]]
-            source = source_dict[lang_arr[j]]
+            domain = domain_dict[lang_arr[j]][i]
+            source = source_dict[lang_arr[j]][i]
             titles.append([ele,domain,source])
         j += 1
     
@@ -386,9 +419,9 @@ def get_gdelt_processed(query="economy", target_country="US", date=date.today(),
     idx = 0
     kept = 0
     kept_data = []
-    for arr in data['articles']:
-        if arr['domain'] in valid_domains:
-            kept_data.append(arr)
+    for article in data:
+        if article['domain'] in valid_domains:
+            kept_data.append(article)
             kept += 1
         idx += 1
 
@@ -429,7 +462,11 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
     info = CompositeInfo.fetch(conn, "sentiment")
     register_composite(info,conn)
 
+
     arti = CompositeInfo.fetch(conn, "article")
+    register_composite(arti,conn)
+    if is_hourly:
+        arti = CompositeInfo.fetch(conn, "article_v2")
     register_composite(arti,conn)
 
     title_process = [titles,titles_inter]
@@ -556,7 +593,7 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
         t.start()
         inside_threads.append(t)
         #titles_inter =  asyncio.run(get_titles(data_inter,syncer))
-        while inside_threads[0].is_alive() or inside_threads[0].is_alive():
+        while inside_threads[0].is_alive() or inside_threads[1].is_alive():
             #print(f"international: {title_arr[1]},{inside_threads[1]} national: {title_arr[0]},{inside_threads[0]}")
             time.sleep(5)
 
@@ -588,25 +625,22 @@ if __name__ == "__main__":
     syncer = TranslatorSyncer()
     roberta = GST_Roberta()
     start_time = time.time()
-    countries = ["US","UK","Germany","China","Japan","Australia","Ukraine","Russia"] 
-    countries_map = {
-        "US":"America", 
-        "UK":"United Kingdom",
-        "Germany":"Federal Republic of Germany"}
     count = 0
-    max_concurrent = 30
+    max_concurrent = 160
     threads = []
 
     on_days = []
     is_hourly = True
     if is_hourly:
         for i in range(1):
-            cur_hour = datetime.today()-timedelta(hours=i+1)
-            cur_hour = cur_hour.replace(minute=0,second=0)
+            cur_hour = datetime.today()-timedelta(hours=i+10)
+            cur_hour = cur_hour.replace(minute=0,second=0,microsecond=0)
             on_days.append(cur_hour)
     else:
         for i in range(1):
             on_days.append(date.today()-timedelta(days=i+7))
+
+    subjects = ""
 
     #TODO: More function calls, less nesting 
     """Need to make this abomination prettier"""
@@ -615,23 +649,24 @@ if __name__ == "__main__":
             name = target
             name_2 = None
             first_string = f"({name} economy OR {name} market)"
-            if target in countries_map:
+
+            """if target in countries_map:
                 name_2 = name
                 name = countries_map[target]
-                first_string = f"({name} economy OR {name} market OR {name_2} economy OR {name_2} market)"
-            subjects = [first_string,
-                    f"{name} housing", f"{name} crime",
-                    f"{name} inflation", f"{name} immigration"]
+                first_string = f"({name} economy OR {name} market OR {name_2} economy OR {name_2} market)"""
+            
+            target = re.sub(r'\s+', '', target) #Need to remove spaces for sourcecountry
+
             short_subjects = ["economy","housing","crime","inflation","immigration"]
             if is_hourly:
-                if name_2 != None:
-                    subjects = [f"({name} OR {name_2})"]
-                else:
-                    subjects = [{name}]
+                hourly_subjects =  name + ' ' + subjects_given[0]
+                for i in range(1,len(subjects_given)):
+                    hourly_subjects += ' OR ' + name + ' ' + subjects_given[i]
+                subjects = [hourly_subjects]
             for i in range(len(subjects)):
                 subject = subjects[i]
                 short_subject = short_subjects[i]
-                time.sleep(2)#Not to spam too much on API's (ESP Google translate)
+                time.sleep(5)#Not to spam too much on API's (ESP Google translate)
                 #Due to once reaching google cap, either more than 5 per sec or 200k, should make 
                 #Class that counts, also the GDELT now...
                 while(len(threads) >= max_concurrent):
@@ -655,5 +690,7 @@ if __name__ == "__main__":
             if t.is_alive() == False:
                 threads.remove(t)
         time.sleep(2)
+    for i in range(10):
+        time.sleep(5)
     print(f"Finished all, closing, total time: {time.time() - start_time}")
 

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { clamp, randInt } from 'three/src/math/MathUtils';
 import { TessellateModifier } from 'three/examples/jsm/modifiers/TessellateModifier.js';
-import * as d3 from "d3";
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -146,4 +146,25 @@ window.addEventListener( 'pointermove', onPointerMove );
 
 window.addEventListener('click', (e) => {
     console.log(hoveredMesh)
+
+    const exporter = new GLTFExporter();
+
+    console.log(scene.toJSON)
+    exporter.parse(
+        scene,
+        // called when the gltf has been generated
+        function ( gltf ) {
+
+            console.log( gltf );
+            //downloadJSON( gltf );
+            console.log( gltf.json );
+
+        },
+        // called when there is an error in the generation
+        function ( error ) {
+
+            console.log( 'An error happened' );
+
+        }
+    );
 });

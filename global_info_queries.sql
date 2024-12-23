@@ -57,6 +57,17 @@ CREATE TABLE global_info_hourly(
     PRIMARY KEY(target_country,on_time)
 )
 
+SELECT * FROM global_info_hourly
+
+WITH article AS (
+    SELECT 
+    UNNEST(headline_national) AS headline,
+    on_time
+    FROM global_info_hourly)
+
+SELECT count(headline) AS headline_amount
+FROM article
+
 WITH article AS (
     SELECT 
     UNNEST(headline_national) AS headline,
