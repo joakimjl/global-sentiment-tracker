@@ -160,7 +160,7 @@ class TranslatorSyncer():
                     print(f"Thread doing: {int(i*inc_size)} to {int(inc_size*(i+1))} for: {lang}")
                     t.start()
                     threads_processing.append(t)
-                    time.sleep(0.1)
+                    time.sleep(2)
                 #titles = self.batch_process(batch,lang)
                 #self.finished_batches[lang] = titles
                 time.sleep(1)
