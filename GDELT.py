@@ -153,7 +153,7 @@ class TranslatorSyncer():
             for lang,batch in self.total_batches.items():
                 print(f"Batch nr: {count}/{len(self.total_batches)} batches has {len(batch)} in language: {lang}")
                 threads_processing = []
-                res_arr = []
+                res_arr = [[],[],[]]
                 inc_size = len(batch)/3 #Increment size
                 for res_index in range(3):
                     t = Thread(target=self.batch_process, args=[batch[int(i*inc_size):int(inc_size*(i+1))], lang, res_arr, res_index])
