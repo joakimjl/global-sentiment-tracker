@@ -20,6 +20,7 @@
     "typescript": "^5.7.2"
   },
   "dependencies": {
+    "@nodetoy/react-nodetoy": "^0.1.24",
     "aws-amplify": "^6.10.2"
   }
 }

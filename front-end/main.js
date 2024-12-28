@@ -140,6 +140,20 @@ loader.load(
 	// called when the resource is loaded
 	function ( gltf ) {
 
+        const material = new THREE.ShaderMaterial({
+
+            uniforms: {
+                time: { value: 1.0 },
+                resolution: { value: new THREE.Vector2() }
+            },
+        
+            vertexShader: ,
+            fragmentShader: document.getElementById( 'fragmentShader' ).textContent
+        });
+
+        console.log(gltf.scene.children[0])
+        gltf.scene.children[0].material = material
+
 		scene.add( gltf.scene );
 
 		gltf.animations; // Array<THREE.AnimationClip>
@@ -151,15 +165,11 @@ loader.load(
 	},
 	// called while loading is progressing
 	function ( xhr ) {
-
 		console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
-
 	},
 	// called when loading has errors
 	function ( error ) {
-
 		console.log( error );
-
 	}
 );
 
@@ -178,10 +188,15 @@ function animate() {
 animate();
 window.addEventListener( 'pointermove', onPointerMove );
 
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+  window.addEventListener("resize", onWindowResize);
+
 window.addEventListener('click', (e) => {
     console.log(hoveredMesh)
-
-
     /* 
     const exporter = new GLTFExporter();
 

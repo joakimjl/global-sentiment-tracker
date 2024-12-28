@@ -85,7 +85,7 @@ class TranslatorSyncer():
 
         return res
 
-    def batch_process(self,batch,lang):
+    def batch_process(self,batch,lang,res_arr=None,res_arr_index=-1):
         error_count = 0
         id = self.started()
         num_chars = len("".join(batch))
@@ -108,6 +108,9 @@ class TranslatorSyncer():
         self.finished(id)
 
         print(f"Total req: {self.total_requests}, total time: {self.total_time}, avg time: {self.total_time/(self.total_requests+0.001)}")
+
+        if res_arr != None:
+            res_arr[res_arr_index] = batch
 
         return(batch)
 
@@ -146,13 +149,37 @@ class TranslatorSyncer():
         if self._started_process == False:
             self._started_process = True
             print(f"Big Batching now total of {len(self.total_batches)} batches")
-            count = 1
+            count = 1 #For printing only
             for lang,batch in self.total_batches.items():
                 print(f"Batch nr: {count}/{len(self.total_batches)} batches has {len(batch)} in language: {lang}")
-                titles = self.batch_process(batch,lang)
-                self.finished_batches[lang] = titles
+                threads_processing = []
+                res_arr = []
+                inc_size = len(batch)/3 #Increment size
+                for res_index in range(3):
+                    t = Thread(target=self.batch_process, args=[batch[int(i*inc_size):int(inc_size*(i+1))], lang, res_arr, res_index])
+                    print(f"Thread doing: {int(i*inc_size)} to {int(inc_size*(i+1))} for: {lang}")
+                    t.start()
+                    threads_processing.append(t)
+                    time.sleep(0.1)
+                #titles = self.batch_process(batch,lang)
+                #self.finished_batches[lang] = titles
                 time.sleep(1)
                 count += 1
+                threads_finished = False
+                while not threads_finished:
+                    all_finished = True
+                    for thread in threads_processing:
+                        if thread.is_alive() == True:
+                            all_finished = False
+                    threads_finished = all_finished
+                    time.sleep(5)
+                flat_res_arr = []
+                for arr in res_arr:
+                    for ele in arr:
+                        flat_res_arr.append(ele)
+
+                self.finished_batches[lang] = flat_res_arr
+
             self.all_batch_done = True
     
     def retrive_translation(self,start,end,lang):
