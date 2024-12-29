@@ -154,13 +154,18 @@ class TranslatorSyncer():
                 print(f"Batch nr: {count}/{len(self.total_batches)} batches has {len(batch)} in language: {lang}")
                 threads_processing = []
                 res_arr = [[],[],[]]
-                inc_size = len(batch)/3 #Increment size
-                for i in range(3):
+                num_batch = int(len(batch)/25)
+                if num_batch == 0: #Minimum 1 batch
+                    num_batch = 1
+                for j in range(num_batch):
+                    res_arr.append([])
+                inc_size = len(batch)/num_batch #Increment size
+                for i in range(num_batch):
                     t = Thread(target=self.batch_process, args=[batch[int(i*inc_size):int(inc_size*(i+1))], lang, res_arr, i])
                     print(f"Thread doing: {int(i*inc_size)} to {int(inc_size*(i+1))} for: {lang}")
                     t.start()
                     threads_processing.append(t)
-                    time.sleep(2)
+                    time.sleep(4)
                 #titles = self.batch_process(batch,lang)
                 #self.finished_batches[lang] = titles
                 time.sleep(1)
@@ -172,7 +177,7 @@ class TranslatorSyncer():
                         if thread.is_alive() == True:
                             all_finished = False
                     threads_finished = all_finished
-                    time.sleep(5)
+                    time.sleep(1)
                 flat_res_arr = []
                 for arr in res_arr:
                     for ele in arr:
