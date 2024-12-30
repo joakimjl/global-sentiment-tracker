@@ -57,13 +57,15 @@ CREATE TABLE global_info_hourly(
     PRIMARY KEY(target_country,on_time)
 )
 
-SELECT * FROM global_info_hourly WHERE on_time >= '2024-12-21'
+SELECT * FROM global_info_hourly WHERE on_time >= '2024-12-29'
 
 WITH article AS (
     SELECT 
     UNNEST(headline_national) AS headline,
     on_time
-    FROM global_info_hourly)
+    FROM global_info_hourly
+    WHERE on_time >= '2024-12-29'
+    )
 
 SELECT count(headline) AS headline_amount
 FROM article

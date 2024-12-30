@@ -160,7 +160,7 @@ class TranslatorSyncer():
                 for j in range(num_batch):
                     res_arr.append([])
                 inc_size = len(batch)/num_batch #Increment size
-                sleep_after_num = 3
+                sleep_after_num = 4
                 sleep_count = 0
                 for i in range(num_batch):
                     t = Thread(target=self.batch_process, args=[batch[int(i*inc_size):int(inc_size*(i+1))], lang, res_arr, i])
@@ -733,7 +733,7 @@ if __name__ == "__main__":
             if t.is_alive() == False:
                 threads.remove(t)
         time.sleep(2)
-    for i in range(10):
+    for i in range(2):
         time.sleep(5)
     print(f"Finished all, closing, total time: {time.time() - start_time}")
 
