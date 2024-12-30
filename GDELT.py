@@ -154,7 +154,7 @@ class TranslatorSyncer():
                 print(f"Batch nr: {count}/{len(self.total_batches)} batches has {len(batch)} in language: {lang}")
                 threads_processing = []
                 res_arr = []
-                num_batch = int(len(batch)/100)
+                num_batch = int(len(batch)/50)
                 if num_batch == 0: #Minimum 1 batch
                     num_batch = 1
                 for j in range(num_batch):
@@ -168,28 +168,30 @@ class TranslatorSyncer():
                     t.start()
                     threads_processing.append(t)
                     time.sleep(0.1)
+                    threads_finished = False
+                    while not threads_finished:
+                        all_finished = True
+                        for thread in threads_processing:
+                            if thread.is_alive() == True:
+                                all_finished = False
+                        threads_finished = all_finished
+                        time.sleep(1)
                     if sleep_count % sleep_after_num == 0 and sleep_count > 0:
-                        time.sleep(6)
+                        time.sleep(5)
                     sleep_count += 1
                 #titles = self.batch_process(batch,lang)
                 #self.finished_batches[lang] = titles
-                time.sleep(1)
+                time.sleep(5)
                 count += 1
-                threads_finished = False
-                while not threads_finished:
-                    all_finished = True
-                    for thread in threads_processing:
-                        if thread.is_alive() == True:
-                            all_finished = False
-                    threads_finished = all_finished
-                    time.sleep(1)
                 flat_res_arr = []
                 for arr in res_arr:
                     for ele in arr:
                         flat_res_arr.append(ele)
 
                 self.finished_batches[lang] = flat_res_arr
+                print("Inserted")
 
+            print("All Done")
             self.all_batch_done = True
     
     def retrive_translation(self,start,end,lang):
@@ -619,6 +621,8 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
         data_inter = get_gdelt_processed(
             query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer, is_hourly=is_hourly)
         title_arr = [None] * 2
+        if len(data_nat) == 0 or len(data_inter) == 0:
+            print(f"Length of one headline array was 0 for: {target}")
         if data_nat[0] == None:
             return False
         t = Thread(target=get_titles, args=[title_arr, data_nat, syncer, 0])
@@ -646,6 +650,8 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
         if titles_inter == False:
             return False
         
+        print(f"Working on insdert for {target}")
+        
         sentiment_arr_nat, titles_nat, target_country, query = process_titles(
                 target_country=target, date=on_day, roberta=roberta, syncer=syncer, titles=titles_nat) 
         sentiment_arr_inter, titles_inter, target_country, query = process_titles(
@@ -653,7 +659,7 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
         insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, short_subject, on_day, is_hourly=is_hourly)
         print(f"Inserted sucessfully: {target} on {subject} on {on_day}")
     except Exception as error:
-        print(f"{error} \n Continuing anyway but {target} on {subject} on {on_day} not inserted")
+        print(f"{error} \n Continuing anyway but {target} on {on_day} not inserted")
     return True
 
 

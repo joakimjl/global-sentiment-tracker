@@ -174,6 +174,12 @@ countries = [
 "Lesotho",
 "Guinea-Bissau",
 "Slovenia",
-"Equatorial Guinea",
-]
+"Equatorial Guinea",]
 
+countries = [
+"Gabon",
+"Botswana",
+"Lesotho",
+"Guinea-Bissau",
+"Slovenia",
+"Equatorial Guinea",]
