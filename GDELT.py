@@ -157,7 +157,7 @@ class TranslatorSyncer():
                 sleep_after_num = 3
                 sleep_count = 0
                 res_arr = []
-                num_batch = int(len(batch)/50)
+                num_batch = int(len(batch)/100)
                 if num_batch < sleep_after_num: # Now will atleast separate sleep num or the amount of articles
                     num_batch = min(sleep_after_num, len(batch))
                 for j in range(num_batch):
