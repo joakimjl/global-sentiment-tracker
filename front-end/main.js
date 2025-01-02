@@ -135,20 +135,26 @@ var hoveredMesh;
 // Instantiate a loader
 const loader = new GLTFLoader();
 
+const water_planet_material = new THREE.ShaderMaterial({
+    vertexShader: vertexShader,
+    fragmentShader: fragmentShader,
+    uniforms: {
+        time: {value: (Date.now()/10)%10}
+    }
+});
+
+water_planet_material.needsUpdate = true;
+
 // Load a glTF resource
 loader.load(
 	// resource URL
 	'planet_2.gltf',
+    
 	// called when the resource is loaded
 	function ( gltf ) {
 
-        const material = new THREE.ShaderMaterial({
-            vertexShader: vertexShader,
-            fragmentShader: fragmentShader
-        });
-
         console.log(gltf.scene.children[0])
-        gltf.scene.children[0].material = material
+        gltf.scene.children[0].material = water_planet_material
 
 		scene.add( gltf.scene );
 
@@ -180,6 +186,8 @@ function animate() {
     requestAnimationFrame(animate);
     scene.rotateY(0.0001);
     renderer.render(scene, camera);
+    var time_val = ((Date.now()/1000)%100)/100;
+    water_planet_material.uniforms.time.value = time_val;
 }
 animate();
 window.addEventListener( 'pointermove', onPointerMove );
