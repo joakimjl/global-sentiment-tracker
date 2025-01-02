@@ -98,7 +98,7 @@ class TranslatorSyncer():
             batch = Translator(source=lang.lower(), target='en').translate_batch(batch)
             #batch = self.fetch_from_lambda(batch,lang)
         except:
-	    print("TRANSLATE STOPPED FUNCTIONING")
+            print("TRANSLATE STOPPED FUNCTIONING")
             print(f'BATCH FOR {lang} FAILED WITH {len(batch)} ARTICLES')
             error_count += 1
             if error_count > 3:
