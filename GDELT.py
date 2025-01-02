@@ -199,7 +199,6 @@ class TranslatorSyncer():
     def retrive_translation(self,start,end,lang):
         if not self.all_batch_done:
             return False
-        print(f"Retrieving now {lang} while fin is: {self.all_batch_done}")
         res = []
         for i in range(start,end):
             res.append(self.finished_batches[lang][i])
