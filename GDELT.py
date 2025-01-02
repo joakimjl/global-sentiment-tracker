@@ -170,7 +170,7 @@ class TranslatorSyncer():
                     t.start()
                     threads_processing.append(t)
                     time.sleep(0.1)
-                    if (sleep_count % sleep_after_num == 0 and sleep_count > 0) or (i == len(num_batch)-1):
+                    if (sleep_count % sleep_after_num == 0 and sleep_count > 0) or (i == num_batch-1):
                         threads_finished = False
                         while not threads_finished:
                             all_finished = True
