@@ -98,6 +98,7 @@ class TranslatorSyncer():
             batch = Translator(source=lang.lower(), target='en').translate_batch(batch)
             #batch = self.fetch_from_lambda(batch,lang)
         except:
+	    print("TRANSLATE STOPPED FUNCTIONING")
             print(f'BATCH FOR {lang} FAILED WITH {len(batch)} ARTICLES')
             error_count += 1
             if error_count > 3:
@@ -160,7 +161,7 @@ class TranslatorSyncer():
                 for j in range(num_batch):
                     res_arr.append([])
                 inc_size = len(batch)/num_batch #Increment size
-                sleep_after_num = 2
+                sleep_after_num = 3
                 sleep_count = 0
                 all_finished = False
                 for i in range(num_batch):
@@ -178,11 +179,11 @@ class TranslatorSyncer():
                                     all_finished = False
                             threads_finished = all_finished
                             time.sleep(1)
-                    time.sleep(20)
+                    time.sleep(0.5)
                     sleep_count += 1
                 #titles = self.batch_process(batch,lang)
                 #self.finished_batches[lang] = titles
-                time.sleep(2)
+                time.sleep(5)
                 count += 1
                 flat_res_arr = []
                 for arr in res_arr:
@@ -616,7 +617,7 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
         print(f"{target} on {short_subject} on {on_day} already in database")
         return
     try:
-        print(f"Starting {target} about {subject}: remaining: {remain_rows}")
+        print(f"Starting {target} : remaining: {remain_rows}")
         data_nat = get_gdelt_processed(
             query=subject, target_country=target, date=on_day, roberta=roberta, syncer=syncer, is_hourly=is_hourly)
         data_inter = get_gdelt_processed(
