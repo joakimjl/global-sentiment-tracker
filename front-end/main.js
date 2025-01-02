@@ -148,7 +148,7 @@ water_planet_material.needsUpdate = true;
 // Load a glTF resource
 loader.load(
 	// resource URL
-	'planet_test.gltf',
+	'planet_2.gltf',
     
 	// called when the resource is loaded
 	function ( gltf ) {
