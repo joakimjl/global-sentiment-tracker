@@ -191,7 +191,7 @@ class TranslatorSyncer():
                         flat_res_arr.append(ele)
 
                 self.finished_batches[lang] = flat_res_arr
-                print("Inserted")
+                print(f"Inserted {lang}")
 
             print("All Done")
             self.all_batch_done = True
@@ -650,7 +650,7 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
         if titles_inter == False:
             return False
         
-        print(f"Working on insdert for {target}")
+        print(f"Working on insert for {target}")
         
         sentiment_arr_nat, titles_nat, target_country, query = process_titles(
                 target_country=target, date=on_day, roberta=roberta, syncer=syncer, titles=titles_nat) 
