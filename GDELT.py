@@ -328,7 +328,7 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
             if article['title'] not in all_titles:
                 temp_res.append(article)
                 all_titles.append(article['title'])
-    
+    time.sleep(1)
     return temp_res
 
 def tokenize(titles):
