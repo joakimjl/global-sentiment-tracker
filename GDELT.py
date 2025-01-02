@@ -154,15 +154,15 @@ class TranslatorSyncer():
             for lang,batch in self.total_batches.items():
                 print(f"Batch nr: {count}/{len(self.total_batches)} batches has {len(batch)} in language: {lang}")
                 threads_processing = []
+                sleep_after_num = 3
+                sleep_count = 0
                 res_arr = []
                 num_batch = int(len(batch)/50)
-                if num_batch == 0: #Minimum 1 batch
-                    num_batch = 1
+                if num_batch < sleep_after_num: # Now will atleast separate sleep num or the amount of articles
+                    num_batch = min(sleep_after_num, len(batch))
                 for j in range(num_batch):
                     res_arr.append([])
                 inc_size = len(batch)/num_batch #Increment size
-                sleep_after_num = 3
-                sleep_count = 0
                 all_finished = False
                 for i in range(num_batch):
                     t = Thread(target=self.batch_process, args=[batch[int(i*inc_size):int(inc_size*(i+1))], lang, res_arr, i])
