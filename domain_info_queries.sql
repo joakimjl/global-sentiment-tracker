@@ -18,7 +18,7 @@ SELECT * FROM domain_info
 SELECT di.*
 FROM domain_info di,
 UNNEST(di.country_mentions) AS cm(country_code, count)
-WHERE di.domain_weight > 0.8
+WHERE di.domain_weight > 0.1
   AND cm.count > 150000
 GROUP BY di.domain
 
