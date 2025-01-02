@@ -138,7 +138,7 @@ const loader = new GLTFLoader();
 // Load a glTF resource
 loader.load(
 	// resource URL
-	'/planet_2.gltf',
+	'planet_2.gltf',
 	// called when the resource is loaded
 	function ( gltf ) {
 
