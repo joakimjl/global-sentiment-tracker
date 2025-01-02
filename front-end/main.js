@@ -4,6 +4,8 @@ import { clamp, randInt } from 'three/src/math/MathUtils';
 import { TessellateModifier } from 'three/examples/jsm/modifiers/TessellateModifier.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import vertexShader from './vertexShader.vert?raw';
+import fragmentShader from './fragmentShader.frag?raw';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -136,19 +138,13 @@ const loader = new GLTFLoader();
 // Load a glTF resource
 loader.load(
 	// resource URL
-	'planet_2.gltf',
+	'/planet_2.gltf',
 	// called when the resource is loaded
 	function ( gltf ) {
 
         const material = new THREE.ShaderMaterial({
-
-            uniforms: {
-                time: { value: 1.0 },
-                resolution: { value: new THREE.Vector2() }
-            },
-        
-            vertexShader: ,
-            fragmentShader: document.getElementById( 'fragmentShader' ).textContent
+            vertexShader: vertexShader,
+            fragmentShader: fragmentShader
         });
 
         console.log(gltf.scene.children[0])
