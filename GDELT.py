@@ -466,7 +466,7 @@ def get_gdelt_processed(query="economy", target_country="US", date=date.today(),
             kept += 1
         idx += 1
 
-    print(f'{target_country} kept: {kept} removed: {idx-kept} about {query}')
+    print(f'{target_country} kept: {kept} removed: {idx-kept}')
     
     return kept_data
 
