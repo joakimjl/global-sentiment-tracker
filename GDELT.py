@@ -308,18 +308,17 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
         if response.status_code == 200:
             try :
                 data = json.loads(response.text)
+                if data == {}:
+                    print(f"Data was empty at: {query_batch} with country {source_country}. Ignoring")
+                else:
+                    res.append(data)
             except:
                 print(f"Data was empty at: {query_batch} with country {source_country}. Ignoring")
                 #return None
-            if data == {}:
-                print(f"Data was empty at: {query_batch} with country {source_country}. Ignoring")
-                #return None
-            else:
-                res.append(data)
         else:
             print(f"Request failed with status code {response.status_code}")
             #return None
-        time.sleep(0.2)
+        time.sleep(0.15)
     temp_res = []
     all_titles = []
     for arr in res:
@@ -328,7 +327,6 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
             if article['title'] not in all_titles:
                 temp_res.append(article)
                 all_titles.append(article['title'])
-    time.sleep(1)
     return temp_res
 
 def tokenize(titles):
