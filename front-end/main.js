@@ -186,7 +186,7 @@ function animate() {
     requestAnimationFrame(animate);
     scene.rotateY(0.0001);
     renderer.render(scene, camera);
-    var time_val = ((Date.now()/200)%20)/20;
+    var time_val = Math.floor( ((Date.now()/100000)%1)*100000 );
     water_planet_material.uniforms.time.value = time_val;
 }
 animate();
