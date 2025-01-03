@@ -18,7 +18,7 @@ import math
 import boto3
 import random
 import re
-
+import certifi
 
 
 #Find KPI for display, decide how and when. If opinion changes on subject, should that be covered?
@@ -155,7 +155,7 @@ class TranslatorSyncer():
                 print(f"Batch nr: {count}/{len(self.total_batches)} batches has {len(batch)} in language: {lang}")
                 threads_processing = []
                 sleep_after_num = 3
-                sleep_count = 0
+                sleep_count = 1
                 res_arr = []
                 num_batch = int(len(batch)/100)
                 if num_batch < sleep_after_num: # Now will atleast separate sleep num or the amount of articles
@@ -250,7 +250,7 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
     """
     
     
-    base_url = "https://api.gdeltproject.org/api/v2/doc/doc"
+    base_url = "http://api.gdeltproject.org/api/v2/doc/doc"
     
     #Ensures only given values will be used, if null do not add.
     if source_country:
@@ -301,7 +301,6 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
         headers = { # Was needed for 429 error, might look for other solution
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
         }
-        
         # Send GET request
         response = requests.get(base_url, params=params, headers=headers)
         
