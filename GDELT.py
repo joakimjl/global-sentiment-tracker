@@ -157,7 +157,7 @@ class TranslatorSyncer():
                 sleep_after_num = 3
                 sleep_count = 1
                 res_arr = []
-                num_batch = int(len(batch)/100)
+                num_batch = int(len(batch)/150)
                 if num_batch < sleep_after_num: # Now will atleast separate sleep num or the amount of articles
                     num_batch = min(sleep_after_num, len(batch))
                 for j in range(num_batch):
@@ -170,8 +170,10 @@ class TranslatorSyncer():
                     t.start()
                     threads_processing.append(t)
                     time.sleep(0.1)
+                    min_time = 35
                     if (sleep_count % sleep_after_num == 0 and sleep_count > 0) or (i == num_batch-1):
                         threads_finished = False
+                        before_time = time.now()
                         while not threads_finished:
                             all_finished = True
                             for thread in threads_processing:
@@ -179,6 +181,8 @@ class TranslatorSyncer():
                                     all_finished = False
                             threads_finished = all_finished
                             time.sleep(1)
+                        if before_time <= time.now() - min_time: #Needs extra delay sometimes
+                            time.sleep(before_time - time.now() + min_time)
                     time.sleep(0.5)
                     sleep_count += 1
                 #titles = self.batch_process(batch,lang)
