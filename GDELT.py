@@ -181,8 +181,8 @@ class TranslatorSyncer():
                                     all_finished = False
                             threads_finished = all_finished
                             time.sleep(1)
-                        if before_time <= time.time() - min_time: #Needs extra delay sometimes
-                            time.sleep(before_time - time.time() + min_time)
+                        if before_time >= time.time() - min_time: #Needs extra delay sometimes
+                            time.sleep(max(before_time - time.time() + min_time, 0.0001))
                     time.sleep(0.5)
                     sleep_count += 1
                 #titles = self.batch_process(batch,lang)
