@@ -427,7 +427,9 @@ def get_titles(res,data,syncer,index):
         #print(f"Time to wait: {40 + syncer.last_added_time - time.time()}")
         if syncer.last_added_time <= time.time()-90:
             syncer.big_batch_process()
-    
+    sleep_time_rand = random.random()*350
+
+    time.sleep(sleep_time_rand)    
     count = 0
     lang_arr = []
     for lang_key, index_range in index_dict.items():
@@ -652,9 +654,8 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
            return False
         if titles_inter == False:
             return False
-         
         print(f"Working on insert for {target}")
-        time.sleep(random.random()*200) #For slower systems
+        time.sleep(sleep_time_rand)
         
         sentiment_arr_nat, titles_nat, target_country, query = process_titles(
                 target_country=target, date=on_day, roberta=roberta, syncer=syncer, titles=titles_nat) 
