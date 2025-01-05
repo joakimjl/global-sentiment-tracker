@@ -16,5 +16,7 @@ void main() {
 
     pos = tempPos;
 
+    tempPos *= time*0.0000101;
+
     gl_Position = projectionMatrix * modelViewMatrix * vec4(tempPos, 1.);
 }

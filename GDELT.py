@@ -655,7 +655,6 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
         if titles_inter == False:
             return False
         print(f"Working on insert for {target}")
-        time.sleep(sleep_time_rand)
         
         sentiment_arr_nat, titles_nat, target_country, query = process_titles(
                 target_country=target, date=on_day, roberta=roberta, syncer=syncer, titles=titles_nat) 
