@@ -1,11 +1,14 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { clamp, randInt } from 'three/src/math/MathUtils';
+import { clamp, randFloat, randInt } from 'three/src/math/MathUtils';
 import { TessellateModifier } from 'three/examples/jsm/modifiers/TessellateModifier.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import vertexShader from './vertexShader.vert?raw';
-import fragmentShader from './fragmentShader.frag?raw';
+import vertShaderWater from './vertShaderWater.vert?raw';
+import vertShaderLand from './vertShaderLand.vert?raw';
+import fragShaderWater from './fragShaderWater.frag?raw';
+import fragShaderLand from './fragShaderLand.frag?raw';
+import { forEachChild } from 'typescript';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -136,14 +139,28 @@ var hoveredMesh;
 const loader = new GLTFLoader();
 
 const water_planet_material = new THREE.ShaderMaterial({
-    vertexShader: vertexShader,
-    fragmentShader: fragmentShader,
+    vertexShader: vertShaderWater,
+    fragmentShader: fragShaderWater,
     uniforms: {
         time: {value: (Date.now()/10)%10}
     }
 });
 
 water_planet_material.needsUpdate = true;
+
+const land_planet_material = new THREE.ShaderMaterial({
+    vertexShader: vertShaderLand,
+    fragmentShader: fragShaderLand,
+    uniforms: {
+        time: {value: (Date.now()/10)%10},
+        landMovement: {value: 0.001},
+        givenRandTime: {value: randFloat(0,1)}
+    }
+});
+
+land_planet_material.needsUpdate = true;
+
+var land_mat_arr = [];
 
 // Load a glTF resource
 loader.load(
@@ -155,6 +172,24 @@ loader.load(
 
         console.log(gltf.scene.children[0])
         gltf.scene.children[0].material = water_planet_material
+
+        for (let index = 1; index < gltf.scene.children.length; index++) {
+            const element = gltf.scene.children[index];
+            let rand = randFloat(0,1);
+            const land_planet_temp = new THREE.ShaderMaterial({
+                vertexShader: vertShaderLand,
+                fragmentShader: fragShaderLand,
+                uniforms: {
+                    time: {value: (Date.now()/10)%10},
+                    landMovement: {value: 0.001},
+                    givenRandTime: {value: rand}
+                }
+            });
+            
+            land_mat_arr.push(land_planet_temp);
+            land_planet_temp.needsUpdate = true;
+            element.material = land_planet_temp;
+        }
 
 		scene.add( gltf.scene );
 
@@ -175,6 +210,10 @@ loader.load(
 	}
 );
 
+var last_fps_time = Date.now();
+
+var frame_count = 0;
+
 function animate() {
     raycaster.setFromCamera( pointer, camera );
     intersects = raycaster.intersectObjects( scene.children );
@@ -184,10 +223,23 @@ function animate() {
         hoveredMesh = "None"
     }
     requestAnimationFrame(animate);
-    scene.rotateY(0.0001);
+    //scene.rotateY(0.01);
     renderer.render(scene, camera);
     var time_val = Math.floor( ((Date.now()/100000)%1)*100000 );
     water_planet_material.uniforms.time.value = time_val;
+    land_planet_material.uniforms.time.value = time_val;
+    land_planet_material.uniforms.landMovement.value = 0.05;
+    for (let index = 0; index < land_mat_arr.length; index++) {
+        const element = land_mat_arr[index];
+        element.uniforms.time.value = time_val;
+        element.uniforms.landMovement.value = 0.05;
+    }
+    if (last_fps_time + 1000 <= Date.now()){
+        console.log(frame_count);
+        frame_count = 0
+        last_fps_time = Date.now()
+    }
+    frame_count += 1;
 }
 animate();
 window.addEventListener( 'pointermove', onPointerMove );
