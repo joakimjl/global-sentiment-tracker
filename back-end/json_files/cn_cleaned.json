@@ -1,0 +1,106 @@
+[
+ {
+  "domain": "chinadaily.com.cn",
+  "facebook_fol": "105M",
+  "twitter_fol": "2K",
+  "insta_fol": "",
+  "freq_post": "2posts/year",
+  "domain_auth": "91"
+ },
+ {
+  "domain": "globaltimes.cn",
+  "facebook_fol": "77.5M",
+  "twitter_fol": "1.9M",
+  "insta_fol": "",
+  "freq_post": "5posts/week",
+  "domain_auth": "89"
+ },
+ {
+  "domain": "english.news.cn",
+  "facebook_fol": "97.4M",
+  "twitter_fol": "12M",
+  "insta_fol": "1.6M",
+  "freq_post": "2posts/week",
+  "domain_auth": "86"
+ },
+ {
+  "domain": "cgtn.com",
+  "facebook_fol": "120M",
+  "twitter_fol": "13M",
+  "insta_fol": "2.3M",
+  "freq_post": "7posts/week",
+  "domain_auth": "85"
+ },
+ {
+  "domain": "ecns.cn",
+  "facebook_fol": "1.4M",
+  "twitter_fol": "635.2K",
+  "insta_fol": "",
+  "freq_post": "3posts/day",
+  "domain_auth": "85"
+ },
+ {
+  "domain": "rand.org",
+  "facebook_fol": "57.7K",
+  "twitter_fol": "246.4K",
+  "insta_fol": "19K",
+  "freq_post": "24posts/year",
+  "domain_auth": "84"
+ },
+ {
+  "domain": "thediplomat.com",
+  "facebook_fol": "845.9K",
+  "twitter_fol": "236.6K",
+  "insta_fol": "",
+  "freq_post": "4posts/week",
+  "domain_auth": "84"
+ },
+ {
+  "domain": "technode.com",
+  "facebook_fol": "",
+  "twitter_fol": "18.3K",
+  "insta_fol": "",
+  "freq_post": "15posts/week",
+  "domain_auth": "82"
+ },
+ {
+  "domain": "english.chinamil.com.cn",
+  "facebook_fol": "",
+  "twitter_fol": "343",
+  "insta_fol": "",
+  "freq_post": "",
+  "domain_auth": "75"
+ },
+ {
+  "domain": "chinadigitaltimes.net",
+  "facebook_fol": "13.2K",
+  "twitter_fol": "237.9K",
+  "insta_fol": "690",
+  "freq_post": "4posts/day",
+  "domain_auth": "70"
+ },
+ {
+  "domain": "carnewschina.com",
+  "facebook_fol": "25K",
+  "twitter_fol": "1.9K",
+  "insta_fol": "",
+  "freq_post": "30posts/year",
+  "domain_auth": "64"
+ },
+ {
+  "domain": "chinafile.com",
+  "facebook_fol": "15.4K",
+  "twitter_fol": "80.2K",
+  "insta_fol": "3.1K",
+  "freq_post": "1post/month",
+  "domain_auth": "63"
+ },
+ {
+  "domain": "china-briefing.com",
+  "facebook_fol": "993",
+  "twitter_fol": "6.6K",
+  "insta_fol": "",
+  "freq_post": "",
+  "domain_auth": "63"
+ }
+]
