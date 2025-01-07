@@ -680,12 +680,12 @@ if __name__ == "__main__":
     is_hourly = True
     if is_hourly:
         for i in range(1):
-            cur_hour = datetime.today()-timedelta(hours=i+10)
+            cur_hour = datetime.today()-timedelta(hours=i+13)
             cur_hour = cur_hour.replace(minute=0,second=0,microsecond=0)
             on_days.append(cur_hour)
     else:
         for i in range(1):
-            on_days.append(date.today()-timedelta(days=i+7))
+            on_days.append(date.today()-timedelta(days=i+8))
 
     subjects = ""
 
