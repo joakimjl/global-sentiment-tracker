@@ -1,0 +1,21 @@
+{
+    "sqltools.connections": [
+        {
+            "pgOptions": {
+                "ssl": {
+                    "rejectUnauthorized": false,
+                    "key": "",
+                    "cert": ""
+                }
+            },
+            "previewLimit": 50,
+            "server": "global-sentiment-db.c5k48gqy0u6r.eu-west-1.rds.amazonaws.com",
+            "port": 5432,
+            "askForPassword": true,
+            "driver": "PostgreSQL",
+            "name": "AWS-RDS",
+            "username": "gstsenti",
+            "database": "postgres"
+        }
+    ]
+}
