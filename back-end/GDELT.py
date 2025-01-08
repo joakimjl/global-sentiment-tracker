@@ -423,11 +423,11 @@ def get_titles(res,data,syncer,index):
 
     total_batch = []
     while syncer.all_batch_done == False:       
-        time.sleep(50)
+        time.sleep(100+random.random()*50)
         #print(f"Time to wait: {40 + syncer.last_added_time - time.time()}")
-        if syncer.last_added_time <= time.time()-90:
+        if syncer.last_added_time <= time.time()-99:
             syncer.big_batch_process()
-    sleep_time_rand = random.random()*600
+    sleep_time_rand = random.random()*5
 
     time.sleep(sleep_time_rand)    
     count = 0
