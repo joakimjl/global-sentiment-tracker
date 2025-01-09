@@ -423,7 +423,7 @@ def get_titles(res,data,syncer,index):
 
     total_batch = []
     while syncer.all_batch_done == False:       
-        time.sleep(100+random.random()*50)
+        time.sleep(200+random.random()*150)
         #print(f"Time to wait: {40 + syncer.last_added_time - time.time()}")
         if syncer.last_added_time <= time.time()-99:
             syncer.big_batch_process()
