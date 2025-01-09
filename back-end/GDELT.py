@@ -18,7 +18,6 @@ import math
 import boto3
 import random
 import re
-import certifi
 
 
 #Find KPI for display, decide how and when. If opinion changes on subject, should that be covered?
@@ -61,7 +60,7 @@ class TranslatorSyncer():
         del self.started_time_map[id]
 
     def started(self):
-        while (len(self.started_time_map) > self.max_con or self.chars >= self.max_chars):
+        while (len(self.started_time_map) > self.max_con):
             print(f"Thread waiting due to: {len(self.started_time_map)} > {self.max_con} or {self.chars} >= {self.max_chars}")
             time.sleep(1)
         self.started_time_map[self.id] = time.time()
@@ -104,11 +103,9 @@ class TranslatorSyncer():
             if error_count > 3:
                 return False
 
-        self.chars -= num_chars
-
         self.finished(id)
 
-        print(f"Total req: {self.total_requests}, total time: {self.total_time}, avg time: {self.total_time/(self.total_requests+0.001)}")
+        print(f"Total req: {self.total_requests}, total time: {self.total_time}, avg time: {self.total_time/(self.total_requests+0.001)}, chars: {self.chars}")
 
         if res_arr != None:
             res_arr[res_arr_index] = batch
@@ -199,6 +196,7 @@ class TranslatorSyncer():
 
             print("All Done")
             self.all_batch_done = True
+            time.sleep(random.random()*100)
     
     def retrive_translation(self,start,end,lang):
         if not self.all_batch_done:
@@ -654,7 +652,7 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
            return False
         if titles_inter == False:
             return False
-        print(f"Working on insert for {target}")
+        print(f"Working on insert for {target} at {datetime.now()}")
         
         sentiment_arr_nat, titles_nat, target_country, query = process_titles(
                 target_country=target, date=on_day, roberta=roberta, syncer=syncer, titles=titles_nat) 
