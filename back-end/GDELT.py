@@ -196,7 +196,7 @@ class TranslatorSyncer():
 
             print("All Done")
             self.all_batch_done = True
-            time.sleep(random.random()*100)
+            time.sleep(300)
     
     def retrive_translation(self,start,end,lang):
         if not self.all_batch_done:
@@ -421,7 +421,7 @@ def get_titles(res,data,syncer,index):
 
     total_batch = []
     while syncer.all_batch_done == False:       
-        time.sleep(200+random.random()*150)
+        time.sleep(200+random.random()*500)
         #print(f"Time to wait: {40 + syncer.last_added_time - time.time()}")
         if syncer.last_added_time <= time.time()-99:
             syncer.big_batch_process()
