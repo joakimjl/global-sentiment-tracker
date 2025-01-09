@@ -30,6 +30,23 @@ import re
 # TODO: Countries maybe needed, find optimal way to store data, most likely FK to country table and group by
 # TODO: Add translation, check on ex, Swedish, Danish, Norweigan, Tagalog, German.
 
+class ProcessLock():
+    def __init__(self):
+        self.locked = False
+
+    def attemptLock(self):
+        if self.locked == False:
+            self.locked = True
+            return True
+        return False
+    
+    def releaseLock(self):
+        if self.locked == True:
+            self.locked = False
+            return True
+        print("LOCK WAS ENTERED AT THE SAME TIME, RACECONDITION")
+        return False
+    
 class TranslatorSyncer():
     def __init__(self, max_concurrent=15, max_chars=990000) -> None:
         self.total_active = 0
@@ -179,7 +196,7 @@ class TranslatorSyncer():
                             threads_finished = all_finished
                             time.sleep(1)
                         if before_time >= time.time() - min_time: #Needs extra delay sometimes
-                            time.sleep(max(before_time - time.time() + min_time, 0.0001))
+                            time.sleep(max(before_time - time.time() + min_time, 0.001))
                     time.sleep(0.5)
                     sleep_count += 1
                 #titles = self.batch_process(batch,lang)
@@ -196,7 +213,6 @@ class TranslatorSyncer():
 
             print("All Done")
             self.all_batch_done = True
-            time.sleep(300)
     
     def retrive_translation(self,start,end,lang):
         if not self.all_batch_done:
@@ -421,7 +437,7 @@ def get_titles(res,data,syncer,index):
 
     total_batch = []
     while syncer.all_batch_done == False:       
-        time.sleep(200+random.random()*500)
+        time.sleep(50)
         #print(f"Time to wait: {40 + syncer.last_added_time - time.time()}")
         if syncer.last_added_time <= time.time()-99:
             syncer.big_batch_process()
@@ -471,7 +487,12 @@ def get_gdelt_processed(query="economy", target_country="US", date=date.today(),
     
     return kept_data
 
-def process_titles(query="economy", target_country="US", date=date.today(), roberta=None, syncer=None, titles=None) :
+def process_titles(query="economy", target_country="US", date=date.today(), roberta=None, syncer=None, titles=None, lock=None) :
+    allowed = False
+    while not allowed:
+        if lock.attemptLock() == True:
+            allowed = True
+        time.sleep(5)
     sia = SentimentIntensityAnalyzer()
     sentiment_arr = []
     vader = []
@@ -487,6 +508,7 @@ def process_titles(query="economy", target_country="US", date=date.today(), robe
 
     if target_country[0] == "-":
         target_country = target_country[1:]
+    lock.releaseLock()
     return sentiment_arr, titles, target_country, query
 
 def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, query, date, is_hourly=False) -> None:
@@ -504,11 +526,10 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
     info = CompositeInfo.fetch(conn, "sentiment")
     register_composite(info,conn)
 
-
-    arti = CompositeInfo.fetch(conn, "article")
-    register_composite(arti,conn)
     if is_hourly:
         arti = CompositeInfo.fetch(conn, "article_v2")
+    else:
+        arti = CompositeInfo.fetch(conn, "article")
     register_composite(arti,conn)
 
     title_process = [titles,titles_inter]
@@ -610,7 +631,10 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
 
     return True
 
-def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=date.today(), short_subject="Any Subject", is_hourly=False):
+def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=date.today(), short_subject="Any Subject", is_hourly=False, lock=None):
+    if lock == None:
+        print("No lock")
+        return None
     """Completes all tasks for one row, separated for multithreading"""
     already_in_db = check_exists(target, short_subject, on_day, is_hourly=is_hourly)
     inside_threads = []
@@ -655,9 +679,9 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
         print(f"Working on insert for {target} at {datetime.now()}")
         
         sentiment_arr_nat, titles_nat, target_country, query = process_titles(
-                target_country=target, date=on_day, roberta=roberta, syncer=syncer, titles=titles_nat) 
+                target_country=target, date=on_day, roberta=roberta, syncer=syncer, titles=titles_nat, lock=lock) 
         sentiment_arr_inter, titles_inter, target_country, query = process_titles(
-                query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer, titles=titles_inter) 
+                query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer, titles=titles_inter, lock=lock) 
         insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, short_subject, on_day, is_hourly=is_hourly)
         print(f"Inserted sucessfully: {target} on {subject} on {on_day}")
     except Exception as error:
@@ -667,6 +691,7 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
 
 # TODO:Fix large duping problem from GDELT data
 if __name__ == "__main__":
+    lock = ProcessLock()
     syncer = TranslatorSyncer()
     roberta = GST_Roberta()
     start_time = time.time()
@@ -725,7 +750,7 @@ if __name__ == "__main__":
                     
                 remain_rows = len(countries)*len(subjects)*len(on_days)-count
                 #asyncio.run(fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day, short_subject))
-                t = Thread(target=fetch_and_insert_one, args=[target, subject, remain_rows, roberta, syncer, on_day, short_subject, True])
+                t = Thread(target=fetch_and_insert_one, args=[target, subject, remain_rows, roberta, syncer, on_day, short_subject, True, lock])
                 t.start()
                 threads.append(t)
                 
