@@ -739,7 +739,7 @@ if __name__ == "__main__":
     is_hourly = True
     if is_hourly:
         for i in range(1):
-            cur_hour = datetime.today()-timedelta(hours=4*i+24) #4 hours per index
+            cur_hour = datetime.today()-timedelta(hours=4*i+26) #4 hours per index
             cur_hour = cur_hour.replace(minute=0,second=0,microsecond=0)
             on_days.append(cur_hour)
     else:
