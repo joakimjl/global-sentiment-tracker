@@ -57,7 +57,7 @@ CREATE TABLE global_info_hourly(
     PRIMARY KEY(target_country,on_time)
 )
 
-SELECT * FROM global_info_hourly WHERE on_time >= '2024-12-29'
+SELECT * FROM global_info_hourly WHERE on_time >= '2025-01-08'
 
 WITH article AS (
     SELECT 
@@ -124,7 +124,7 @@ SELECT UNNEST(headline_national) AS headline,
     UNNEST(sentiment_national[1:1]) AS senti,
     UNNEST(sentiment_national[2:2]) AS senti_second
 FROM global_info_hourly
-WHERE target_country = 'Norway'
+WHERE target_country = 'Pakistan'
 
 
 --Query to get average sentiment

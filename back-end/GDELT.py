@@ -716,7 +716,7 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
         sentiment_arr_inter, titles_inter, target_country, query = process_titles(
                 query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer, titles=titles_inter, lock=lock) 
         insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, short_subject, on_day, is_hourly=is_hourly)
-        print(f"Inserted sucessfully: {target} on {subject} on {on_day}")
+        print(f"Inserted sucessfully: {target} on {on_day}")
     except Exception as error:
         print(f"{error} \n Continuing anyway but {target} on {on_day} not inserted")
     return True
