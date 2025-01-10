@@ -116,9 +116,15 @@ class TranslatorSyncer():
         except:
             print("TRANSLATE STOPPED FUNCTIONING") #VIM has double tabs
             print(f'BATCH FOR {lang} FAILED WITH {len(batch)} ARTICLES')
-            error_count += 1
-            if error_count > 3:
-                return False
+            time.sleep(60*31) #API requires 30 min delay doing 31 in case
+            try:
+                print("Recovered, works now")
+                batch = Translator(source=lang.lower(), target='en').translate_batch(batch)
+            except:
+                print("STILL FAILED")
+                error_count += 1
+                if error_count > 3:
+                    return False
 
         self.finished(id)
 
