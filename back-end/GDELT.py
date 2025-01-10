@@ -128,15 +128,29 @@ class TranslatorSyncer():
         except:
             print("TRANSLATE STOPPED FUNCTIONING") #VIM has double tabs
             print(f'BATCH FOR {lang} FAILED WITH {len(batch)} ARTICLES')
-            time.sleep(60*31) #API requires 30 min delay doing 31 in case
+            try:
+                batch = Translator(target='en').translate_batch(batch)
+                print("Auto translate worked")
+            except:
+                print("Tried auto detect language")
+                if lang == "NorwegianNynorsk":
+                    new_batch = []
+                    print("NorwegianNynorsk was removed")
+                    for i in range(len(batch)):
+                        new_batch.append(False)
+                    batch = new_batch
+                else:
+                    time.sleep(60*31) #API requires 30 min delay doing 31 in case
             try:
                 print("Recovered, works now")
                 batch = Translator(source=lang.lower(), target='en').translate_batch(batch)
             except:
                 print("STILL FAILED")
                 error_count += 1
-                if error_count > 3:
-                    return False
+                new_batch = []
+                for i in range(len(batch)):
+                    new_batch.append(False)
+                batch = new_batch
 
         self.finished(id)
 
@@ -237,7 +251,8 @@ class TranslatorSyncer():
             return False
         res = []
         for i in range(start,end):
-            res.append(self.finished_batches[lang][i])
+            if self.finished_batches[lang][i] != False:
+                res.append(self.finished_batches[lang][i])
         return res
 
 def check_exists(country, subject, day, is_hourly=False):

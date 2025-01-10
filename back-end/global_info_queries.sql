@@ -123,10 +123,8 @@ $$ language plpgsql;
 SELECT UNNEST(headline_national) AS headline,
     UNNEST(sentiment_national[1:1]) AS senti,
     UNNEST(sentiment_national[2:2]) AS senti_second
-FROM global_info
-WHERE target_country = 'US'
-AND on_day = '20240129'
-AND on_subject = 'America housing'
+FROM global_info_hourly
+WHERE target_country = 'Norway'
 
 
 --Query to get average sentiment
