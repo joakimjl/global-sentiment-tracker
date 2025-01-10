@@ -31,21 +31,33 @@ import re
 # TODO: Add translation, check on ex, Swedish, Danish, Norweigan, Tagalog, German.
 
 class ProcessLock():
-    def __init__(self):
+    def __init__(self, allowed_amount=1):
         self.locked = False
+        self.allowed_amount = allowed_amount
+        self.ongoing = 0
+        self.enabled = True
 
     def attemptLock(self):
-        if self.locked == False:
-            self.locked = True
+        if self.enabled == False:
             return True
+        if self.ongoing < self.allowed_amount:
+            if self.allowed_amount <= self.ongoing + 1:
+                self.ongoing += 1
+                self.locked = True
+                return True
         return False
     
     def releaseLock(self):
-        if self.locked == True:
-            self.locked = False
+        if self.enabled == False:
             return True
-        print("LOCK WAS ENTERED AT THE SAME TIME, RACECONDITION")
-        return False
+        self.ongoing -= 1
+        if self.ongoing < 0:
+            print("LOCK WAS ENTERED AT THE SAME TIME, RACECONDITION")
+            return False
+        return True
+    
+    def disableLock(self):
+        self.enabled = False
     
 class TranslatorSyncer():
     def __init__(self, max_concurrent=15, max_chars=990000) -> None:
@@ -698,6 +710,9 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
 # TODO:Fix large duping problem from GDELT data
 if __name__ == "__main__":
     lock = ProcessLock()
+    lock.allowed_amount = 3
+    #lock.disableLock()
+    #If parallell is better run with lock on disable ( lock.disableLock() )
     syncer = TranslatorSyncer()
     roberta = GST_Roberta()
     start_time = time.time()
