@@ -238,7 +238,7 @@ def check_exists(country, subject, day, is_hourly=False):
     cur = connection.cursor()
 
     if is_hourly:
-        day = day-timedelta(hours=1)
+        day = day-timedelta(hours=4)
     else:
         day = day-timedelta(days=1) #Start day is what is inserted always
 
@@ -311,7 +311,7 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
 
         start_day = day-timedelta(days=1)
         if is_hourly:
-            start_day = day-timedelta(hours=1)
+            start_day = day-timedelta(hours=4)
         end_day = day
         
         params = {
@@ -709,7 +709,7 @@ if __name__ == "__main__":
     is_hourly = True
     if is_hourly:
         for i in range(1):
-            cur_hour = datetime.today()-timedelta(hours=i+13)
+            cur_hour = datetime.today()-timedelta(hours=4*i+24) #4 hours per index
             cur_hour = cur_hour.replace(minute=0,second=0,microsecond=0)
             on_days.append(cur_hour)
     else:
