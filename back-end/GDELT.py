@@ -42,7 +42,8 @@ class ProcessLock():
             return True
         if self.ongoing < self.allowed_amount:
             self.ongoing += 1
-            self.locked = True
+            if self.allowed_amount <= self.ongoing:
+                self.locked = True
             return True
         return False
     
@@ -527,6 +528,7 @@ def process_titles(query="economy", target_country="US", date=date.today(), robe
         if lock.attemptLock() == True:
             allowed = True
         time.sleep(5)
+    print(f"{target_country} seniment processing running")
     sia = SentimentIntensityAnalyzer()
     sentiment_arr = []
     vader = []
