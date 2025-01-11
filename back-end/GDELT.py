@@ -141,16 +141,16 @@ class TranslatorSyncer():
                     batch = new_batch
                 else:
                     time.sleep(60*31) #API requires 30 min delay doing 31 in case
-            try:
-                print("Recovered, works now")
-                batch = Translator(source=lang.lower(), target='en').translate_batch(batch)
-            except:
-                print("STILL FAILED")
-                error_count += 1
-                new_batch = []
-                for i in range(len(batch)):
-                    new_batch.append(False)
-                batch = new_batch
+                    try:
+                        print("Recovered, works now")
+                        batch = Translator(source=lang.lower(), target='en').translate_batch(batch)
+                    except:
+                        print("STILL FAILED")
+                        error_count += 1
+                        new_batch = []
+                        for i in range(len(batch)):
+                            new_batch.append(False)
+                        batch = new_batch
 
         self.finished(id)
 
