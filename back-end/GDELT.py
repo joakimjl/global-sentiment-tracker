@@ -41,16 +41,17 @@ class ProcessLock():
         if self.enabled == False:
             return True
         if self.ongoing < self.allowed_amount:
-            if self.allowed_amount <= self.ongoing + 1:
-                self.ongoing += 1
-                self.locked = True
-                return True
+            self.ongoing += 1
+            self.locked = True
+            return True
         return False
     
     def releaseLock(self):
         if self.enabled == False:
             return True
         self.ongoing -= 1
+        if self.ongoing < self.allowed_amount:
+            self.locked = False
         if self.ongoing < 0:
             print("LOCK WAS ENTERED AT THE SAME TIME, RACECONDITION")
             return False
@@ -724,8 +725,7 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
 
 # TODO:Fix large duping problem from GDELT data
 if __name__ == "__main__":
-    lock = ProcessLock()
-    lock.allowed_amount = 3
+    lock = ProcessLock(allowed_amount=3)
     #lock.disableLock()
     #If parallell is better run with lock on disable ( lock.disableLock() )
     syncer = TranslatorSyncer()
@@ -739,7 +739,7 @@ if __name__ == "__main__":
     is_hourly = True
     if is_hourly:
         for i in range(1):
-            cur_hour = datetime.today()-timedelta(hours=4*i+26) #4 hours per index
+            cur_hour = datetime.today()-timedelta(hours=4*i+29) #4 hours per index
             cur_hour = cur_hour.replace(minute=0,second=0,microsecond=0)
             on_days.append(cur_hour)
     else:
