@@ -727,7 +727,7 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
 
 # TODO:Fix large duping problem from GDELT data
 if __name__ == "__main__":
-    lock = ProcessLock(allowed_amount=3)
+    lock = ProcessLock(allowed_amount=1)
     #lock.disableLock()
     #If parallell is better run with lock on disable ( lock.disableLock() )
     syncer = TranslatorSyncer()
