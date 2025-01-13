@@ -11,6 +11,24 @@ void main() {
 
     vec3 sunLocation = vec3(0.,0.,10.);
 
+    vec3 landNormal = normalize(pos);
+
+    vec3 diffStrength = landNormal*sunLocation*1.0;
+
+    float diffSum = diffStrength.x + diffStrength.y + diffStrength.z;
+
+    diffStrength = vec3(diffSum/3.);
+
+    newColor *= diffStrength;
+    
+    gl_FragColor = vec4(newColor,1.); 
+}
+
+/* void main() {
+    vec3 newColor = vec3(0.2,0.8,0.2);
+
+    vec3 sunLocation = vec3(0.,0.,10.);
+
     vec3 landNormal = tempNormal;
 
     vec3 diffStrength = landNormal*sunLocation;
@@ -37,4 +55,4 @@ void main() {
 
     //gl_FragColor = vec4(clamp(newColor,0.,1.), 1.); 
     gl_FragColor = vec4(landNormal,1.); 
-}
+} */
