@@ -78,6 +78,7 @@ class TranslatorSyncer():
         self._started_process = False
         self._big_batch_lock = False
         self._wait_queue = [99999999999]
+        self.first_ret = True
 
     def finished(self, id):
         sleep_time = self.started_time_map[id]-time.time()+2
@@ -251,6 +252,9 @@ class TranslatorSyncer():
     def retrive_translation(self,start,end,lang):
         if not self.all_batch_done:
             return False
+        if self.first_ret == True:
+            print(f"{lang} retrieveing")
+            self.first_ret = False
         res = []
         for i in range(start,end):
             if self.finished_batches[lang][i] != False:
