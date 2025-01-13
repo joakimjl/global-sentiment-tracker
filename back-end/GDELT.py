@@ -529,9 +529,9 @@ def get_gdelt_processed(query="economy", target_country="US", date=date.today(),
 def process_titles(query="economy", target_country="US", date=date.today(), roberta=None, syncer=None, titles=None, lock=None) :
     allowed = False
     while not allowed:
+        time.sleep(random.random()*(200/lock.allowed_amount))
         if lock.attemptLock() == True:
             allowed = True
-        time.sleep(5)
     print(f"{target_country} seniment processing running")
     sia = SentimentIntensityAnalyzer()
     sentiment_arr = []
