@@ -526,17 +526,25 @@ def get_gdelt_processed(query="economy", target_country="US", date=date.today(),
     
     return kept_data
 
-def process_titles(query="economy", target_country="US", date=date.today(), roberta=None, syncer=None, titles=None, lock=None) :
+def process_titles(query="economy", target_country="US", date=None, roberta=None, syncer=None, titles=None, lock=None) :
     allowed = False
+    #Making it dump files into folders to ensure enough memory available on weaker devices (EC2)
+    file_write = open("back-end/temp_articles/"+target_country,"w")
+    dump_map = {"query":query, "titles":titles}
+    json.dump(dump_map,file_write)
+    dump_map, file_write, query, titles = None,None,None,None
     while not allowed:
-        time.sleep(random.random()*(200/lock.allowed_amount))
+        time.sleep(random.random() * (200 / max(1,lock.allowed_amount)))
         if lock.attemptLock() == True:
             allowed = True
+    file_read = open("back-end/temp_articles/"+target_country,"r")
+    loaded_map = json.load(file_read)
+    file_read = None
     print(f"{target_country} seniment processing running")
     sia = SentimentIntensityAnalyzer()
     sentiment_arr = []
     vader = []
-    text_titles = [text[0] for text in titles]
+    text_titles = [text[0] for text in loaded_map['titles']]
     for title in text_titles:
         vader.append(sia.polarity_scores(title))
     sentiment_arr.append(vader)
@@ -549,7 +557,7 @@ def process_titles(query="economy", target_country="US", date=date.today(), robe
     if target_country[0] == "-":
         target_country = target_country[1:]
     lock.releaseLock()
-    return sentiment_arr, titles, target_country, query
+    return sentiment_arr, loaded_map['titles'], target_country, loaded_map['query']
 
 def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, query, date, is_hourly=False) -> None:
     conn = psycopg.Connection.connect(dbname = "postgres",
