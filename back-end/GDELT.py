@@ -530,7 +530,7 @@ def process_titles(query="economy", target_country="US", date=None, roberta=None
     allowed = False
     #Making it dump files into folders to ensure enough memory available on weaker devices (EC2)
     file_write = open("back-end/temp_articles/"+target_country,"w")
-    dump_map = {"query":"query", "titles":"titles"}
+    dump_map = {"query":query, "titles":query}
     json.dump(dump_map,file_write)
     file_write.close()
     dump_map, file_write, query, titles = None,None,None,None

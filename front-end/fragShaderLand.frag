@@ -20,8 +20,22 @@ void main() {
     diffStrength = vec3(diffSum/3.);
 
     newColor *= diffStrength;
+
+    float relativeMagnitude = abs(cameraPosition.x + cameraPosition.z + cameraPosition.y)/abs(sunLocation.x + sunLocation.z + sunLocation.y);
+
+    float reflection = dot( clamp((sunLocation*relativeMagnitude) + cameraPosition,0.0,1.0), landNormal);
+
+    //vec3 halfWay = normalize(cameraPosition+sunLocation);
+
+    //vec3 refVal = reflect(halfWay, landNormal);
+
+    //float reflectSum = refVal.x + refVal.y + refVal.z;
+
+    //refVal = vec3(-reflectSum/4.)*vec3(0.9882,0.8882,0.539);
+
+    //newColor = newColor + clamp(refVal,-1.0,1.0);
     
-    gl_FragColor = vec4(newColor,1.); 
+    gl_FragColor = vec4(reflection,0.0,0.0,1.); 
 }
 
 /* void main() {
