@@ -32,7 +32,6 @@ import re
 
 class ProcessLock():
     def __init__(self, allowed_amount=1):
-        self.locked = False
         self.allowed_amount = allowed_amount
         self.ongoing = 0
         self.enabled = True
@@ -42,8 +41,6 @@ class ProcessLock():
             return True
         if self.ongoing < self.allowed_amount:
             self.ongoing += 1
-            if self.allowed_amount <= self.ongoing:
-                self.locked = True
             return True
         return False
     
@@ -51,8 +48,6 @@ class ProcessLock():
         if self.enabled == False:
             return True
         self.ongoing -= 1
-        if self.ongoing < self.allowed_amount:
-            self.locked = False
         if self.ongoing < 0:
             print("LOCK WAS ENTERED AT THE SAME TIME, RACECONDITION")
             return False
@@ -534,15 +529,20 @@ def process_titles(query="economy", target_country="US", date=None, roberta=None
     json.dump(dump_map,file_write)
     file_write.close()
     dump_map, file_write, query, titles = None,None,None,None
-    while not allowed:
+    time.sleep(random.random()*10)
+    time.sleep(random.random() * (200 / max(1,lock.allowed_amount)))
+    if lock.attemptLock() == True:
+        allowed = True
+
+    while allowed == False:
         time.sleep(random.random() * (200 / max(1,lock.allowed_amount)))
         if lock.attemptLock() == True:
             allowed = True
+    print(f"Working on insert for {target_country} at {datetime.now()}")
     file_read = open("back-end/temp_articles/"+target_country,"r")
     loaded_map = json.load(file_read)
     file_read.close()
     file_read = None
-    print(f"{target_country} seniment processing running")
     sia = SentimentIntensityAnalyzer()
     sentiment_arr = []
     vader = []
@@ -726,7 +726,7 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
            return False
         if titles_inter == False:
             return False
-        print(f"Working on insert for {target} at {datetime.now()}")
+        
         
         sentiment_arr_nat, titles_nat, target_country, query = process_titles(
                 target_country=target, date=on_day, roberta=roberta, syncer=syncer, titles=titles_nat, lock=lock) 
