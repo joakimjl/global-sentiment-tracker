@@ -530,8 +530,9 @@ def process_titles(query="economy", target_country="US", date=None, roberta=None
     allowed = False
     #Making it dump files into folders to ensure enough memory available on weaker devices (EC2)
     file_write = open("back-end/temp_articles/"+target_country,"w")
-    dump_map = {"query":query, "titles":titles}
+    dump_map = {"query":"query", "titles":"titles"}
     json.dump(dump_map,file_write)
+    file_write.close()
     dump_map, file_write, query, titles = None,None,None,None
     while not allowed:
         time.sleep(random.random() * (200 / max(1,lock.allowed_amount)))
@@ -539,6 +540,7 @@ def process_titles(query="economy", target_country="US", date=None, roberta=None
             allowed = True
     file_read = open("back-end/temp_articles/"+target_country,"r")
     loaded_map = json.load(file_read)
+    file_read.close()
     file_read = None
     print(f"{target_country} seniment processing running")
     sia = SentimentIntensityAnalyzer()
