@@ -791,10 +791,10 @@ if __name__ == "__main__":
     roberta = GST_Roberta()
     start_time = time.time()
     count = 0
-    max_concurrent = 160
+    max_concurrent = 1
     threads = []
 
-    boolean_map = {"dump":True, "insert":False, "fetch_new":True}
+    boolean_map = {"dump":False, "insert":False, "fetch_new":False}
 
     on_days = []
     is_hourly = True
