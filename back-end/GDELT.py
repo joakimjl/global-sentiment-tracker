@@ -794,7 +794,8 @@ if __name__ == "__main__":
     max_concurrent = 1
     threads = []
 
-    boolean_map = {"dump":False, "insert":False, "fetch_new":False}
+    #Temp saved was 2025-01-14 21:00:00
+    boolean_map = {"dump":True, "insert":False, "fetch_new":True}
 
     on_days = []
     is_hourly = True
