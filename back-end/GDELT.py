@@ -791,7 +791,7 @@ if __name__ == "__main__":
     roberta = GST_Roberta()
     start_time = time.time()
     count = 0
-    max_concurrent = 1
+    max_concurrent = 160
     threads = []
 
     #Temp saved was 2025-01-14 21:00:00

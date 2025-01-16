@@ -7,35 +7,19 @@ varying float landMovement;
 uniform float givenRandTime;
 
 void main() {
-    vec3 newColor = vec3(0.2,0.8,0.2);
-
-    vec3 sunLocation = vec3(0.,0.,10.);
-
+    vec3 sunLocation = normalize(vec3(0.,0.,10.));
     vec3 landNormal = normalize(pos);
+    vec3 cameraDir = normalize(cameraPosition - pos);
 
-    vec3 diffStrength = landNormal*sunLocation*1.0;
+    vec3 reflection = reflect(-cameraDir, landNormal);
+    float diffStrength = max(dot(landNormal,sunLocation),0.0);
 
-    float diffSum = diffStrength.x + diffStrength.y + diffStrength.z;
+    vec3 reflectionColor = vec3(0.8,0.8,0.8) * pow(max(dot(reflection,sunLocation), 0.0), 32.0);
+    vec3 diffuseColor = vec3(0.2,0.8,0.2) * diffStrength;
 
-    diffStrength = vec3(diffSum/3.);
-
-    newColor *= diffStrength;
-
-    float relativeMagnitude = abs(cameraPosition.x + cameraPosition.z + cameraPosition.y)/abs(sunLocation.x + sunLocation.z + sunLocation.y);
-
-    float reflection = dot( clamp((sunLocation*relativeMagnitude) + cameraPosition,0.0,1.0), landNormal);
-
-    //vec3 halfWay = normalize(cameraPosition+sunLocation);
-
-    //vec3 refVal = reflect(halfWay, landNormal);
-
-    //float reflectSum = refVal.x + refVal.y + refVal.z;
-
-    //refVal = vec3(-reflectSum/4.)*vec3(0.9882,0.8882,0.539);
-
-    //newColor = newColor + clamp(refVal,-1.0,1.0);
+    vec3 finalColor = diffuseColor + reflectionColor*0.5;
     
-    gl_FragColor = vec4(reflection,0.0,0.0,1.); 
+    gl_FragColor = vec4(finalColor,0.0); 
 }
 
 /* void main() {

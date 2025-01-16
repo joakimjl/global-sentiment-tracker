@@ -7,7 +7,7 @@ varying vec2 uvMap;
 
 
 void main() {
-    vec3 newColor = vec3(0.2,0.2,0.8);
+/*     vec3 newColor = vec3(0.2,0.2,0.8);
 
     vec3 sunLocation = vec3(0.,0.,10.);
 
@@ -42,8 +42,20 @@ void main() {
     float waveSum = (waveSumX + waveSumZ + waveSumY)/3.;
 
     vec2 resUv = sin(uvMap*100.+time*0.001);
+     */
+    vec3 sunLocation = normalize(vec3(0.,0.,10.));
+    vec3 waterNormal = tempNormal;
+    vec3 cameraDir = normalize(cameraPosition - pos);
 
-    gl_FragColor = vec4(newColor,1.); 
+    vec3 reflection = reflect(-cameraDir, waterNormal);
+    float diffStrength = max(dot(waterNormal,sunLocation),0.0);
+
+    vec3 reflectionColor = vec3(0.8,0.8,0.8) * pow(max(dot(reflection,sunLocation), 0.0), 16.0);
+    vec3 diffuseColor = vec3(0.2,0.2,0.8) * diffStrength;
+
+    vec3 finalColor = diffuseColor + reflectionColor;
+    
+    gl_FragColor = vec4(finalColor,0.0); 
 }
 
 /* void main() {
