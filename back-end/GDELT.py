@@ -521,6 +521,26 @@ def get_gdelt_processed(query="economy", target_country="US", date=date.today(),
     
     return kept_data
 
+def dump_info(query="economy", target_country="US", date=None, titles=None):
+    file_write = open("back-end/temp_articles/"+target_country+str(date),"w")
+    dump_map = {"query":query, "titles":titles}
+    json.dump(dump_map,file_write)
+    file_write.close()
+
+    return True
+
+def fetch_dumped_info(target_country="US", date=None):
+    try:
+        file_read = open("back-end/temp_articles/"+target_country+str(date),"r")
+        loaded_map = json.load(file_read)
+        file_read.close()
+        file_read = None
+    except:
+        print("Country missing")
+        return None
+
+    return(loaded_map)
+
 def process_titles(query="economy", target_country="US", date=None, roberta=None, syncer=None, titles=None, lock=None) :
     allowed = False
     #Making it dump files into folders to ensure enough memory available on weaker devices (EC2)
@@ -681,16 +701,36 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
 
     return True
 
-def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=date.today(), short_subject="Any Subject", is_hourly=False, lock=None):
+def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=date.today(), short_subject="Any Subject", is_hourly=False, lock=None, boolean_map=None):
+    """Completes all tasks for one row, separated for multithreading
+    Important to put config options in boolean_map (fetch_new, dump, insert)
+    """
     if lock == None:
         print("No lock")
         return None
-    """Completes all tasks for one row, separated for multithreading"""
+    
+    
     already_in_db = check_exists(target, short_subject, on_day, is_hourly=is_hourly)
     inside_threads = []
     if already_in_db: 
         print(f"{target} on {short_subject} on {on_day} already in database")
         return
+    
+    if boolean_map['fetch_new'] == False:
+        info_nat = fetch_dumped_info(target_country=target, date=on_day)
+        titles_nat = info_nat['titles']
+        info_inter = fetch_dumped_info(target_country="-"+target, date=on_day)
+        titles_inter = info_inter['titles']
+
+        if info_nat != None and info_inter != None:
+            sentiment_arr_nat, titles_nat, target_country, query = process_titles(
+                    query=subject, target_country=target, date=on_day, roberta=roberta, syncer=syncer, titles=titles_nat, lock=lock) 
+            sentiment_arr_inter, titles_inter, target_country, query = process_titles(
+                    query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer, titles=titles_inter, lock=lock) 
+            insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, short_subject, on_day, is_hourly=is_hourly)
+            print(f"Inserted {target_country}")
+            return True
+        
     try:
         print(f"Starting {target} : remaining: {remain_rows}")
         data_nat = get_gdelt_processed(
@@ -727,13 +767,16 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
         if titles_inter == False:
             return False
         
-        
-        sentiment_arr_nat, titles_nat, target_country, query = process_titles(
-                target_country=target, date=on_day, roberta=roberta, syncer=syncer, titles=titles_nat, lock=lock) 
-        sentiment_arr_inter, titles_inter, target_country, query = process_titles(
-                query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer, titles=titles_inter, lock=lock) 
-        insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, short_subject, on_day, is_hourly=is_hourly)
-        print(f"Inserted sucessfully: {target} on {on_day}")
+        if boolean_map['dump'] == True:
+            dump_info(query=subject, target_country=target, date=on_day, titles=titles_nat)
+            print(f"Dumped sucessfully: {target} on {on_day}")
+        if boolean_map["insert"] == True:
+            sentiment_arr_nat, titles_nat, target_country, query = process_titles(
+                    query=subject, target_country=target, date=on_day, roberta=roberta, syncer=syncer, titles=titles_nat, lock=lock) 
+            sentiment_arr_inter, titles_inter, target_country, query = process_titles(
+                    query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer, titles=titles_inter, lock=lock) 
+            insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, short_subject, on_day, is_hourly=is_hourly)
+            print(f"Inserted sucessfully: {target} on {on_day}")
     except Exception as error:
         print(f"{error} \n Continuing anyway but {target} on {on_day} not inserted")
     return True
@@ -750,6 +793,8 @@ if __name__ == "__main__":
     count = 0
     max_concurrent = 160
     threads = []
+
+    boolean_map = {"dump":True, "insert":False, "fetch_new":True}
 
     on_days = []
     is_hourly = True
@@ -802,7 +847,7 @@ if __name__ == "__main__":
                     
                 remain_rows = len(countries)*len(subjects)*len(on_days)-count
                 #asyncio.run(fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day, short_subject))
-                t = Thread(target=fetch_and_insert_one, args=[target, subject, remain_rows, roberta, syncer, on_day, short_subject, True, lock])
+                t = Thread(target=fetch_and_insert_one, args=[target, subject, remain_rows, roberta, syncer, on_day, short_subject, True, lock, boolean_map])
                 t.start()
                 threads.append(t)
                 
