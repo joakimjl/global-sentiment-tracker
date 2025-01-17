@@ -18,5 +18,5 @@ void main() {
 
     vec3 finalColor = diffuseColor + reflectionColor;
     
-    gl_FragColor = vec4(finalColor,0.0); 
+    gl_FragColor = vec4(finalColor,1.0); 
 }
