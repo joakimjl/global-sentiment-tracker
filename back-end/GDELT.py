@@ -794,7 +794,6 @@ def run_all(in_datetime, boolean_map = {"dump":True, "insert":False, "fetch_new"
     threads = []
 
     #Temp saved was 2025-01-14 21:00:00
-    boolean_map = {"dump":True, "insert":False, "fetch_new":True}
 
     on_days = []
     is_hourly = True
