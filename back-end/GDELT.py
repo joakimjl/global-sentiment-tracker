@@ -782,8 +782,7 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
     return True
 
 
-# TODO:Fix large duping problem from GDELT data
-if __name__ == "__main__":
+def run_all(in_datetime, boolean_map = {"dump":True, "insert":False, "fetch_new":True}):
     lock = ProcessLock(allowed_amount=1)
     #lock.disableLock()
     #If parallell is better run with lock on disable ( lock.disableLock() )
@@ -799,14 +798,16 @@ if __name__ == "__main__":
 
     on_days = []
     is_hourly = True
-    if is_hourly:
+    """ if is_hourly:
         for i in range(1):
             cur_hour = datetime.today()-timedelta(hours=4*i+29) #4 hours per index
             cur_hour = cur_hour.replace(minute=0,second=0,microsecond=0)
             on_days.append(cur_hour)
     else:
         for i in range(1):
-            on_days.append(date.today()-timedelta(days=i+8))
+            on_days.append(date.today()-timedelta(days=i+8)) """
+    
+    on_days.append(in_datetime)
 
     subjects = ""
 
@@ -862,3 +863,8 @@ if __name__ == "__main__":
         time.sleep(5)
     print(f"Finished all, closing, total time: {time.time() - start_time}")
 
+
+if __name__ == "__main__":
+    boolean_map = {"dump":False, "insert":True, "fetch_new":False}
+    on_datetime = datetime(year=2025, month=1, day=15, hour=20, minute=0, second=0)
+    run_all(on_datetime, boolean_map)
