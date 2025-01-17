@@ -531,7 +531,9 @@ def dump_info(query="economy", target_country="US", date=None, titles=None):
 
 def fetch_dumped_info(target_country="US", date=None):
     try:
-        file_read = open("back-end/temp_articles/"+target_country+str(date),"r")
+        path = "back-end/temp_articles/"+target_country+str(date)
+        print(path)
+        file_read = open(path,"r")
         loaded_map = json.load(file_read)
         file_read.close()
         file_read = None
@@ -709,7 +711,6 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
         print("No lock")
         return None
     
-    
     already_in_db = check_exists(target, short_subject, on_day, is_hourly=is_hourly)
     inside_threads = []
     if already_in_db: 
@@ -769,6 +770,7 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
         
         if boolean_map['dump'] == True:
             dump_info(query=subject, target_country=target, date=on_day, titles=titles_nat)
+            dump_info(query=subject, target_country="-"+target, date=on_day, titles=titles_inter)
             print(f"Dumped sucessfully: {target} on {on_day}")
         if boolean_map["insert"] == True:
             sentiment_arr_nat, titles_nat, target_country, query = process_titles(
