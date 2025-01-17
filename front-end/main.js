@@ -5,6 +5,10 @@ import { TessellateModifier } from 'three/examples/jsm/modifiers/TessellateModif
 //import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 //import { forEachChild } from 'typescript';
+import vertWater from './vertShaderWater.vert?raw';
+import vertLand from './vertShaderLand.vert?raw';
+import fragWater from './fragShaderWater.frag?raw';
+import fragLand from './fragShaderLand.frag?raw';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -27,11 +31,6 @@ var intersects = raycaster.intersectObjects( scene.children );
 var hoveredMesh;
 
 var land_mat_arr = [];
-
-const fragWater = await (await fetch('fragShaderWater.frag')).text();
-const fragLand = await (await fetch('fragShaderLand.frag')).text();
-const vertWater = await (await fetch('vertShaderWater.vert')).text();
-const vertLand = await (await fetch('vertShaderLand.vert')).text();
 
 const water_planet_material = new THREE.ShaderMaterial({
     vertexShader: vertWater,
