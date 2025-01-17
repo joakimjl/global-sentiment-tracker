@@ -865,5 +865,5 @@ def run_all(in_datetime, boolean_map = {"dump":True, "insert":False, "fetch_new"
 
 if __name__ == "__main__":
     boolean_map = {"dump":False, "insert":True, "fetch_new":False}
-    on_datetime = datetime(year=2025, month=1, day=15, hour=24, minute=0, second=0)
+    on_datetime = datetime(year=2025, month=1, day=16, hour=0, minute=0, second=0)
     run_all(on_datetime, boolean_map)
