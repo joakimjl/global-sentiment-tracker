@@ -19,8 +19,9 @@ class S3BatchHandler():
     def __init__(self):
         self.batch_name = None
 
-    def zip_batch(self, dir="temp_articles"):
-        self.batch_name = "batch_"+str(datetime.datetime.now())+".zip"
+    def zip_batch(self, dir="temp_articles", added_name="fetched"):
+        self.batch_name = added_name+"_batch_"+str(datetime.datetime.now())+".zip"
+        self.batch_name = fix_path(self.batch_name)
         ziper = zipfile.ZipFile(self.batch_name, "w")
         if not os.path.isdir(dir):
             dir = "back-end/"+dir
@@ -40,10 +41,10 @@ class S3BatchHandler():
         s3_client = boto3.client('s3')
         s3_client.upload_file(self.batch_name, "gst-batch-process", self.batch_name)
 
-    def upload_processed(self, path):
+    def upload_processed(self, path, added_name="processed"):
         """Path needs to be given as string of path+filename"""
-        fix_path(path)
-        self.zip_batch("temp_processed")
+        path = fix_path(path)
+        self.zip_batch("temp_processed",added_name="processed")
         if not os.path.isfile(path):
             return False
         self.batch_name = path
@@ -53,4 +54,4 @@ class S3BatchHandler():
 
 if __name__ == "__main__":
     handler = S3BatchHandler()
-    handler.zip_batch()
+    handler.zip_batch(added_name="fetched")
