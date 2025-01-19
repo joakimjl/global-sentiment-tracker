@@ -533,7 +533,10 @@ def dump_info(query="economy", target_country="US", date=None, titles=None):
 def fetch_dumped_info(target_country="US", date=None):
     try:
         path = "back-end/temp_articles/"+target_country+str(date)
+<<<<<<< HEAD
         path = fix_path(path)
+=======
+>>>>>>> 2faa109 (Now works dumping from 16'th)
         file_read = open(path,"r")
         loaded_map = json.load(file_read)
         file_read.close()
@@ -911,9 +914,15 @@ def run_all(in_datetime, boolean_map = {"dump":True, "insert":False, "fetch_new"
 
 
 if __name__ == "__main__":
+<<<<<<< HEAD
     boolean_map = {"dump":False, "insert":False, "fetch_new":False, "upload":True, "process":True, "connected":False, "download_processed":False}
     #on_datetime = datetime(year=2025, month=1, day=16, hour=0, minute=0, second=0)
     #run_all(on_datetime, boolean_map)
     if boolean_map['upload'] == True:
         S3BatchHandler().upload_processed("temp_processed")
     
+=======
+    boolean_map = {"dump":True, "insert":False, "fetch_new":True}
+    on_datetime = datetime(year=2025, month=1, day=16, hour=0, minute=0, second=0)
+    run_all(on_datetime, boolean_map)
+>>>>>>> 2faa109 (Now works dumping from 16'th)
