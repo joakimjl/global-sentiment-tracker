@@ -719,10 +719,11 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
             return
         
     if boolean_map['fetch_new'] == False:
-        info_nat = fetch_dumped_info(target_country=target, date=on_day)
-        titles_nat = info_nat['titles']
-        info_inter = fetch_dumped_info(target_country="-"+target, date=on_day)
-        titles_inter = info_inter['titles']
+        if boolean_map["download_processed"] == False:
+            info_nat = fetch_dumped_info(target_country=target, date=on_day)
+            titles_nat = info_nat['titles']
+            info_inter = fetch_dumped_info(target_country="-"+target, date=on_day)
+            titles_inter = info_inter['titles']
 
         if boolean_map['process'] == True:
             if info_nat != None and info_inter != None:
