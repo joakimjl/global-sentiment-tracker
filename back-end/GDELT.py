@@ -18,6 +18,7 @@ import math
 import boto3
 import random
 import re
+from s3_batch_handler import S3BatchHandler 
 
 
 #Find KPI for display, decide how and when. If opinion changes on subject, should that be covered?
@@ -728,9 +729,15 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
                     query=subject, target_country=target, date=on_day, roberta=roberta, syncer=syncer, titles=titles_nat, lock=lock) 
             sentiment_arr_inter, titles_inter, target_country, query = process_titles(
                     query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer, titles=titles_inter, lock=lock) 
+            
+        if boolean_map['upload'] == True:
+            
+            S3BatchHandler().upload_processed()
+        if boolean_map['insert'] == True:
             insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, short_subject, on_day, is_hourly=is_hourly)
             print(f"Inserted {target_country}")
             return True
+        
         
     try:
         print(f"Starting {target} : remaining: {remain_rows}")
@@ -785,7 +792,7 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
 
 
 def run_all(in_datetime, boolean_map = {"dump":True, "insert":False, "fetch_new":True}):
-    lock = ProcessLock(allowed_amount=1)
+    lock = ProcessLock(allowed_amount=160)
     #lock.disableLock()
     #If parallell is better run with lock on disable ( lock.disableLock() )
     syncer = TranslatorSyncer()
@@ -866,6 +873,6 @@ def run_all(in_datetime, boolean_map = {"dump":True, "insert":False, "fetch_new"
 
 
 if __name__ == "__main__":
-    boolean_map = {"dump":False, "insert":True, "fetch_new":False}
+    boolean_map = {"dump":False, "insert":False, "fetch_new":False, "upload":True}
     on_datetime = datetime(year=2025, month=1, day=16, hour=0, minute=0, second=0)
     run_all(on_datetime, boolean_map)

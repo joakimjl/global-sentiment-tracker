@@ -31,6 +31,15 @@ class S3BatchHandler():
         s3_client = boto3.client('s3')
         s3_client.upload_file(self.batch_name, "gst-batch-process", self.batch_name)
 
+    def upload_processed(self, path):
+        """Path needs to be given as string of path+filename"""
+        if not os.path.isfile(path):
+            return False
+        self.batch_name = path
+        self._upload_batch()
+        print(f"Uploaded {path}")
+        return True
+
 if __name__ == "__main__":
     handler = S3BatchHandler()
     handler.zip_batch()
