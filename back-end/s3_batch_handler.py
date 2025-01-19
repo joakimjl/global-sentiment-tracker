@@ -10,7 +10,7 @@ class S3BatchHandler():
         self.batch_name = None
 
     def zip_batch(self):
-        self.batch_name = "batch_"+str(datetime.datetime.now())
+        self.batch_name = "batch_"+str(datetime.datetime.now())+".zip"
         ziper = zipfile.ZipFile(self.batch_name, "w")
         dir = "temp_articles"
         if not os.path.isdir(dir):
@@ -29,7 +29,7 @@ class S3BatchHandler():
             
     def _upload_batch(self):
         s3_client = boto3.client('s3')
-        s3_client.upload_file(self.batch_name+".zip", "gst-batch-process", self.batch_name+".zip")
+        s3_client.upload_file(self.batch_name, "gst-batch-process", self.batch_name)
 
 if __name__ == "__main__":
     handler = S3BatchHandler()
