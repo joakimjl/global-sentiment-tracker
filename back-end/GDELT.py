@@ -533,10 +533,7 @@ def dump_info(query="economy", target_country="US", date=None, titles=None):
 def fetch_dumped_info(target_country="US", date=None):
     try:
         path = "back-end/temp_articles/"+target_country+str(date)
-<<<<<<< HEAD
         path = fix_path(path)
-=======
->>>>>>> 2faa109 (Now works dumping from 16'th)
         file_read = open(path,"r")
         loaded_map = json.load(file_read)
         file_read.close()
