@@ -18,6 +18,8 @@ docker-compose.yaml
 
 temp_articles/*
 
+back-end/temp_articles/*
+
 siterelevancecsvs/
 
 site_country_mention/
