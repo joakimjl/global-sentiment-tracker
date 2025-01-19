@@ -730,7 +730,21 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
                         query=subject, target_country=target, date=on_day, roberta=roberta, syncer=syncer, titles=titles_nat, lock=lock) 
                 sentiment_arr_inter, titles_inter, target_country, query = process_titles(
                         query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer, titles=titles_inter, lock=lock) 
-            
+                
+        if boolean_map["download_processed"] == True:
+            handler = S3BatchHandler(specific_name = "batch_2025-01-19 22_44_32.666070.zip")
+            handler.fetch_processed("temp_processed",added_name="")
+            with open( fix_path("back-end/temp_processed/"+str(target_country)+str(on_day)) , "r") as f:
+                temp_map = json.load(f)
+                sentiment_arr_nat = temp_map['sentiment_arr_nat']
+                titles_nat = temp_map['titles_nat']
+                sentiment_arr_inter = temp_map['sentiment_arr_inter']
+                titles_inter = temp_map['titles_inter']
+                target_country = temp_map['target_country']
+                short_subject = temp_map['short_subject']
+                on_day = datetime.fromtimestamp(temp_map['on_day'])
+                is_hourly = temp_map['is_hourly']
+
         if boolean_map['upload'] == True:
             part_temp_nat = []
             for ele in sentiment_arr_nat[1]:
@@ -897,7 +911,7 @@ def run_all(in_datetime, boolean_map = {"dump":True, "insert":False, "fetch_new"
 
 
 if __name__ == "__main__":
-    boolean_map = {"dump":False, "insert":False, "fetch_new":False, "upload":True, "process":True, "connected":False}
+    boolean_map = {"dump":False, "insert":False, "fetch_new":False, "upload":True, "process":True, "connected":False, "download_processed":False}
     #on_datetime = datetime(year=2025, month=1, day=16, hour=0, minute=0, second=0)
     #run_all(on_datetime, boolean_map)
     if boolean_map['upload'] == True:
