@@ -5,6 +5,16 @@ import os
 import zipfile
 import datetime
 
+def fix_path(path):
+    new_path = ""
+    for char in path:
+        if char != ":":
+            new_path += char
+        else:
+            new_path += "_"
+    path = new_path
+    return new_path
+
 class S3BatchHandler():
     def __init__(self):
         self.batch_name = None
@@ -31,8 +41,9 @@ class S3BatchHandler():
         s3_client.upload_file(self.batch_name, "gst-batch-process", self.batch_name)
 
     def upload_processed(self, path):
-        self.zip_batch("temp_processed")
         """Path needs to be given as string of path+filename"""
+        fix_path(path)
+        self.zip_batch("temp_processed")
         if not os.path.isfile(path):
             return False
         self.batch_name = path

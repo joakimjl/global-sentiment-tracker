@@ -18,7 +18,7 @@ import math
 import boto3
 import random
 import re
-from s3_batch_handler import S3BatchHandler 
+from s3_batch_handler import S3BatchHandler, fix_path
 
 
 #Find KPI for display, decide how and when. If opinion changes on subject, should that be covered?
@@ -523,7 +523,7 @@ def get_gdelt_processed(query="economy", target_country="US", date=date.today(),
     return kept_data
 
 def dump_info(query="economy", target_country="US", date=None, titles=None):
-    file_write = open("back-end/temp_articles/"+target_country+str(date),"w")
+    file_write = open( fix_path("back-end/temp_articles/"+target_country+str(date)),"w")
     dump_map = {"query":query, "titles":titles}
     json.dump(dump_map,file_write)
     file_write.close()
@@ -533,27 +533,26 @@ def dump_info(query="economy", target_country="US", date=None, titles=None):
 def fetch_dumped_info(target_country="US", date=None):
     try:
         path = "back-end/temp_articles/"+target_country+str(date)
-        print(path)
+        path = fix_path(path)
         file_read = open(path,"r")
         loaded_map = json.load(file_read)
         file_read.close()
         file_read = None
     except:
-        print("Country missing")
-        return None
+        raise Exception(f'Country "{target_country}" missing')
 
     return(loaded_map)
 
 def process_titles(query="economy", target_country="US", date=None, roberta=None, syncer=None, titles=None, lock=None) :
     allowed = False
     #Making it dump files into folders to ensure enough memory available on weaker devices (EC2)
-    file_write = open("back-end/temp_articles/"+target_country,"w")
+    file_write = open( fix_path("back-end/temp_articles/"+target_country),"w")
     dump_map = {"query":query, "titles":titles}
     json.dump(dump_map,file_write)
     file_write.close()
     dump_map, file_write, query, titles = None,None,None,None
-    time.sleep(random.random()*10)
-    time.sleep(random.random() * (200 / max(1,lock.allowed_amount)))
+    #time.sleep(random.random()*10)
+    #time.sleep(random.random() * (200 / max(1,lock.allowed_amount)))
     if lock.attemptLock() == True:
         allowed = True
 
@@ -562,7 +561,7 @@ def process_titles(query="economy", target_country="US", date=None, roberta=None
         if lock.attemptLock() == True:
             allowed = True
     print(f"Working on insert for {target_country} at {datetime.now()}")
-    file_read = open("back-end/temp_articles/"+target_country,"r")
+    file_read = open( fix_path("back-end/temp_articles/"+target_country),"r")
     loaded_map = json.load(file_read)
     file_read.close()
     file_read = None
@@ -733,7 +732,15 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
                         query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer, titles=titles_inter, lock=lock) 
             
         if boolean_map['upload'] == True:
-            with open("temp_processed/"+str(target_country)+str(on_day), "w") as f:
+            part_temp_nat = []
+            for ele in sentiment_arr_nat[1]:
+                part_temp_nat.append(ele.tolist())
+            sentiment_arr_nat[1] = part_temp_nat
+            part_temp_inter = []
+            for ele in sentiment_arr_inter[1]:
+                part_temp_inter.append(ele.tolist())
+            sentiment_arr_inter[1] = part_temp_inter
+            with open( fix_path("back-end/temp_processed/"+str(target_country)+str(on_day)) , "w") as f:
                 temp_map = {
                     "sentiment_arr_nat" : sentiment_arr_nat,
                     "titles_nat" : titles_nat,
@@ -741,10 +748,12 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
                     "titles_inter" : titles_inter,
                     "target_country" : target_country,
                     "short_subject" : short_subject,
-                    "on_day" : on_day,
+                    "on_day" : on_day.timestamp(),
                     "is_hourly" : is_hourly
                 }
                 json.dump(temp_map,f)
+            return True
+        
         if boolean_map['insert'] == True:
             insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, short_subject, on_day, is_hourly=is_hourly)
             print(f"Inserted {target_country}")
@@ -855,7 +864,10 @@ def run_all(in_datetime, boolean_map = {"dump":True, "insert":False, "fetch_new"
             for i in range(len(subjects)):
                 subject = subjects[i]
                 short_subject = short_subjects[i]
-                time.sleep(5)#Not to spam too much on API's (ESP Google translate)
+                if boolean_map['fetch_new'] == True:
+                    time.sleep(5)#Not to spam too much on API's (ESP Google translate)
+                else:
+                    time.sleep(0.5)
                 #Due to once reaching google cap, either more than 5 per sec or 200k, should make 
                 #Class that counts, also the GDELT now...
                 while(len(threads) >= max_concurrent):
