@@ -9,14 +9,13 @@ class S3BatchHandler():
     def __init__(self):
         self.batch_name = None
 
-    def zip_batch(self):
+    def zip_batch(self, dir="temp_articles"):
         self.batch_name = "batch_"+str(datetime.datetime.now())+".zip"
         ziper = zipfile.ZipFile(self.batch_name, "w")
-        dir = "temp_articles"
         if not os.path.isdir(dir):
-            dir = "back-end/temp_articles"
+            dir = "back-end/"+dir
             if not os.path.isdir(dir):
-                raise NameError("Dir name not found")
+                raise NameError(f"Dir name '{dir}' not found")
         
         for filename in os.listdir(dir):
             f = os.path.join(dir,filename)
@@ -32,6 +31,7 @@ class S3BatchHandler():
         s3_client.upload_file(self.batch_name, "gst-batch-process", self.batch_name)
 
     def upload_processed(self, path):
+        self.zip_batch("temp_processed")
         """Path needs to be given as string of path+filename"""
         if not os.path.isfile(path):
             return False

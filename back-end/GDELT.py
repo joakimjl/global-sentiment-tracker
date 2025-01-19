@@ -712,27 +712,39 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
         print("No lock")
         return None
     
-    already_in_db = check_exists(target, short_subject, on_day, is_hourly=is_hourly)
-    inside_threads = []
-    if already_in_db: 
-        print(f"{target} on {short_subject} on {on_day} already in database")
-        return
-    
+    if boolean_map['connected'] == True:
+        already_in_db = check_exists(target, short_subject, on_day, is_hourly=is_hourly)
+        inside_threads = []
+        if already_in_db: 
+            print(f"{target} on {short_subject} on {on_day} already in database")
+            return
+        
     if boolean_map['fetch_new'] == False:
         info_nat = fetch_dumped_info(target_country=target, date=on_day)
         titles_nat = info_nat['titles']
         info_inter = fetch_dumped_info(target_country="-"+target, date=on_day)
         titles_inter = info_inter['titles']
 
-        if info_nat != None and info_inter != None:
-            sentiment_arr_nat, titles_nat, target_country, query = process_titles(
-                    query=subject, target_country=target, date=on_day, roberta=roberta, syncer=syncer, titles=titles_nat, lock=lock) 
-            sentiment_arr_inter, titles_inter, target_country, query = process_titles(
-                    query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer, titles=titles_inter, lock=lock) 
+        if boolean_map['process'] == True:
+            if info_nat != None and info_inter != None:
+                sentiment_arr_nat, titles_nat, target_country, query = process_titles(
+                        query=subject, target_country=target, date=on_day, roberta=roberta, syncer=syncer, titles=titles_nat, lock=lock) 
+                sentiment_arr_inter, titles_inter, target_country, query = process_titles(
+                        query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer, titles=titles_inter, lock=lock) 
             
         if boolean_map['upload'] == True:
-            
-            S3BatchHandler().upload_processed()
+            with open("temp_processed/"+str(target_country)+str(on_day), "w") as f:
+                temp_map = {
+                    "sentiment_arr_nat" : sentiment_arr_nat,
+                    "titles_nat" : titles_nat,
+                    "sentiment_arr_inter" : sentiment_arr_inter,
+                    "titles_inter" : titles_inter,
+                    "target_country" : target_country,
+                    "short_subject" : short_subject,
+                    "on_day" : on_day,
+                    "is_hourly" : is_hourly
+                }
+                json.dump(temp_map,f)
         if boolean_map['insert'] == True:
             insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, short_subject, on_day, is_hourly=is_hourly)
             print(f"Inserted {target_country}")
@@ -873,6 +885,9 @@ def run_all(in_datetime, boolean_map = {"dump":True, "insert":False, "fetch_new"
 
 
 if __name__ == "__main__":
-    boolean_map = {"dump":False, "insert":False, "fetch_new":False, "upload":True}
+    boolean_map = {"dump":False, "insert":False, "fetch_new":False, "upload":True, "process":True, "connected":False}
     on_datetime = datetime(year=2025, month=1, day=16, hour=0, minute=0, second=0)
     run_all(on_datetime, boolean_map)
+    if boolean_map['upload'] == True:
+        S3BatchHandler().upload_processed("temp_processed")
+    
