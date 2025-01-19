@@ -30,3 +30,6 @@ class S3BatchHandler():
     def _upload_batch(self):
         s3_client = boto3.client('s3')
         s3_client.upload_file(self.batch_name+".zip", "gst-batch-process", self.batch_name+".zip")
+
+if __name__ == "__main__":
+    S3BatchHandler.zip_batch()
