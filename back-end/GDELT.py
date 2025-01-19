@@ -733,6 +733,7 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
                         query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer, titles=titles_inter, lock=lock) 
                 
         if boolean_map["download_processed"] == True:
+            target_country = target
             handler = S3BatchHandler(specific_name = "batch_2025-01-19 22_44_32.666070.zip")
             handler.fetch_processed("temp_processed",added_name="")
             with open( fix_path("back-end/temp_processed/"+str(target_country)+str(on_day)) , "r") as f:
