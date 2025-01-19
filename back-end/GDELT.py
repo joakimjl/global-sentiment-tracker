@@ -636,6 +636,8 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
                         temp_arr_count[2] += 1
                     else:
                         temp_arr_count[1] += 1
+                elif type(ele) == list:
+                    sent = info.python_type(ele)
                 else:
                     sent = info.python_type(*ele.values())
                     if [val for val in ele.values()][3] <= -0.05:
@@ -670,6 +672,8 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
                         temp_arr_count[2] += 1
                     else:
                         temp_arr_count[1] += 1
+                elif type(ele) == list:
+                    sent = info.python_type(ele)
                 else:
                     sent = info.python_type(*ele.values())
                     if [val for val in ele.values()][3] <= -0.05:
