@@ -901,5 +901,5 @@ if __name__ == "__main__":
     #on_datetime = datetime(year=2025, month=1, day=16, hour=0, minute=0, second=0)
     #run_all(on_datetime, boolean_map)
     if boolean_map['upload'] == True:
-        S3BatchHandler().upload_processed("temp_processed",)
+        S3BatchHandler().upload_processed("temp_processed")
     
