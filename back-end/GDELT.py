@@ -941,6 +941,6 @@ if __name__ == "__main__":
     #run_all(on_datetime, boolean_map)
     if boolean_map['fetch_new'] == True and boolean_map['upload'] == True:
         S3BatchHandler().zip_batch("temp_articles")
-    elif boolean_map['upload'] == True:
+    elif boolean_map['upload'] == True and boolean_map['fetch_new'] == False:
         S3BatchHandler().upload_processed("temp_processed")
     

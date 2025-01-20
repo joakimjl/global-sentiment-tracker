@@ -36,6 +36,7 @@ class S3BatchHandler():
         
         ziper.close()
         self._upload_batch()
+        print(f"Uploaded: {self.batch_name}")
         return True
     
     def unzip_batch(self, dir="temp_articles", added_name="fetched"):
