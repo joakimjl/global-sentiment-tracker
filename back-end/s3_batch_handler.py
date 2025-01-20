@@ -63,10 +63,6 @@ class S3BatchHandler():
         """Path needs to be given as string of path+filename"""
         path = fix_path(path)
         self.zip_batch("temp_processed",added_name="processed")
-        if not os.path.isfile(path):
-            return False
-        self.batch_name = path
-        self._upload_batch()
         print(f"Uploaded {path}")
         return True
     
@@ -85,4 +81,4 @@ class S3BatchHandler():
 
 if __name__ == "__main__":
     handler = S3BatchHandler(specific_name = "batch_2025-01-19 22_44_32.666070.zip")
-    handler.fetch_processed("temp_processed",added_name="")
+    handler.fetch_processed("temp_processed",added_name="processed")
