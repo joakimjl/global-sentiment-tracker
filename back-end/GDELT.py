@@ -847,7 +847,7 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
 
 
 def run_all(in_datetime, boolean_map = {"dump":True, "insert":False, "fetch_new":True}):
-    lock = ProcessLock(allowed_amount=160)
+    lock = ProcessLock(allowed_amount=1)
     #lock.disableLock()
     #If parallell is better run with lock on disable ( lock.disableLock() )
     syncer = TranslatorSyncer()
