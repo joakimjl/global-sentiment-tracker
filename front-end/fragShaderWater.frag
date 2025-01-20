@@ -17,6 +17,8 @@ void main() {
     vec3 diffuseColor = vec3(0.2,0.2,0.8) * diffStrength;
 
     vec3 finalColor = diffuseColor + reflectionColor;
+
+    float waveMagnitude = 0.0;
     
     gl_FragColor = vec4(finalColor,1.0); 
 }

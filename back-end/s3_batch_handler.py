@@ -80,5 +80,5 @@ class S3BatchHandler():
         return True
 
 if __name__ == "__main__":
-    handler = S3BatchHandler(specific_name = "batch_2025-01-19 22_44_32.666070.zip")
+    handler = S3BatchHandler(specific_name = "fetched_batch_2025-01-20 04_14_07.461557.zip")
     handler.fetch_processed("temp_processed",added_name="processed")
