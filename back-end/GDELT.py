@@ -18,7 +18,7 @@ import math
 import boto3
 import random
 import re
-import certifi
+from s3_batch_handler import S3BatchHandler, fix_path
 
 
 #Find KPI for display, decide how and when. If opinion changes on subject, should that be covered?
@@ -31,6 +31,32 @@ import certifi
 # TODO: Countries maybe needed, find optimal way to store data, most likely FK to country table and group by
 # TODO: Add translation, check on ex, Swedish, Danish, Norweigan, Tagalog, German.
 
+class ProcessLock():
+    def __init__(self, allowed_amount=1):
+        self.allowed_amount = allowed_amount
+        self.ongoing = 0
+        self.enabled = True
+
+    def attemptLock(self):
+        if self.enabled == False:
+            return True
+        if self.ongoing < self.allowed_amount:
+            self.ongoing += 1
+            return True
+        return False
+    
+    def releaseLock(self):
+        if self.enabled == False:
+            return True
+        self.ongoing -= 1
+        if self.ongoing < 0:
+            print("LOCK WAS ENTERED AT THE SAME TIME, RACECONDITION")
+            return False
+        return True
+    
+    def disableLock(self):
+        self.enabled = False
+    
 class TranslatorSyncer():
     def __init__(self, max_concurrent=15, max_chars=990000) -> None:
         self.total_active = 0
@@ -48,6 +74,7 @@ class TranslatorSyncer():
         self._started_process = False
         self._big_batch_lock = False
         self._wait_queue = [99999999999]
+        self.first_ret = True
 
     def finished(self, id):
         sleep_time = self.started_time_map[id]-time.time()+2
@@ -61,7 +88,7 @@ class TranslatorSyncer():
         del self.started_time_map[id]
 
     def started(self):
-        while (len(self.started_time_map) > self.max_con or self.chars >= self.max_chars):
+        while (len(self.started_time_map) > self.max_con):
             print(f"Thread waiting due to: {len(self.started_time_map)} > {self.max_con} or {self.chars} >= {self.max_chars}")
             time.sleep(1)
         self.started_time_map[self.id] = time.time()
@@ -100,15 +127,33 @@ class TranslatorSyncer():
         except:
             print("TRANSLATE STOPPED FUNCTIONING") #VIM has double tabs
             print(f'BATCH FOR {lang} FAILED WITH {len(batch)} ARTICLES')
-            error_count += 1
-            if error_count > 3:
-                return False
-
-        self.chars -= num_chars
+            try:
+                batch = Translator(target='en').translate_batch(batch)
+                print("Auto translate worked")
+            except:
+                print("Tried auto detect language")
+                if lang == "NorwegianNynorsk":
+                    new_batch = []
+                    print("NorwegianNynorsk was removed")
+                    for i in range(len(batch)):
+                        new_batch.append(False)
+                    batch = new_batch
+                else:
+                    time.sleep(60*31) #API requires 30 min delay doing 31 in case
+                    try:
+                        print("Recovered, works now")
+                        batch = Translator(source=lang.lower(), target='en').translate_batch(batch)
+                    except:
+                        print("STILL FAILED")
+                        error_count += 1
+                        new_batch = []
+                        for i in range(len(batch)):
+                            new_batch.append(False)
+                        batch = new_batch
 
         self.finished(id)
 
-        print(f"Total req: {self.total_requests}, total time: {self.total_time}, avg time: {self.total_time/(self.total_requests+0.001)}")
+        print(f"Total req: {self.total_requests}, total time: {self.total_time}, avg time: {self.total_time/(self.total_requests+0.001)}, chars: {self.chars}")
 
         if res_arr != None:
             res_arr[res_arr_index] = batch
@@ -182,7 +227,7 @@ class TranslatorSyncer():
                             threads_finished = all_finished
                             time.sleep(1)
                         if before_time >= time.time() - min_time: #Needs extra delay sometimes
-                            time.sleep(max(before_time - time.time() + min_time, 0.0001))
+                            time.sleep(max(before_time - time.time() + min_time, 0.001))
                     time.sleep(0.5)
                     sleep_count += 1
                 #titles = self.batch_process(batch,lang)
@@ -203,9 +248,13 @@ class TranslatorSyncer():
     def retrive_translation(self,start,end,lang):
         if not self.all_batch_done:
             return False
+        if self.first_ret == True:
+            print(f"{lang} retrieveing")
+            self.first_ret = False
         res = []
         for i in range(start,end):
-            res.append(self.finished_batches[lang][i])
+            if self.finished_batches[lang][i] != False:
+                res.append(self.finished_batches[lang][i])
         return res
 
 def check_exists(country, subject, day, is_hourly=False):
@@ -218,7 +267,7 @@ def check_exists(country, subject, day, is_hourly=False):
     cur = connection.cursor()
 
     if is_hourly:
-        day = day-timedelta(hours=1)
+        day = day-timedelta(hours=4)
     else:
         day = day-timedelta(days=1) #Start day is what is inserted always
 
@@ -291,7 +340,7 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
 
         start_day = day-timedelta(days=1)
         if is_hourly:
-            start_day = day-timedelta(hours=1)
+            start_day = day-timedelta(hours=4)
         end_day = day
         
         params = {
@@ -425,9 +474,9 @@ def get_titles(res,data,syncer,index):
     while syncer.all_batch_done == False:       
         time.sleep(50)
         #print(f"Time to wait: {40 + syncer.last_added_time - time.time()}")
-        if syncer.last_added_time <= time.time()-90:
+        if syncer.last_added_time <= time.time()-99:
             syncer.big_batch_process()
-    sleep_time_rand = random.random()*600
+    sleep_time_rand = random.random()*5
 
     time.sleep(sleep_time_rand)    
     count = 0
@@ -473,11 +522,53 @@ def get_gdelt_processed(query="economy", target_country="US", date=date.today(),
     
     return kept_data
 
-def process_titles(query="economy", target_country="US", date=date.today(), roberta=None, syncer=None, titles=None) :
+def dump_info(query="economy", target_country="US", date=None, titles=None):
+    file_write = open( fix_path("back-end/temp_articles/"+target_country+str(date)),"w")
+    dump_map = {"query":query, "titles":titles}
+    json.dump(dump_map,file_write)
+    file_write.close()
+
+    return True
+
+def fetch_dumped_info(target_country="US", date=None):
+    try:
+        path = "back-end/temp_articles/"+target_country+str(date)
+        path = fix_path(path)
+        file_read = open(path,"r")
+        loaded_map = json.load(file_read)
+        file_read.close()
+        file_read = None
+    except:
+        raise Exception(f'Country "{target_country}" missing')
+
+    return(loaded_map)
+
+def process_titles(query="economy", target_country="US", date=None, roberta=None, syncer=None, titles=None, lock=None) :
+    allowed = False
+    #Making it dump files into folders to ensure enough memory available on weaker devices (EC2)
+    file_write = open( fix_path("back-end/temp_articles/"+target_country),"w")
+    dump_map = {"query":query, "titles":titles}
+    json.dump(dump_map,file_write)
+    file_write.close()
+    dump_map, file_write, query, titles = None,None,None,None
+    #time.sleep(random.random()*10)
+    #time.sleep(random.random() * (200 / max(1,lock.allowed_amount)))
+    if lock.attemptLock() == True:
+        allowed = True
+
+    while allowed == False:
+        time.sleep(random.random() * (200 / max(1,lock.allowed_amount)))
+        if lock.attemptLock() == True:
+            allowed = True
+    print(f"Working on insert for {target_country} at {datetime.now()}")
+    file_read = open( fix_path("back-end/temp_articles/"+target_country),"r")
+    loaded_map = json.load(file_read)
+    file_read.close()
+    file_read = None
     sia = SentimentIntensityAnalyzer()
     sentiment_arr = []
     vader = []
-    text_titles = [text[0] for text in titles]
+    text_titles = [text[0] for text in loaded_map['titles']]
     for title in text_titles:
         vader.append(sia.polarity_scores(title))
     sentiment_arr.append(vader)
@@ -489,7 +580,8 @@ def process_titles(query="economy", target_country="US", date=date.today(), robe
 
     if target_country[0] == "-":
         target_country = target_country[1:]
-    return sentiment_arr, titles, target_country, query
+    lock.releaseLock()
+    return sentiment_arr, loaded_map['titles'], target_country, loaded_map['query']
 
 def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, query, date, is_hourly=False) -> None:
     conn = psycopg.Connection.connect(dbname = "postgres",
@@ -506,11 +598,10 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
     info = CompositeInfo.fetch(conn, "sentiment")
     register_composite(info,conn)
 
-
-    arti = CompositeInfo.fetch(conn, "article")
-    register_composite(arti,conn)
     if is_hourly:
         arti = CompositeInfo.fetch(conn, "article_v2")
+    else:
+        arti = CompositeInfo.fetch(conn, "article")
     register_composite(arti,conn)
 
     title_process = [titles,titles_inter]
@@ -539,6 +630,15 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
                     sent = info.python_type(*ele.tolist(), 
                                             (ele.tolist()[2]-ele.tolist()[0])/(ele.tolist()[1]+1) )
                     polarity = math.tanh(ele.tolist()[2] - ele.tolist()[0])
+                    if polarity <= -0.05:
+                        temp_arr_count[0] += 1
+                    elif polarity >= 0.05:
+                        temp_arr_count[2] += 1
+                    else:
+                        temp_arr_count[1] += 1
+                elif type(ele) == list:
+                    sent = info.python_type(*ele, (ele[2]-ele[0])/(ele[1]+1))
+                    polarity = math.tanh(ele[2] - ele[0])
                     if polarity <= -0.05:
                         temp_arr_count[0] += 1
                     elif polarity >= 0.05:
@@ -579,6 +679,15 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
                         temp_arr_count[2] += 1
                     else:
                         temp_arr_count[1] += 1
+                elif type(ele) == list:
+                    sent = info.python_type(*ele, (ele[2]-ele[0])/(ele[1]+1))
+                    polarity = math.tanh(ele[2] - ele[0])
+                    if polarity <= -0.05:
+                        temp_arr_count[0] += 1
+                    elif polarity >= 0.05:
+                        temp_arr_count[2] += 1
+                    else:
+                        temp_arr_count[1] += 1
                 else:
                     sent = info.python_type(*ele.values())
                     if [val for val in ele.values()][3] <= -0.05:
@@ -612,13 +721,79 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
 
     return True
 
-def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=date.today(), short_subject="Any Subject", is_hourly=False):
-    """Completes all tasks for one row, separated for multithreading"""
-    already_in_db = check_exists(target, short_subject, on_day, is_hourly=is_hourly)
-    inside_threads = []
-    if already_in_db: 
-        print(f"{target} on {short_subject} on {on_day} already in database")
-        return
+def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=date.today(), short_subject="Any Subject", is_hourly=False, lock=None, boolean_map=None):
+    """Completes all tasks for one row, separated for multithreading
+    Important to put config options in boolean_map (fetch_new, dump, insert)
+    """
+    if lock == None:
+        print("No lock")
+        return None
+    
+    if boolean_map['connected'] == True:
+        already_in_db = check_exists(target, short_subject, on_day, is_hourly=is_hourly)
+        inside_threads = []
+        if already_in_db: 
+            print(f"{target} on {short_subject} on {on_day} already in database")
+            return
+        
+    if boolean_map['fetch_new'] == False:
+        if boolean_map["download_processed"] == False:
+            info_nat = fetch_dumped_info(target_country=target, date=on_day)
+            titles_nat = info_nat['titles']
+            info_inter = fetch_dumped_info(target_country="-"+target, date=on_day)
+            titles_inter = info_inter['titles']
+
+        if boolean_map['process'] == True:
+            if info_nat != None and info_inter != None:
+                sentiment_arr_nat, titles_nat, target_country, query = process_titles(
+                        query=subject, target_country=target, date=on_day, roberta=roberta, syncer=syncer, titles=titles_nat, lock=lock) 
+                sentiment_arr_inter, titles_inter, target_country, query = process_titles(
+                        query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer, titles=titles_inter, lock=lock) 
+                
+        if boolean_map["download_processed"] == True:
+            target_country = target
+            handler = S3BatchHandler(specific_name = "batch_2025-01-19 22_44_32.666070.zip")
+            handler.fetch_processed("temp_processed",added_name="")
+            with open( fix_path("back-end/temp_processed/"+str(target_country)+str(on_day)) , "r") as f:
+                temp_map = json.load(f)
+                sentiment_arr_nat = temp_map['sentiment_arr_nat']
+                titles_nat = temp_map['titles_nat']
+                sentiment_arr_inter = temp_map['sentiment_arr_inter']
+                titles_inter = temp_map['titles_inter']
+                target_country = temp_map['target_country']
+                short_subject = temp_map['short_subject']
+                on_day = datetime.fromtimestamp(temp_map['on_day'])
+                is_hourly = temp_map['is_hourly']
+
+        if boolean_map['upload'] == True:
+            part_temp_nat = []
+            for ele in sentiment_arr_nat[1]:
+                part_temp_nat.append(ele.tolist())
+            sentiment_arr_nat[1] = part_temp_nat
+            part_temp_inter = []
+            for ele in sentiment_arr_inter[1]:
+                part_temp_inter.append(ele.tolist())
+            sentiment_arr_inter[1] = part_temp_inter
+            with open( fix_path("back-end/temp_processed/"+str(target_country)+str(on_day)) , "w") as f:
+                temp_map = {
+                    "sentiment_arr_nat" : sentiment_arr_nat,
+                    "titles_nat" : titles_nat,
+                    "sentiment_arr_inter" : sentiment_arr_inter,
+                    "titles_inter" : titles_inter,
+                    "target_country" : target_country,
+                    "short_subject" : short_subject,
+                    "on_day" : on_day.timestamp(),
+                    "is_hourly" : is_hourly
+                }
+                json.dump(temp_map,f)
+            return True
+        
+        if boolean_map['insert'] == True:
+            insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, short_subject, on_day, is_hourly=is_hourly)
+            print(f"Inserted {target_country}")
+            return True
+        
+        
     try:
         print(f"Starting {target} : remaining: {remain_rows}")
         data_nat = get_gdelt_processed(
@@ -654,21 +829,29 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
            return False
         if titles_inter == False:
             return False
-        print(f"Working on insert for {target}")
         
-        sentiment_arr_nat, titles_nat, target_country, query = process_titles(
-                target_country=target, date=on_day, roberta=roberta, syncer=syncer, titles=titles_nat) 
-        sentiment_arr_inter, titles_inter, target_country, query = process_titles(
-                query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer, titles=titles_inter) 
-        insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, short_subject, on_day, is_hourly=is_hourly)
-        print(f"Inserted sucessfully: {target} on {subject} on {on_day}")
+        if boolean_map['dump'] == True:
+            dump_info(query=subject, target_country=target, date=on_day, titles=titles_nat)
+            dump_info(query=subject, target_country="-"+target, date=on_day, titles=titles_inter)
+            print(f"Dumped sucessfully: {target} on {on_day}")
+        if boolean_map["insert"] == True:
+            sentiment_arr_nat, titles_nat, target_country, query = process_titles(
+                    query=subject, target_country=target, date=on_day, roberta=roberta, syncer=syncer, titles=titles_nat, lock=lock) 
+            sentiment_arr_inter, titles_inter, target_country, query = process_titles(
+                    query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer, titles=titles_inter, lock=lock) 
+            insert_data(sentiment_arr_nat, titles_nat, sentiment_arr_inter, titles_inter, target_country, short_subject, on_day, is_hourly=is_hourly)
+            print(f"Inserted sucessfully: {target} on {on_day}")
     except Exception as error:
         print(f"{error} \n Continuing anyway but {target} on {on_day} not inserted")
     return True
 
 
-# TODO:Fix large duping problem from GDELT data
-if __name__ == "__main__":
+def run_all(in_datetime, boolean_map = {"dump":True, "insert":False, "fetch_new":True}):
+    lock = ProcessLock(allowed_amount=1)
+    if boolean_map['process'] == True:
+        lock = ProcessLock(allowed_amount=160)
+    #lock.disableLock()
+    #If parallell is better run with lock on disable ( lock.disableLock() )
     syncer = TranslatorSyncer()
     roberta = GST_Roberta()
     start_time = time.time()
@@ -676,16 +859,21 @@ if __name__ == "__main__":
     max_concurrent = 160
     threads = []
 
+    #Temp saved was 2025-01-14 21:00:00
+
     on_days = []
     is_hourly = True
-    if is_hourly:
+    """ if is_hourly:
         for i in range(1):
-            cur_hour = datetime.today()-timedelta(hours=i+13)
+            cur_hour = datetime.today()-timedelta(hours=4*i+29) #4 hours per index
             cur_hour = cur_hour.replace(minute=0,second=0,microsecond=0)
             on_days.append(cur_hour)
     else:
         for i in range(1):
-            on_days.append(date.today()-timedelta(days=i+8))
+            on_days.append(date.today()-timedelta(days=i+8)) """
+    
+    for date in in_datetime:
+        on_days.append(date)
 
     subjects = ""
 
@@ -696,6 +884,9 @@ if __name__ == "__main__":
             name = target
             name_2 = None
             first_string = f"({name} economy OR {name} market)"
+
+            if target in countries_map:
+                name = countries_map[target]
 
             """if target in countries_map:
                 name_2 = name
@@ -713,7 +904,10 @@ if __name__ == "__main__":
             for i in range(len(subjects)):
                 subject = subjects[i]
                 short_subject = short_subjects[i]
-                time.sleep(5)#Not to spam too much on API's (ESP Google translate)
+                if boolean_map['fetch_new'] == True:
+                    time.sleep(5)#Not to spam too much on API's (ESP Google translate)
+                else:
+                    time.sleep(0.5)
                 #Due to once reaching google cap, either more than 5 per sec or 200k, should make 
                 #Class that counts, also the GDELT now...
                 while(len(threads) >= max_concurrent):
@@ -727,7 +921,7 @@ if __name__ == "__main__":
                     
                 remain_rows = len(countries)*len(subjects)*len(on_days)-count
                 #asyncio.run(fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day, short_subject))
-                t = Thread(target=fetch_and_insert_one, args=[target, subject, remain_rows, roberta, syncer, on_day, short_subject, True])
+                t = Thread(target=fetch_and_insert_one, args=[target, subject, remain_rows, roberta, syncer, on_day, short_subject, True, lock, boolean_map])
                 t.start()
                 threads.append(t)
                 
@@ -741,3 +935,17 @@ if __name__ == "__main__":
         time.sleep(5)
     print(f"Finished all, closing, total time: {time.time() - start_time}")
 
+
+if __name__ == "__main__":
+    #boolean_map = {"dump":False, "insert":False, "fetch_new":False, "upload":True, "process":True, "connected":False, "download_processed":False} #For upload and processing
+    #boolean_map = {"dump":False, "insert":True, "fetch_new":False, "upload":False, "process":False, "connected":True, "download_processed":True} #Downloading processed
+    boolean_map = {"dump":True, "insert":False, "fetch_new":True, "upload":True, "process":False, "connected":True, "download_processed":False} #Fetch and upload info
+    on_datetime = []
+    for i in range(5):
+        on_datetime.append(datetime(year=2025, month=1, day=16, hour=4+4*i, minute=0, second=0))
+    run_all(on_datetime, boolean_map)
+    if boolean_map['fetch_new'] == True and boolean_map['upload'] == True:
+        S3BatchHandler().zip_batch("temp_articles")
+    elif boolean_map['upload'] == True and boolean_map['fetch_new'] == False:
+        S3BatchHandler().upload_processed("temp_processed")
+    

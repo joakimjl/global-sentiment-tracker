@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+secret_key.PEM
+
 node_modules/
 
 #Docker yaml
@@ -11,6 +13,16 @@ docker-compose.yaml
 
 # C extensions
 *.so
+
+*.geojson
+
+temp_articles/*
+back-end/temp_articles/*
+
+temp_processed/*
+back-end/temp_processed/*
+
+batch*
 
 siterelevancecsvs/
 

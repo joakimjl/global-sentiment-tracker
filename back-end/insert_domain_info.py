@@ -3,7 +3,7 @@ import json
 from os import walk
 import math
 from datetime import datetime, timedelta, date
-from settings import POSTGRES_PASSWORD, POSTGRES_USER
+from settings import POSTGRES_PASSWORD, POSTGRES_USER, CONNECT_IP_REMOTE
 from psycopg.types.composite import CompositeInfo, register_composite
 from data_form_querying import connect
 
@@ -14,7 +14,7 @@ def geric_sql_insert(table, columns, values, columns_count=6, connection=None):
         connection = psycopg.Connection.connect(dbname = "postgres",
                                 user = POSTGRES_USER,
                                 password = POSTGRES_PASSWORD,
-                                host = "192.168.1.51",
+                                host = CONNECT_IP_REMOTE,
                                 port = "5432")
 
     val_text = "VALUES("
@@ -54,7 +54,7 @@ def fetch_composite(name) -> CompositeInfo:
     conn = psycopg.Connection.connect(dbname = "postgres",
                             user = POSTGRES_USER,
                             password = POSTGRES_PASSWORD,
-                            host = "192.168.1.51",
+                            host = CONNECT_IP_REMOTE,
                             port = "5432")
     
     info = CompositeInfo.fetch(conn, name)
@@ -69,7 +69,7 @@ def domain_consolidate():
     info = fetch_composite("country_mentions")
     time_str = str(datetime.today().strftime('%Y%m%d%H%M%S'))
 
-    file = open("site_country_mention/bq-results-20241122-230741-1732317007922.json","r")
+    file = open("back-end/site_country_mention/bq-results-20241122-230741-1732317007922.json","r")
 
     bigquery_mentions = json.load(file)
 
@@ -81,7 +81,7 @@ def domain_consolidate():
 
     file.close()
 
-    path = "siterelevancecsvs/"
+    path = "back-end/siterelevancecsvs/"
     
     f = []
     for (dirpath, dirnames, filenames) in walk(path):
@@ -112,7 +112,7 @@ def domain_consolidate():
                                             data_mapped[domain][5])
 
 
-    file_temp = open("json_files/cn_cleaned.json","r")
+    file_temp = open("back-end/json_files/cn_cleaned.json","r")
     cn_data = json.load(file_temp)
     file_temp.close()
 

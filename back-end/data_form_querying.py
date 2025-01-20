@@ -3,7 +3,7 @@ import json
 from os import walk
 import math
 from datetime import datetime, timedelta, date
-from settings import POSTGRES_PASSWORD, POSTGRES_USER
+from settings import POSTGRES_PASSWORD, POSTGRES_USER, CONNECT_IP_REMOTE
 from psycopg.types.composite import CompositeInfo, register_composite
 import time
 from country_list import countries, countries_map
@@ -12,7 +12,7 @@ def connect():
     connection = psycopg.Connection.connect(dbname = "postgres",
                             user = POSTGRES_USER,
                             password = POSTGRES_PASSWORD,
-                            host = "192.168.1.51",
+                            host = CONNECT_IP_REMOTE,
                             port = "5432")
 
     return connection
