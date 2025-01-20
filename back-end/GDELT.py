@@ -637,7 +637,8 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
                     else:
                         temp_arr_count[1] += 1
                 elif type(ele) == list:
-                    sent = info.python_type(*ele)
+                    print(f"ele: {ele} and {(ele.tolist()[2]-ele.tolist()[0])/(ele.tolist()[1]+1)}")
+                    sent = info.python_type(*ele, (ele.tolist()[2]-ele.tolist()[0])/(ele.tolist()[1]+1))
                     polarity = math.tanh(ele[2] - ele[0])
                     if polarity <= -0.05:
                         temp_arr_count[0] += 1
@@ -680,7 +681,7 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
                     else:
                         temp_arr_count[1] += 1
                 elif type(ele) == list:
-                    sent = info.python_type(*ele)
+                    sent = info.python_type(*ele, (ele.tolist()[2]-ele.tolist()[0])/(ele.tolist()[1]+1))
                     polarity = math.tanh(ele[2] - ele[0])
                     if polarity <= -0.05:
                         temp_arr_count[0] += 1
