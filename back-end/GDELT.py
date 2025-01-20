@@ -637,7 +637,14 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
                     else:
                         temp_arr_count[1] += 1
                 elif type(ele) == list:
-                    sent = info.python_type(tuple(ele))
+                    sent = info.python_type(*ele)
+                    polarity = math.tanh(ele[2] - ele[0])
+                    if polarity <= -0.05:
+                        temp_arr_count[0] += 1
+                    elif polarity >= 0.05:
+                        temp_arr_count[2] += 1
+                    else:
+                        temp_arr_count[1] += 1
                 else:
                     sent = info.python_type(*ele.values())
                     if [val for val in ele.values()][3] <= -0.05:
@@ -673,7 +680,14 @@ def insert_data(sentiment, titles, sentiment_inter, titles_inter, tar_country, q
                     else:
                         temp_arr_count[1] += 1
                 elif type(ele) == list:
-                    sent = info.python_type(tuple(ele))
+                    sent = info.python_type(*ele)
+                    polarity = math.tanh(ele[2] - ele[0])
+                    if polarity <= -0.05:
+                        temp_arr_count[0] += 1
+                    elif polarity >= 0.05:
+                        temp_arr_count[2] += 1
+                    else:
+                        temp_arr_count[1] += 1
                 else:
                     sent = info.python_type(*ele.values())
                     if [val for val in ele.values()][3] <= -0.05:
