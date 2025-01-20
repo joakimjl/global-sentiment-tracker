@@ -885,6 +885,9 @@ def run_all(in_datetime, boolean_map = {"dump":True, "insert":False, "fetch_new"
             name_2 = None
             first_string = f"({name} economy OR {name} market)"
 
+            if target in countries_map:
+                name = countries_map[target]
+
             """if target in countries_map:
                 name_2 = name
                 name = countries_map[target]
@@ -934,9 +937,9 @@ def run_all(in_datetime, boolean_map = {"dump":True, "insert":False, "fetch_new"
 
 
 if __name__ == "__main__":
-    boolean_map = {"dump":False, "insert":False, "fetch_new":False, "upload":True, "process":True, "connected":False, "download_processed":False} #For upload and processing
+    #boolean_map = {"dump":False, "insert":False, "fetch_new":False, "upload":True, "process":True, "connected":False, "download_processed":False} #For upload and processing
     #boolean_map = {"dump":False, "insert":True, "fetch_new":False, "upload":False, "process":False, "connected":True, "download_processed":True} #Downloading processed
-    #boolean_map = {"dump":True, "insert":False, "fetch_new":True, "upload":True, "process":False, "connected":True, "download_processed":False} #Fetch and upload info
+    boolean_map = {"dump":True, "insert":False, "fetch_new":True, "upload":True, "process":False, "connected":True, "download_processed":False} #Fetch and upload info
     on_datetime = []
     for i in range(5):
         on_datetime.append(datetime(year=2025, month=1, day=16, hour=4+4*i, minute=0, second=0))

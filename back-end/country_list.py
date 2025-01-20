@@ -2,8 +2,8 @@
 #countries = ["US","UK","Germany","China","Japan","Australia","Ukraine","Russia"] 
 
 countries_map = {
-    "United States":"America",
-    "United Kingdom":"Great Britain",
+    "United States":"US",
+    "United Kingdom":"UK",
     "Moldova":"Moldavia"}
 
 subjects_given = [
