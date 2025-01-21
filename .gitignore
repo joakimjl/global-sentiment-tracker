@@ -5,6 +5,8 @@ __pycache__/
 
 secret_key.PEM
 
+*PEM
+
 node_modules/
 
 #Docker yaml
