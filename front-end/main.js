@@ -24,8 +24,10 @@ function onPointerMove( event ) {
 	pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 }
 
-camera.position.z = 5;
-const controls = new OrbitControls(camera, renderer.domElement);
+const initCameraDistance = 1000;
+camera.position.z = initCameraDistance;
+const finishCameraDist = 5;
+//const controls = new OrbitControls(camera, renderer.domElement);
 
 var intersects = raycaster.intersectObjects( scene.children );
 var hoveredMesh;
@@ -106,8 +108,12 @@ loader.load(
 
 var last_fps_time = Date.now();
 
-var frame_count = 0;
+function lerp(a, b, alpha) {
+    return a + alpha * (b - a);
+}
 
+var frame_count = 0;
+var alpha = 0;
 function animate() {
     raycaster.setFromCamera( pointer, camera );
     intersects = raycaster.intersectObjects( scene.children );
@@ -116,6 +122,8 @@ function animate() {
     } else {
         hoveredMesh = "None"
     }
+    alpha = clamp( Math.pow(alpha + (Date.now()-last_fps_time)/550000, 0.9) ,0,1);
+    camera.position.z = lerp(initCameraDistance, finishCameraDist, alpha);
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
     var time_val = Math.floor( ((Date.now()/100000)%1)*100000 );
