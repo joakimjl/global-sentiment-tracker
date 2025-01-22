@@ -1,6 +1,6 @@
-# GlobalSentimentTracker
+# GlobalSentimentTracker WIP
 Global national and international news sentiment analysis and visualization using ETL pipelines, sentiment models, and interactive 3D visualizations.
-WIP
+
 # Hosted at: https://globalsentiment.xyz
 
 # Overview
