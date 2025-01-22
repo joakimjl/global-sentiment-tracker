@@ -12,5 +12,7 @@ Sentiment analysis runs with VADER (NLTK) and roBERTa (https://huggingface.co/ca
 This is all (WIP) displayed on a 3D interactive website where you can query certain subjects for different countries or globally.
 ### Dataset querying
 Partitioned databases for each day, the dataset consists of 270k headlines all translated from their original languages, each with sentiment labels, more processing TBD.
+### Planet Shaders (WIP)
+Custom ocean shaders that are stylized, Custom land shaders to show night-day cycle and display color relevant to selected timeframe sentiment.
 #### Note
 This repo is a little messy due to some initial rushing of the project.
