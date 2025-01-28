@@ -1,5 +1,7 @@
 from flask import Flask
 
+from data_form_querying import connect
+
 app = Flask(__name__)
 
 @app.route("/")

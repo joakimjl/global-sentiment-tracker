@@ -111,9 +111,23 @@ var last_fps_time = Date.now();
 function lerp(a, b, alpha) {
     return a + alpha * (b - a);
 }
-
 var frame_count = 0;
 var alpha = 0;
+
+async function fetchQuery(Country, query){
+    const url = "https://54.246.88.247:5000/";
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Response status: ${response.status}`);
+        }
+        const json = await response.json();
+        console.log(json);
+    } catch (error) {
+        console.error(error.message);
+    }
+}
+
 function animate() {
     raycaster.setFromCamera( pointer, camera );
     intersects = raycaster.intersectObjects( scene.children );
@@ -153,5 +167,6 @@ function onWindowResize() {
   window.addEventListener("resize", onWindowResize);
 
 window.addEventListener('click', (e) => {
+    fetchQuery("US","Economy");
     console.log(hoveredMesh)
 });
