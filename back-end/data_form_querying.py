@@ -89,7 +89,7 @@ CREATE OR REPLACE AGGREGATE sum(count_sentiment)\
     stype = count_sentiment,\
     initcond = '(0,0,0)'\
 );")
-    cur.close()
+    conn.commit()
     print("Fin")
 """
     conn = connect()
