@@ -4,15 +4,15 @@ from data_form_querying import connect
 from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
-cors = CORS(app) # allow CORS for all domains on all routes.
+cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
-@app.route("/")
+@app.route("/", methods=["GET"])
 @cross_origin()
 def hello_world():
     return "<p>Hello, World!</p>"
 
-@app.route("/info")
+@app.route("/info", methods=["GET"])
 @cross_origin()
 def hello_info():
     try:
