@@ -115,7 +115,7 @@ var frame_count = 0;
 var alpha = 0;
 
 async function fetchQuery(Country, query){
-    const url = "https://54.246.88.247";
+    const url = "https://54.246.88.247/info";
     try {
         const response = await fetch(url);
         if (!response.ok) {
