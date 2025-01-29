@@ -115,7 +115,7 @@ var frame_count = 0;
 var alpha = 0;
 
 async function fetchQuery(Country, query){
-    const url = "https://54.246.88.247/info";
+    const url = "http://54.246.88.247/info?country="+Country+"&query="+query+"&timeframe=1";
     try {
         const response = await fetch(url);
         if (!response.ok) {
@@ -167,6 +167,6 @@ function onWindowResize() {
   window.addEventListener("resize", onWindowResize);
 
 window.addEventListener('click', (e) => {
-    fetchQuery("US","Economy");
+    fetchQuery("World","Any");
     console.log(hoveredMesh)
 });
