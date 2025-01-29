@@ -13,4 +13,4 @@ def hello_info():
     conn = connect()
     cur = conn.cursor()
     cur.execute("SELECT * FROM global_info_hourly")
-    return cur.fetchone()
+    return (cur.fetchone())
