@@ -88,8 +88,7 @@ BEGIN\
     positive_count := ($1).positive + ($2).positive;\
     RETURN ROW(negative_count, neutral_count, positive_count)::count_sentiment;\
 END;\
-$$ language plpgsql;\ "
-    )
+$$ language plpgsql;")
     print("Fin")
 """
     conn = connect()
