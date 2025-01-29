@@ -67,14 +67,7 @@ if __name__ == "__main__":
     conn = connect()
     cur = conn.cursor()
 
-    cur.execute("CREATE OR REPLACE AGGREGATE sum(count_sentiment)\
-(\
-    sfunc = test_sum_state,\
-    stype = count_sentiment,\
-    initcond = '(0,0,0)'\
-);\
-\
-CREATE OR REPLACE function test_sum_state(\
+    cur.execute("CREATE OR REPLACE function test_sum_state(\
     state count_sentiment,\
     next count_sentiment\
 ) RETURNS count_sentiment AS $$\
