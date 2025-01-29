@@ -43,5 +43,8 @@ def fetch_sentiment(country,query,timeframe):
     GROUP BY target_country")
     return f"{cur.fetchall()}"
 
+def create_server():
+    return app
+
 if __name__ == "__main__":
     app.run(ssl_context='adhoc')
