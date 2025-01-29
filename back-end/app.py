@@ -15,4 +15,4 @@ def hello_info():
     print("Executing")
     cur.execute("SELECT * FROM global_info_hourly")
     print(cur.fetchone())
-    return (cur.fetchone())
+    return f"<p>{cur.fetchone()}"
