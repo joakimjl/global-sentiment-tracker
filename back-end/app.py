@@ -12,7 +12,5 @@ def hello_world():
 def hello_info():
     conn = connect()
     cur = conn.cursor()
-    print("Executing")
     cur.execute("SELECT * FROM global_info_hourly")
-    print(cur.fetchone())
-    return f"<p>{cur.fetchone()}"
+    return f"{cur.fetchone()}"
