@@ -10,4 +10,7 @@ def hello_world():
 
 @app.route("/info")
 def hello_info():
-    return "<p>Hello, info!</p>"
+    conn = connect()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM global_info_hourly")
+    return cur.fetchone()
