@@ -41,3 +41,6 @@ def fetch_sentiment(country,query,timeframe):
     FROM global_info_hourly\
     GROUP BY target_country")
     return f"{cur.fetchall()}"
+
+if __name__ == "__main__":
+    app.run(ssl_context='adhoc')
