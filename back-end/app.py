@@ -30,7 +30,7 @@ def hello_info():
 
     return fetch_sentiment(country,query,timeframe)
 
-def fetch_sentiment():
+def fetch_sentiment(country,query,timeframe):
     conn = connect()
     cur = conn.cursor()
     cur.execute("SELECT target_country,\
