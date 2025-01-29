@@ -1,7 +1,5 @@
 import psycopg
-import json
 from os import walk
-import math
 from datetime import datetime, timedelta, date
 from settings import POSTGRES_PASSWORD, POSTGRES_USER, CONNECT_IP_REMOTE
 from psycopg.types.composite import CompositeInfo, register_composite
