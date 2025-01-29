@@ -15,6 +15,7 @@ def hello_world():
 @app.route("/info", methods=["GET"])
 @cross_origin()
 def hello_info():
+    print(request.remote_addr)
     try:
         country = request.args.get('country')
     except:
