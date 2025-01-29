@@ -9,5 +9,5 @@ def hello_world():
     return "<p>Hello, World!</p>"
 
 @app.route("/info")
-def hello_world():
+def hello_info():
     return "<p>Hello, info!</p>"
