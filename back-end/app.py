@@ -11,12 +11,6 @@ def hello_world():
 
 @app.route("/info")
 def hello_info():
-
-    return fetch_sentiment()
-
-def fetch_sentiment():
-    
-
     try:
         country = request.args.get('country')
     except:
@@ -29,7 +23,10 @@ def fetch_sentiment():
         timeframe = request.args.get('timeframe')
     except:
         timeframe = 1
-    
+
+    return fetch_sentiment(country,query,timeframe)
+
+def fetch_sentiment():
     conn = connect()
     cur = conn.cursor()
     cur.execute("SELECT target_country,\

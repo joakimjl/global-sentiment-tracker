@@ -65,6 +65,34 @@ if __name__ == "__main__":
     date = date.today()-timedelta(days=89)
 
     conn = connect()
+    cur = conn.cursor()
+
+    cur.execute("CREATE OR REPLACE AGGREGATE sum(count_sentiment)\
+(\
+    sfunc = test_sum_state,\
+    stype = count_sentiment,\
+    initcond = '(0,0,0)'\
+);\
+\
+CREATE OR REPLACE function test_sum_state(\
+    state count_sentiment,\
+    next count_sentiment\
+) RETURNS count_sentiment AS $$\
+DECLARE \
+    negative_count INTEGER := 0;\
+    neutral_count INTEGER := 0;\
+    positive_count INTEGER := 0;\
+BEGIN\
+    negative_count := ($1).negative + ($2).negative;\
+    neutral_count := ($1).neutral + ($2).neutral;\
+    positive_count := ($1).positive + ($2).positive;\
+    RETURN ROW(negative_count, neutral_count, positive_count)::count_sentiment;\
+END;\
+$$ language plpgsql;\ "
+    )
+    print("Fin")
+"""
+    conn = connect()
 
     for i in range(45):
         for country in countries:
@@ -76,4 +104,4 @@ if __name__ == "__main__":
     conn.close()
 
     print(time.time()-start)
-
+"""
