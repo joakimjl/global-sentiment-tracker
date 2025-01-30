@@ -3,6 +3,7 @@ from flask import request
 from data_form_querying import connect
 from flask_cors import CORS, cross_origin
 import json
+from country_codes import countrycodesmap
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -43,6 +44,9 @@ def fetch_sentiment(country,query,timeframe):
     FROM global_info_hourly\
     GROUP BY target_country")
     res = cur.fetchall()
+    for ele in res:
+        temp = (countrycodesmap[ele[0]],ele[1],ele[2],ele[3],ele[4])
+        ele = temp
     #Data format is country, vader national, roberta national, vader international, roberta international
     return json.dumps(res)
 
