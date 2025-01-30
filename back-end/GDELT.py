@@ -885,8 +885,8 @@ def run_all(in_datetime, boolean_map = {"dump":True, "insert":False, "fetch_new"
             name_2 = None
             first_string = f"({name} economy OR {name} market)"
 
-            if target in countries_map:
-                name = countries_map[target]
+            #if target in countries_map:
+            #    name = countries_map[target]
 
             """if target in countries_map:
                 name_2 = name
