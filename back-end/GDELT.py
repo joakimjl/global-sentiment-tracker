@@ -942,10 +942,10 @@ if __name__ == "__main__":
     boolean_map = {"dump":True, "insert":False, "fetch_new":True, "upload":True, "process":False, "connected":True, "download_processed":False} #Fetch and upload info
     on_datetime = []
     for i in range(7):
-        on_datetime = [datetime(year=2025, month=1, day=17, hour=4+4*i, minute=0, second=0)]
-        run_all(on_datetime, boolean_map)
-        if boolean_map['fetch_new'] == True and boolean_map['upload'] == True:
-            S3BatchHandler().zip_batch("temp_articles")
-        elif boolean_map['upload'] == True and boolean_map['fetch_new'] == False:
-            S3BatchHandler().upload_processed("temp_processed")
+        on_datetime.append(datetime(year=2025, month=1, day=17, hour=4+4*i, minute=0, second=0))
+    run_all(on_datetime, boolean_map)
+    if boolean_map['fetch_new'] == True and boolean_map['upload'] == True:
+        S3BatchHandler().zip_batch("temp_articles",day=date(year=2025, month=1, day=17))
+    elif boolean_map['upload'] == True and boolean_map['fetch_new'] == False:
+        S3BatchHandler().upload_processed("temp_processed")
     

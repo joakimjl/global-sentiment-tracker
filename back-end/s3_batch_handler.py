@@ -20,8 +20,8 @@ class S3BatchHandler():
         self.batch_name = None
         self.specific_name = specific_name
 
-    def zip_batch(self, dir="temp_articles", added_name="fetched"):
-        self.batch_name = added_name+"_batch_"+str(datetime.datetime.now())+".zip"
+    def zip_batch(self, dir="temp_articles", added_name="fetched",day=datetime.datetime.now()):
+        self.batch_name = added_name+"_batch_"+str(day)+".zip"
         self.batch_name = fix_path(self.batch_name)
         ziper = zipfile.ZipFile(self.batch_name, "w")
         if not os.path.isdir(dir):
