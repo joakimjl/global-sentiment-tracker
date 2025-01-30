@@ -1,5 +1,5 @@
 
-countrycodesmap = {
+country_codes_map = {
 "Afghanistan" : "AF",
 "AkrotiriSovereignBaseArea" : "AX",
 "Albania" : "AL",
