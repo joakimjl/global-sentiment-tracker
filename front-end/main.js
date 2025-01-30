@@ -171,7 +171,7 @@ async function fetchQuery(country, query, timeframe) {
                                 tempNum += char;
                             }
                         }
-                        
+
                         let neg = numArr[0];
                         let neu = numArr[1];
                         let pos = numArr[2];
@@ -190,7 +190,7 @@ async function fetchQuery(country, query, timeframe) {
     }
 }
 
-fetchQuery("World","Any",1);
+
 var controls_done = false;
 
 function animate() {
@@ -224,6 +224,9 @@ function animate() {
         console.log(frame_count);
         frame_count = 0
         last_fps_time = Date.now()
+        if (!controls_done){
+            fetchQuery("World","Any",1);
+        }
     }
     frame_count += 1;
 }
