@@ -504,7 +504,7 @@ def get_titles(res,data,syncer,index):
     res[index] = titles
     return titles
 
-def get_gdelt_processed(query="economy", target_country="US", date=date.today(), roberta=None, syncer=None, is_hourly=False):
+def get_gdelt_headlines(query="economy", target_country="US", date=date.today(), is_hourly=False):
     data = fetch_gdelt_headline(query_term=query, source_country=target_country, day=date, is_hourly=is_hourly)
     if data == None:
         return None, None, None, None #Pretty ugly might find better fix.
@@ -796,10 +796,10 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
         
     try:
         print(f"Starting {target} : remaining: {remain_rows}")
-        data_nat = get_gdelt_processed(
-            query=subject, target_country=target, date=on_day, roberta=roberta, syncer=syncer, is_hourly=is_hourly)
-        data_inter = get_gdelt_processed(
-            query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer, is_hourly=is_hourly)
+        data_nat = get_gdelt_headlines(
+            query=subject, target_country=target, date=on_day, is_hourly=is_hourly)
+        data_inter = get_gdelt_headlines(
+            query=subject, target_country=str("-"+target), date=on_day, is_hourly=is_hourly)
         title_arr = [None] * 2
         if len(data_nat) == 0 or len(data_inter) == 0:
             print(f"Length of one headline array was 0 for: {target}")
@@ -853,7 +853,10 @@ def run_all(in_datetime, boolean_map = {"dump":True, "insert":False, "fetch_new"
     #lock.disableLock()
     #If parallell is better run with lock on disable ( lock.disableLock() )
     syncer = TranslatorSyncer()
-    roberta = GST_Roberta()
+    if boolean_map['process'] == True or boolean_map['insert'] == True:
+        roberta = GST_Roberta()
+    else:
+        roberta = None
     start_time = time.time()
     count = 0
     max_concurrent = 160
