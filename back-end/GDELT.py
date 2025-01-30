@@ -856,7 +856,7 @@ def run_all(in_datetime, boolean_map = {"dump":True, "insert":False, "fetch_new"
     roberta = GST_Roberta()
     start_time = time.time()
     count = 0
-    max_concurrent = 1
+    max_concurrent = 160
     threads = []
 
     #Temp saved was 2025-01-14 21:00:00
