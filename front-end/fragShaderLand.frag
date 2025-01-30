@@ -5,6 +5,7 @@ uniform float time;
 varying vec3 tempNormal;
 varying float landMovement;
 uniform float givenRandTime;
+uniform float sentiment;
 
 void main() {
     vec3 sunLocation = normalize(vec3(0.,0.,10.));
@@ -17,7 +18,7 @@ void main() {
     vec3 reflectionColor = vec3(0.8,0.8,0.8) * pow(max(dot(reflection,sunLocation), 0.0), 32.0);
     vec3 diffuseColor = vec3(0.2,0.8,0.2) * diffStrength;
 
-    vec3 finalColor = diffuseColor + reflectionColor*0.5;
+    vec3 finalColor = diffuseColor + reflectionColor*0.5 + sentiment;
     
     gl_FragColor = vec4(finalColor,1.0); 
 }

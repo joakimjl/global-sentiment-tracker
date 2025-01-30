@@ -78,14 +78,17 @@ loader.load(
                 uniforms: {
                     time: {value: (Date.now()/10)%10},
                     landMovement: {value: 0.001},
-                    givenRandTime: {value: rand}
+                    givenRandTime: {value: rand},
+                    sentiment: {value: rand}
                 }
             });
-            
-            land_mat_arr.push(land_planet_temp);
+            land_planet_temp.name = element.name
+            land_mat_arr.push(land_planet_temp); //ADD COUNTRY NAME
             land_planet_temp.needsUpdate = true;
             element.material = land_planet_temp;
         }
+
+        console.log(land_mat_arr)
 
         scene.add( gltf.scene );
 
@@ -153,6 +156,11 @@ function animate() {
     land_planet_material.uniforms.landMovement.value = 0.05;
     for (let index = 0; index < land_mat_arr.length; index++) {
         const element = land_mat_arr[index];
+        if (element.name[0] == "I" && element.name[1] == "R"){
+            element.uniforms.sentiment.value = -0.5;
+        } else {
+            element.uniforms.sentiment.value = 0;
+        }
         element.uniforms.time.value = time_val;
         element.uniforms.landMovement.value = 0.05;
     }
