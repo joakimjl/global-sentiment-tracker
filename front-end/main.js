@@ -117,6 +117,7 @@ function lerp(a, b, alpha) {
 var frame_count = 0;
 var alpha = 0;
 
+
 async function fetchQuery(country, query, timeframe) {
     const url = `https://6x8t077c58.execute-api.eu-west-1.amazonaws.com/gst-prod/gst-fetch-info?country=${country}&query=${query}&timeframe=${timeframe}`;
     try {
@@ -132,11 +133,65 @@ async function fetchQuery(country, query, timeframe) {
         });
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const json = await response.json();
-        console.log(json);
+        try{
+            const names = new Map();
+            if (land_mat_arr[0] != null){
+                for (let index = 0; index < json.length; index++) {
+                    const ele = json[index];
+                    names.set(ele[0], [ele[1],ele[2],ele[3],ele[4]]);
+                }
+                console.log(names);
+                for (let index = 0; index < land_mat_arr.length; index++) {
+                    const element = land_mat_arr[index];
+                    const countryCode = element.name[0] + element.name[1];
+                    if (names.has(countryCode)) {
+                        //Data format is country, vader national, roberta national, vader international, roberta international
+                        const national_vader = names.get(countryCode)[0];
+                        const national_rob = names.get(countryCode)[1];
+                        const inter_vader = names.get(countryCode)[2];
+                        const inter_rob = names.get(countryCode)[3];
+
+                        let tempNum = "";
+                        let isNum = false;
+                        let numArr = [];
+
+                        let checked = national_vader;
+                        for (let index = 1; index < checked.length; index++) {
+                            const char = checked[index];
+                            const prevChar = checked[index-1];
+                            if (prevChar == "(" || prevChar == ","){
+                                isNum = true;
+                            }
+                            if (char == "," || char == ")"){
+                                isNum = false;
+                                numArr.push(parseInt(tempNum));
+                                tempNum = "";
+                            }
+                            if (isNum) {
+                                tempNum += char;
+                            }
+                        }
+                        
+                        let neg = numArr[0];
+                        let neu = numArr[1];
+                        let pos = numArr[2];
+                        
+                        element.uniforms.sentiment.value = (pos-neg)/neu;
+                    }
+                    else {
+                        element.uniforms.sentiment.value = -500;
+                    }
+                }
+            }
+        }
+        catch(error){console.log("Land not done yet", error.message);}
     } catch (error) {
         console.error("Fetch error:", error.message);
     }
 }
+
+fetchQuery("World","Any",1);
+var controls_done = false;
 
 function animate() {
     raycaster.setFromCamera( pointer, camera );
@@ -147,7 +202,13 @@ function animate() {
         hoveredMesh = "None"
     }
     alpha = clamp( Math.pow(alpha + (Date.now()-last_fps_time)/550000, 0.9) ,0,1);
-    camera.position.z = lerp(initCameraDistance, finishCameraDist, alpha);
+    if (!controls_done) {
+        camera.position.z = lerp(initCameraDistance, finishCameraDist, alpha);
+    }
+    if (alpha >= 1 && !controls_done){
+        controls_done = true;
+        const controls = new OrbitControls(camera, renderer.domElement);
+    }
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
     var time_val = Math.floor( ((Date.now()/100000)%1)*100000 );
@@ -156,11 +217,6 @@ function animate() {
     land_planet_material.uniforms.landMovement.value = 0.05;
     for (let index = 0; index < land_mat_arr.length; index++) {
         const element = land_mat_arr[index];
-        if (element.name[0] == "I" && element.name[1] == "R"){
-            element.uniforms.sentiment.value = -0.5;
-        } else {
-            element.uniforms.sentiment.value = 0;
-        }
         element.uniforms.time.value = time_val;
         element.uniforms.landMovement.value = 0.05;
     }
@@ -182,6 +238,6 @@ function onWindowResize() {
   window.addEventListener("resize", onWindowResize);
 
 window.addEventListener('click', (e) => {
-    fetchQuery("World","Any");
+    fetchQuery("World","Any",1);
     console.log(hoveredMesh)
 });
