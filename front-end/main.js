@@ -115,7 +115,7 @@ var frame_count = 0;
 var alpha = 0;
 
 async function fetchQuery(country, query, timeframe) {
-    const url = `https://6x8t077c58.execute-api.eu-west-1.amazonaws.com/prod/?country=${country}&query=${query}&timeframe=${timeframe}`;
+    const url = `https://6x8t077c58.execute-api.eu-west-1.amazonaws.com/gst-prod?country=${country}&query=${query}&timeframe=${timeframe}`;
     try {
         const response = await fetch(url, {
             method: "GET",
