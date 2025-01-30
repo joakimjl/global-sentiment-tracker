@@ -43,6 +43,7 @@ def fetch_sentiment(country,query,timeframe):
     FROM global_info_hourly\
     GROUP BY target_country")
     res = cur.fetchall()
+    #Data format is country, vader national, roberta national, vader international, roberta international
     return json.dumps(res)
 
 def create_server():
