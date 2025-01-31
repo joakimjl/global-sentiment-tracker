@@ -13,8 +13,13 @@ void main() {
     vec3 reflection = reflect(-cameraDir, waterNormal);
     float diffStrength = max(dot(waterNormal,sunLocation),0.0);
 
+    vec3 posDir = normalize(pos);
+    float distToCenter = (abs(pos.x) + abs(pos.y) + abs(pos.z)) / (abs(posDir.x) + abs(posDir.y) + abs(posDir.z));
+
+    vec3 baseDiffuse = vec3(0.2,0.2,0.8)+clamp(pow(distToCenter,50.2)*0.00000000000000032*(vec3(0.8,0.8,0.2))-0.3, 0.0,1.0);
+
     vec3 reflectionColor = vec3(0.8,0.8,0.8) * pow(max(dot(reflection,sunLocation), 0.0), 16.0);
-    vec3 diffuseColor = vec3(0.2,0.2,0.8) * diffStrength;
+    vec3 diffuseColor = baseDiffuse * diffStrength;
 
     vec3 finalColor = diffuseColor + reflectionColor;
 

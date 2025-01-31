@@ -753,8 +753,8 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
                 
         if boolean_map["download_processed"] == True:
             target_country = target
-            handler = S3BatchHandler(specific_name = "batch_2025-01-19 22_44_32.666070.zip")
-            handler.fetch_processed("temp_processed",added_name="")
+            #handler = S3BatchHandler(specific_name = "fetched_batch_"+str(date(year=2025, month=1, day=day)))
+            #handler.fetch_processed("temp_processed",added_name="")
             with open( fix_path("back-end/temp_processed/"+str(target_country)+str(on_day)) , "r") as f:
                 temp_map = json.load(f)
                 sentiment_arr_nat = temp_map['sentiment_arr_nat']
@@ -941,16 +941,19 @@ def run_all(in_datetime, boolean_map = {"dump":True, "insert":False, "fetch_new"
 
 
 if __name__ == "__main__":
-    #boolean_map = {"dump":False, "insert":False, "fetch_new":False, "upload":True, "process":True, "connected":False, "download_processed":False} #For upload and processing
+    boolean_map = {"dump":False, "insert":False, "fetch_new":False, "upload":True, "process":True, "connected":False, "download_processed":False} #For upload and processing
     #boolean_map = {"dump":False, "insert":True, "fetch_new":False, "upload":False, "process":False, "connected":True, "download_processed":True} #Downloading processed
-    boolean_map = {"dump":True, "insert":False, "fetch_new":True, "upload":True, "process":False, "connected":True, "download_processed":False} #Fetch and upload info
+    #boolean_map = {"dump":True, "insert":False, "fetch_new":True, "upload":True, "process":False, "connected":True, "download_processed":False} #Fetch and upload info
+    day = 17
     on_datetime = []
-    day = 18
-    for i in range(6):
+    if boolean_map['download_processed'] == True:
+        handler = S3BatchHandler(specific_name = "temp_processed"+str(date(year=2025, month=1, day=day)))
+        handler.fetch_processed("temp_processed",added_name="")
+    for i in range(7):
         on_datetime = [datetime(year=2025, month=1, day=day+int( (4+4*i)/24 ), hour=(4+4*i)%24, minute=0, second=0)]
         run_all(on_datetime, boolean_map)
     if boolean_map['fetch_new'] == True and boolean_map['upload'] == True:
         S3BatchHandler().zip_batch("temp_articles",day=date(year=2025, month=1, day=day))
     elif boolean_map['upload'] == True and boolean_map['fetch_new'] == False:
-        S3BatchHandler().upload_processed("temp_processed")
+        S3BatchHandler().upload_processed("temp_processed",day=date(year=2025, month=1, day=day))
     

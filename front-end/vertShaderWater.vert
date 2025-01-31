@@ -7,7 +7,7 @@ varying vec3 tempNormal;
 varying vec2 uvMap;
 
 void main() {
-    tempPos = position;
+    tempPos = position*0.996;
 
     tempNormal = normal;
 
@@ -17,25 +17,25 @@ void main() {
     
     vColor = tempPos * 1.;
 
-    pos = tempPos;
-
     //tempPos *= 1.005+0.005*sin(tempPos*50.0+(time*0.01));
 
-    /* vec3 sumOfSines = vec3(0.0,0.0,0.0);
+    vec3 sumOfSines = vec3(0.0,0.0,0.0);
 
-    for(int i=1;i<10;++i)
+    for(int i=3;i<10;++i)
     {
-        sumOfSines += (0.0004 + 0.0001/float(i))*sin( tempPos*10.0*float(i) + ((time*float(i))/100.0) );
-    } */
+        sumOfSines += clamp( (0.00002 * float(i) )*sin( tempPos*20.00*float(i) + ((time* (float(i))/900.0))),-0.3,0.3 );
+    }
 
-    vec3 sine1 = 0.0008*sin(tempPos*100.0+(time*0.0092));
-    vec3 sine2 = 0.0013*sin(tempPos*50.0+(time*0.003));
-    vec3 sine3 = 0.0013*sin(tempPos*25.0+(time*0.01));
-    vec3 sine4 = 0.0015*sin(tempPos*10.0+(time*0.0022))+0.0001;
+    vec3 sine1 = 0.0008*sin(tempPos*2000.0+(time*0.0052));
+    vec3 sine2 = 0.0013*sin(tempPos*900.0+(time*0.0015));
+    vec3 sine3 = 0.0013*sin(tempPos*550.0+(time*0.005));
+    vec3 sine4 = 0.0015*sin(tempPos*200.0+(time*0.0012));
 
-    vec3 sumOfSines = sine1 + sine2 + sine3 + sine4;
+    sumOfSines += sine1 + sine2 + sine3 + sine4;
 
-    tempPos *= 1.005+sumOfSines;
+    tempPos *= 1.005+(sumOfSines*2.15);
+
+    pos = tempPos;
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(tempPos, 1.);
 }

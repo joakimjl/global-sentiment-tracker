@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { clamp, randFloat, randInt } from 'three/src/math/MathUtils';
-import { TessellateModifier } from 'three/examples/jsm/modifiers/TessellateModifier.js';
+import { clamp, randFloat } from 'three/src/math/MathUtils';
 //import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 //import { forEachChild } from 'typescript';
@@ -9,6 +8,8 @@ import vertWater from './vertShaderWater.vert?raw';
 import vertLand from './vertShaderLand.vert?raw';
 import fragWater from './fragShaderWater.frag?raw';
 import fragLand from './fragShaderLand.frag?raw';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -23,6 +24,29 @@ function onPointerMove( event ) {
 	pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
 	pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 }
+
+var displayText = "1 2 3 4 5 6 7";
+
+const fontloader = new FontLoader();
+fontloader.load('./Roboto_Regular.json', function(font) {
+    const geometry = new TextGeometry(displayText, {
+        font: font,
+        size: 0.1,
+        depth: 0.02,
+    });
+
+    const textMesh = new THREE.Mesh(geometry, [
+        new THREE.MeshBasicMaterial({color: new THREE.Color(0xffffff)}),
+        new THREE.MeshBasicMaterial({color: new THREE.Color(0xffffff)})
+    ]);
+
+    textMesh.position.y = 3
+
+    scene.add(textMesh);
+    const tempLight = new THREE.PointLight({color: new THREE.Color(0xffffff), intensity: 1000, decay: 0});
+    tempLight.position.z = 10;
+    scene.add(tempLight);
+});
 
 const initCameraDistance = 1000;
 camera.position.z = initCameraDistance;
