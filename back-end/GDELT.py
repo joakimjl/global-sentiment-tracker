@@ -951,7 +951,7 @@ if __name__ == "__main__":
     on_datetime = []
     if boolean_map['download_processed'] == True:
         handler = S3BatchHandler(specific_name = None)
-        handler.fetch_processed("processed",added_name="",day=date_info)
+        handler.fetch_processed("temp_processed",added_name="processed",day=date_info)
     for i in range(7):
         on_datetime = [datetime(year=year, month=month, day=day+int( (4+4*i)/24 ), hour=(4+4*i)%24, minute=0, second=0)]
         run_all(on_datetime, boolean_map)
