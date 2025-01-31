@@ -21,6 +21,8 @@ docker-compose.yaml
 temp_articles/*
 back-end/temp_articles/*
 
+*.zip
+
 temp_processed/*
 back-end/temp_processed/*
 
