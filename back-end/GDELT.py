@@ -19,6 +19,7 @@ import boto3
 import random
 import re
 from s3_batch_handler import S3BatchHandler, fix_path
+import sys
 
 
 #Find KPI for display, decide how and when. If opinion changes on subject, should that be covered?
@@ -944,11 +945,12 @@ if __name__ == "__main__":
     #boolean_map = {"dump":False, "insert":True, "fetch_new":False, "upload":False, "process":False, "connected":True, "download_processed":True} #Downloading processed
     boolean_map = {"dump":True, "insert":False, "fetch_new":True, "upload":True, "process":False, "connected":True, "download_processed":False} #Fetch and upload info
     on_datetime = []
-    for i in range(1,7):
-        on_datetime = [datetime(year=2025, month=1, day=17+int( (4+4*i)/24 ), hour=(4+4*i)%24, minute=0, second=0)]
+    day = 18
+    for i in range(6):
+        on_datetime = [datetime(year=2025, month=1, day=day+int( (4+4*i)/24 ), hour=(4+4*i)%24, minute=0, second=0)]
         run_all(on_datetime, boolean_map)
     if boolean_map['fetch_new'] == True and boolean_map['upload'] == True:
-        S3BatchHandler().zip_batch("temp_articles",day=date(year=2025, month=1, day=17))
+        S3BatchHandler().zip_batch("temp_articles",day=date(year=2025, month=1, day=day))
     elif boolean_map['upload'] == True and boolean_map['fetch_new'] == False:
         S3BatchHandler().upload_processed("temp_processed")
     
