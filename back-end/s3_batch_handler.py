@@ -39,11 +39,11 @@ class S3BatchHandler():
         print(f"Uploaded: {self.batch_name}")
         return True
     
-    def unzip_batch(self, dir="temp_articles", added_name="fetched"):
+    def unzip_batch(self, dir="temp_articles", added_name="fetched",day=datetime.date.today()):
         if self.specific_name:
             self.batch_name = self.specific_name
         else:
-            self.batch_name = fix_path(added_name+"_batch_"+str(datetime.datetime.now())+".zip")
+            self.batch_name = fix_path(added_name+"_batch_"+str(day)+".zip")
         with zipfile.ZipFile(self.batch_name, 'r') as ziper:
             if not os.path.isdir(dir):
                 dir = "back-end/"+dir
@@ -73,7 +73,7 @@ class S3BatchHandler():
         else:
             self.batch_name = fix_path(added_name+"_batch_"+str(day)+".zip")
         self._download_batch()
-        self.unzip_batch("temp_processed",added_name=added_name)
+        self.unzip_batch("temp_processed",added_name=added_name,day=day)
         if not os.path.isfile(path):
             return False
         
