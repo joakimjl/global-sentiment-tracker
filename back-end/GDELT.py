@@ -945,15 +945,18 @@ if __name__ == "__main__":
     boolean_map = {"dump":False, "insert":True, "fetch_new":False, "upload":False, "process":False, "connected":True, "download_processed":True} #Downloading processed
     #boolean_map = {"dump":True, "insert":False, "fetch_new":True, "upload":True, "process":False, "connected":True, "download_processed":False} #Fetch and upload info
     day = 17
+    month = 1
+    year = 2025
+    date_info = date(year=year, month=month, day=day)
     on_datetime = []
     if boolean_map['download_processed'] == True:
         handler = S3BatchHandler(specific_name = None)
-        handler.fetch_processed("processed",added_name="")
+        handler.fetch_processed("processed",added_name="",day=date_info)
     for i in range(7):
-        on_datetime = [datetime(year=2025, month=1, day=day+int( (4+4*i)/24 ), hour=(4+4*i)%24, minute=0, second=0)]
+        on_datetime = [datetime(year=year, month=month, day=day+int( (4+4*i)/24 ), hour=(4+4*i)%24, minute=0, second=0)]
         run_all(on_datetime, boolean_map)
     if boolean_map['fetch_new'] == True and boolean_map['upload'] == True:
-        S3BatchHandler().zip_batch("temp_articles",day=date(year=2025, month=1, day=day))
+        S3BatchHandler().zip_batch("temp_articles",day=date_info)
     elif boolean_map['upload'] == True and boolean_map['fetch_new'] == False:
-        S3BatchHandler().upload_processed("temp_processed",day=date(year=2025, month=1, day=day))
+        S3BatchHandler().upload_processed("temp_processed",day=date_info)
     

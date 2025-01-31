@@ -67,11 +67,11 @@ class S3BatchHandler():
         print(f"Uploaded {path}")
         return True
     
-    def fetch_processed(self, path, added_name="processed"):
+    def fetch_processed(self, path, added_name="processed",day=datetime.date.today()):
         if self.specific_name:
             self.batch_name = self.specific_name
         else:
-            self.batch_name = fix_path(added_name+"_batch_"+str(datetime.datetime.now())+".zip")
+            self.batch_name = fix_path(added_name+"_batch_"+str(day)+".zip")
         self._download_batch()
         self.unzip_batch("temp_processed",added_name=added_name)
         if not os.path.isfile(path):
