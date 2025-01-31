@@ -941,14 +941,14 @@ def run_all(in_datetime, boolean_map = {"dump":True, "insert":False, "fetch_new"
 
 
 if __name__ == "__main__":
-    boolean_map = {"dump":False, "insert":False, "fetch_new":False, "upload":True, "process":True, "connected":False, "download_processed":False} #For upload and processing
-    #boolean_map = {"dump":False, "insert":True, "fetch_new":False, "upload":False, "process":False, "connected":True, "download_processed":True} #Downloading processed
+    #boolean_map = {"dump":False, "insert":False, "fetch_new":False, "upload":True, "process":True, "connected":False, "download_processed":False} #For upload and processing
+    boolean_map = {"dump":False, "insert":True, "fetch_new":False, "upload":False, "process":False, "connected":True, "download_processed":True} #Downloading processed
     #boolean_map = {"dump":True, "insert":False, "fetch_new":True, "upload":True, "process":False, "connected":True, "download_processed":False} #Fetch and upload info
     day = 17
     on_datetime = []
     if boolean_map['download_processed'] == True:
-        handler = S3BatchHandler(specific_name = "temp_processed"+str(date(year=2025, month=1, day=day)))
-        handler.fetch_processed("temp_processed",added_name="")
+        handler = S3BatchHandler(specific_name = None)
+        handler.fetch_processed("processed",added_name="")
     for i in range(7):
         on_datetime = [datetime(year=2025, month=1, day=day+int( (4+4*i)/24 ), hour=(4+4*i)%24, minute=0, second=0)]
         run_all(on_datetime, boolean_map)
