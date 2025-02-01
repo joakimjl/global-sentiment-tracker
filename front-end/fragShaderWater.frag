@@ -6,7 +6,8 @@ varying vec3 tempNormal;
 varying vec2 uvMap;
 
 void main() {
-    vec3 sunLocation = normalize(vec3(0.,0.,10.));
+    //vec3 sunLocation = normalize(vec3(0.,0.,10.));
+    vec3 sunLocation = normalize(cameraPosition);
     vec3 waterNormal = tempNormal;
     vec3 cameraDir = normalize(cameraPosition - pos);
 
