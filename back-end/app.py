@@ -47,7 +47,7 @@ def fetch_sentiment_timeframe(country,query,timeframe):
         sum(senti_count_int[2]) as rober_int,\
         on_time \
         FROM global_info_hourly \
-        WHERE target_country == %s\
+        WHERE target_country = %s\
         GROUP BY target_country, on_time",(country,))
     else:
         cur.execute("SELECT target_country,\
