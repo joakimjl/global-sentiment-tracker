@@ -36,7 +36,9 @@ def hello_info():
 def fetch_sentiment_timeframe(country,query,timeframe):
     conn = connect()
     cur = conn.cursor()
-    print(f"{country},{query},{timeframe}")
+    country = str(country)
+    query = str(query)
+    timeframe = int(timeframe)
     if (country != "World"):
         cur.execute("SELECT target_country,\
         sum(senti_count_nat[1]) as vader_nat,\
