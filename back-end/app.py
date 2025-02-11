@@ -37,15 +37,15 @@ def fetch_sentiment_timeframe(country,query,timeframe):
     conn = connect()
     cur = conn.cursor()
     if (country != "World"):
-        cur.execute("SELECT %s,\
+        cur.execute("SELECT target_country,\
         sum(senti_count_nat[1]) as vader_nat,\
         sum(senti_count_nat[2]) as rober_nat,\
         sum(senti_count_int[1]) as vader_int,\
         sum(senti_count_int[2]) as rober_int,\
         on_time \
         FROM global_info_hourly \
-        WHERE target_country == %s\
-        GROUP BY target_country, on_time"),("target_country",country)
+        WHERE target_country == %s AND target_country != %s\
+        GROUP BY target_country, on_time"),(country,"world_not_exist")
     else:
         cur.execute("SELECT target_country,\
         sum(senti_count_nat[1]) as vader_nat,\
