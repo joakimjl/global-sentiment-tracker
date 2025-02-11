@@ -36,14 +36,25 @@ def hello_info():
 def fetch_sentiment_timeframe(country,query,timeframe):
     conn = connect()
     cur = conn.cursor()
-    cur.execute("SELECT target_country,\
-    sum(senti_count_nat[1]) as vader_nat,\
-    sum(senti_count_nat[2]) as rober_nat,\
-    sum(senti_count_int[1]) as vader_int,\
-    sum(senti_count_int[2]) as rober_int,\
-    on_time \
-    FROM global_info_hourly\
-    GROUP BY target_country, on_time")
+    if (country != "World"):
+        cur.execute("SELECT target_country,\
+        sum(senti_count_nat[1]) as vader_nat,\
+        sum(senti_count_nat[2]) as rober_nat,\
+        sum(senti_count_int[1]) as vader_int,\
+        sum(senti_count_int[2]) as rober_int,\
+        on_time \
+        FROM global_info_hourly \
+        WHERE target_country == %s\
+        GROUP BY target_country, on_time"),country
+    else:
+        cur.execute("SELECT target_country,\
+        sum(senti_count_nat[1]) as vader_nat,\
+        sum(senti_count_nat[2]) as rober_nat,\
+        sum(senti_count_int[1]) as vader_int,\
+        sum(senti_count_int[2]) as rober_int,\
+        on_time \
+        FROM global_info_hourly \
+        GROUP BY target_country, on_time")
     res = cur.fetchall()
     temp_res = []
     for ele in res:
