@@ -18,7 +18,7 @@ def hello_world():
 @cross_origin()
 def hello_info():
     try:
-        country = country_codes_map[request.headers.get('country')]
+        country = {request.headers.get('country'): key for key, request.headers.get('country') in country_codes_map.items()}
     except:
         country = "World"
     try:
