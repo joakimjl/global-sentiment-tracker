@@ -26,7 +26,9 @@ function onPointerMove( event ) {
 	pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 }
 
-function generateText(displayText, data=undefined){
+
+var dataFetching = null;
+function generateText(displayText, data=null){
     const fontloader = new FontLoader();
     fontloader.load('./Roboto_Regular.json', function(font) {
         const infographicScene = new THREE.Scene();
@@ -35,9 +37,13 @@ function generateText(displayText, data=undefined){
             size: 0.1,
             depth: 0.02,
         });
-        
+
         //testing dummy data
-        data = [-1,-0.7,-0,1,-1,-1,-1,-0.5,0,0.1,0.2,1]
+        if (data == null){
+            data = [-1,-0.7,-0,1,-1,-1,-1,-0.5,0,0.1,0.2,1]
+        }
+        console.log(displayText[0]+displayText[1])
+        console.log(data.get(displayText[0]+displayText[1]))
         var dataCoords = [];
         for (let index = 0; index < data.length-1; index++) {
             const element = data[index];//Should be dates
@@ -247,7 +253,8 @@ async function fetchQuery(country, query, timeframe) {
                     const ele = json[index];
                     names.set(ele[0], [ele[1],ele[2],ele[3],ele[4]]);
                 }
-                //console.log(names);
+                
+                
                 for (let index = 0; index < land_mat_arr.length; index++) {
                     const element = land_mat_arr[index];
                     const countryCode = element.name[0] + element.name[1];
@@ -287,6 +294,7 @@ async function fetchQuery(country, query, timeframe) {
                     }
                 }
             }
+            dataFetching = names
         }
         catch(error){console.log("Land not done yet", error.message);}
     } catch (error) {
@@ -299,6 +307,7 @@ var controls_done = false;
 var last_fps_time = Date.now();
 let fetched = false;
 var prevName = "";
+var clickChange = false;
 
 function animate() {
     raycaster.setFromCamera( pointer, camera );
@@ -332,6 +341,12 @@ function animate() {
         fetchQuery("World","Any",1);
         const controls = new OrbitControls(camera, renderer.domElement);
     }
+    if (clickChange == true && dataFetching != null){
+        clickChange = false
+        scene.remove(scene.getObjectByName("infographic"))
+        generateText(hoveredMesh.name, dataFetching)
+    }
+
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
     var time_val = Math.floor( ((Date.now()/100000)%1)*100000 );
@@ -369,10 +384,10 @@ function onWindowResize() {
 window.addEventListener('click', (e) => {
     if (hoveredMesh.name != undefined && hoveredMesh.name[0] != "_"){
         if (hoveredMesh.name != prevName){
-            fetchQuery("World","Any",1);
+            clickChange = true;
             prevName = hoveredMesh.name
-            scene.remove(scene.getObjectByName("infographic"))
-            generateText(hoveredMesh.name, data=fetchQuery)
+            dataFetching = null;
+            fetchQuery("World","Any",1);
         }
     }
     //console.log(hoveredMesh)
