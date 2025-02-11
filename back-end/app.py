@@ -17,17 +17,16 @@ def hello_world():
 @app.route("/info", methods=["GET"])
 @cross_origin()
 def hello_info():
-    print(request.remote_addr)
     try:
-        country = request.args.get('country')
+        country = request.headers.get('country')
     except:
         country = "World"
     try:
-        query = request.args.get('query')
+        query = request.headers.get('query')
     except:
         query = "Any"
     try:
-        timeframe = request.args.get('timeframe')
+        timeframe = request.headers.get('timeframe')
     except:
         timeframe = 1
 
