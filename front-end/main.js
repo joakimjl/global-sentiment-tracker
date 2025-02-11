@@ -10,6 +10,7 @@ import fragWater from './fragShaderWater.frag?raw';
 import fragLand from './fragShaderLand.frag?raw';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+import { TessellateModifier } from 'three/examples/jsm/modifiers/TessellateModifier.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -34,24 +35,47 @@ function generateText(displayText, data=undefined){
             size: 0.1,
             depth: 0.02,
         });
-
+        
         //testing dummy data
-        data = [-1,-0.5,0,0.5,1]
+        data = [-1,-0.7,-0,1,-1,-1,-1,-0.5,0,0.1,0.2,1]
+        var dataCoords = [];
+        for (let index = 0; index < data.length-1; index++) {
+            const element = data[index];//Should be dates
+            dataCoords.push([(index-parseInt(data.length/2))/5, element/3+0.5])
+        }
 
-        const dataGeometry = new THREE.BufferGeometry();
+        for (let index = data.length-1; index >= 0; index--) {
+            const element = data[index];//Should be dates
+            dataCoords.push([(index-parseInt(data.length/2))/5, element/3+0.3])
+        }
+        dataCoords.push([(0-parseInt(data.length/2))/5, data[0]/3+0.3])
 
-        const dataVertices = new Float32Array( [
-            -1.0, -1.0,  1.0, // v0
-            1.0, -1.0,  1.0, // v1
-            1.0,  1.0,  1.0, // v2
-            
-            1.0,  1.0,  1.0, // v3
-            -1.0,  1.0,  1.0, // v4
-            -1.0, -1.0,  1.0  // v5
-            ] );
-            
-        // itemSize = 3 because there are 3 values (components) per vertex
-        dataGeometry.setAttribute( 'position', new THREE.BufferAttribute( dataVertices, 3 ) );
+        const dataShape = new THREE.Shape();//Needs to make shape into cubes..
+        dataShape.moveTo(dataCoords[0][0], dataCoords[0][1]);
+        for (let i = 0; i < dataCoords.length; i++) {
+            dataShape.lineTo(dataCoords[i][0], dataCoords[i][1]);
+        }
+
+        const extrudeSettings = {
+            steps: 1,
+            depth: 0.0001,
+            bevelEnabled: false
+        };
+
+        let dataGeometry = new THREE.ExtrudeGeometry(dataShape, extrudeSettings);
+
+        let dataTesselateAmount = clamp(dataCoords.length/2,5,100);
+        const tessellateModifier = new TessellateModifier(3,dataTesselateAmount);
+        dataGeometry = tessellateModifier.modify(dataGeometry);
+
+        for (let i = 0; i < dataGeometry.attributes.position.count; i++) {
+            const x = dataGeometry.attributes.position.getX(i);
+            const y = dataGeometry.attributes.position.getY(i);
+            const z = dataGeometry.attributes.position.getZ(i);
+
+            dataGeometry.attributes.position.setXYZ(i, x, y, z);
+        }
+    
         const dataMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
         const dataMesh = new THREE.Mesh( dataGeometry, dataMaterial );
 
@@ -274,6 +298,7 @@ async function fetchQuery(country, query, timeframe) {
 var controls_done = false;
 var last_fps_time = Date.now();
 let fetched = false;
+var prevName = "";
 
 function animate() {
     raycaster.setFromCamera( pointer, camera );
@@ -342,8 +367,13 @@ function onWindowResize() {
   window.addEventListener("resize", onWindowResize);
 
 window.addEventListener('click', (e) => {
-    fetchQuery("World","Any",1);
-    scene.remove(scene.getObjectByName("infographic"))
-    generateText(hoveredMesh.name)
+    if (hoveredMesh.name != undefined && hoveredMesh.name[0] != "_"){
+        if (hoveredMesh.name != prevName){
+            fetchQuery("World","Any",1);
+            prevName = hoveredMesh.name
+            scene.remove(scene.getObjectByName("infographic"))
+            generateText(hoveredMesh.name, data=fetchQuery)
+        }
+    }
     //console.log(hoveredMesh)
 });
