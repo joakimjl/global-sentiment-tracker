@@ -43,11 +43,11 @@ def fetch_sentiment_timeframe(country,query,timeframe):
     sum(senti_count_int[2]) as rober_int,\
     on_time \
     FROM global_info_hourly\
-    GROUP BY target_country,on_time")
+    GROUP BY target_country, on_time")
     res = cur.fetchall()
     temp_res = []
     for ele in res:
-        temp = [country_codes_map[ele[0]],ele[1],ele[2],ele[3],ele[4],ele[5]]
+        temp = [country_codes_map[ele[0]],ele[1],ele[2],ele[3],ele[4],ele[5].strftime("%Y/%m/%d%H")]
         temp_res.append(temp)
     #Data format is country, vader national, roberta national, vader international, roberta international
     return json.dumps(temp_res)
