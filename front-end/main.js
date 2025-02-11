@@ -25,28 +25,64 @@ function onPointerMove( event ) {
 	pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 }
 
-var displayText = "1 2 3 4 5 6 7";
+function generateText(displayText, data=undefined){
+    const fontloader = new FontLoader();
+    fontloader.load('./Roboto_Regular.json', function(font) {
+        const infographicScene = new THREE.Scene();
+        const geometry = new TextGeometry(displayText, {
+            font: font,
+            size: 0.1,
+            depth: 0.02,
+        });
 
-const fontloader = new FontLoader();
-fontloader.load('./Roboto_Regular.json', function(font) {
-    const geometry = new TextGeometry(displayText, {
-        font: font,
-        size: 0.1,
-        depth: 0.02,
+        //testing dummy data
+        data = [-1,-0.5,0,0.5,1]
+
+        const dataGeometry = new THREE.BufferGeometry();
+
+        const dataVertices = new Float32Array( [
+            -1.0, -1.0,  1.0, // v0
+            1.0, -1.0,  1.0, // v1
+            1.0,  1.0,  1.0, // v2
+            
+            1.0,  1.0,  1.0, // v3
+            -1.0,  1.0,  1.0, // v4
+            -1.0, -1.0,  1.0  // v5
+            ] );
+            
+        // itemSize = 3 because there are 3 values (components) per vertex
+        dataGeometry.setAttribute( 'position', new THREE.BufferAttribute( dataVertices, 3 ) );
+        const dataMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
+        const dataMesh = new THREE.Mesh( dataGeometry, dataMaterial );
+
+        infographicScene.add(dataMesh)
+
+        //Move origin of mesh
+        geometry.translate(-0.03*displayText.length,0,0)
+
+        const textMesh = new THREE.Mesh(geometry, [
+            new THREE.MeshBasicMaterial({color: new THREE.Color(0xffffff)}),
+            new THREE.MeshBasicMaterial({color: new THREE.Color(0xffffff)})
+        ]);
+
+        textMesh.name = "infographic";
+        infographicScene.name = "infographic";
+        
+        textMesh.position.y = 1
+        //textMesh.position.x = -0.35
+        infographicScene.add(textMesh)
+        infographicScene.position.y = 2.2
+        
+        scene.add(infographicScene);
+        const tempLight = new THREE.PointLight({color: new THREE.Color(0xffffff), intensity: 1000, decay: 0});
+        tempLight.position.z = 10;
+        scene.add(tempLight);
     });
+}
 
-    const textMesh = new THREE.Mesh(geometry, [
-        new THREE.MeshBasicMaterial({color: new THREE.Color(0xffffff)}),
-        new THREE.MeshBasicMaterial({color: new THREE.Color(0xffffff)})
-    ]);
 
-    textMesh.position.y = 3
-
-    scene.add(textMesh);
-    const tempLight = new THREE.PointLight({color: new THREE.Color(0xffffff), intensity: 1000, decay: 0});
-    tempLight.position.z = 10;
-    scene.add(tempLight);
-});
+var displayText = "1 2 3 4 5 6 7 8 9 10";
+generateText(displayText)
 
 const initCameraDistance = 1000;
 camera.position.z = initCameraDistance;
@@ -112,14 +148,14 @@ loader.load(
             element.material = land_planet_temp;
         }
 
-        console.log(land_mat_arr)
+        //console.log(land_mat_arr)
 
         scene.add( gltf.scene );
 
         gltf.animations; // Array<THREE.AnimationClip>
         gltf.scene; // THREE.Group
         gltf.scenes; // Array<THREE.Group>
-        gltf.cameras; // Array<THREE.Camera>
+        //gltf.cameras; // Array<THREE.Camera>
         gltf.asset; // Object
 
     },
@@ -133,13 +169,36 @@ loader.load(
     }
 );
 
-var last_fps_time = Date.now();
-
 function lerp(a, b, alpha) {
     return a + alpha * (b - a);
 }
 var frame_count = 0;
 var alpha = 0;
+
+var mode = "international";
+
+function addSentiment(checked){
+    let tempNum = "";
+    let isNum = false;
+    let numArr = [];
+
+    for (let index = 1; index < checked.length; index++) {
+        const char = checked[index];
+        const prevChar = checked[index-1];
+        if (prevChar == "(" || prevChar == ","){
+            isNum = true;
+        }
+        if (char == "," || char == ")"){
+            isNum = false;
+            numArr.push(parseInt(tempNum));
+            tempNum = "";
+        }
+        if (isNum) {
+            tempNum += char;
+        }
+    }
+    return numArr;
+}
 
 
 async function fetchQuery(country, query, timeframe) {
@@ -164,41 +223,38 @@ async function fetchQuery(country, query, timeframe) {
                     const ele = json[index];
                     names.set(ele[0], [ele[1],ele[2],ele[3],ele[4]]);
                 }
-                console.log(names);
+                //console.log(names);
                 for (let index = 0; index < land_mat_arr.length; index++) {
                     const element = land_mat_arr[index];
                     const countryCode = element.name[0] + element.name[1];
                     if (names.has(countryCode)) {
                         //Data format is country, vader national, roberta national, vader international, roberta international
-                        const national_vader = names.get(countryCode)[0];
-                        const national_rob = names.get(countryCode)[1];
-                        const inter_vader = names.get(countryCode)[2];
-                        const inter_rob = names.get(countryCode)[3];
+                        var vader;
+                        var rob
 
-                        let tempNum = "";
-                        let isNum = false;
-                        let numArr = [];
+                        if (mode == "international") {
+                            vader = names.get(countryCode)[2];
+                            rob = names.get(countryCode)[3];
+                        } else if (mode == "national") {
+                            vader = names.get(countryCode)[0];
+                            rob = names.get(countryCode)[1];
+                        }
+                        //const national_vader = names.get(countryCode)[0];
+                        //const national_rob = names.get(countryCode)[1];
+                        //const inter_vader = names.get(countryCode)[2];
+                        //const inter_rob = names.get(countryCode)[3];
 
-                        let checked = national_vader;
-                        for (let index = 1; index < checked.length; index++) {
-                            const char = checked[index];
-                            const prevChar = checked[index-1];
-                            if (prevChar == "(" || prevChar == ","){
-                                isNum = true;
-                            }
-                            if (char == "," || char == ")"){
-                                isNum = false;
-                                numArr.push(parseInt(tempNum));
-                                tempNum = "";
-                            }
-                            if (isNum) {
-                                tempNum += char;
-                            }
+                        let res = addSentiment(vader);
+                        let temp = addSentiment(rob);
+
+                        for (let index = 0; index < temp.length; index++) {
+                            const element = temp[index];
+                            res[index] += element;
                         }
 
-                        let neg = numArr[0];
-                        let neu = numArr[1];
-                        let pos = numArr[2];
+                        let neg = res[0];
+                        let neu = res[1];
+                        let pos = res[2];
                         
                         element.uniforms.sentiment.value = (pos-neg)/neu;
                     }
@@ -216,21 +272,39 @@ async function fetchQuery(country, query, timeframe) {
 
 
 var controls_done = false;
+var last_fps_time = Date.now();
+let fetched = false;
 
 function animate() {
     raycaster.setFromCamera( pointer, camera );
     intersects = raycaster.intersectObjects( scene.children );
     if (intersects.length >= 1){
-        hoveredMesh = intersects[0].object;
+        if (intersects[0] != undefined) {
+            if (intersects[0].object != "_Water"){
+                hoveredMesh = intersects[0].object;
+            } else {
+                if (intersects[1] != undefined) {
+                    hoveredMesh = intersects[1].object;
+                }
+            }
+        }
     } else {
         hoveredMesh = "None"
     }
+    //console.log(intersects)
     alpha = clamp( Math.pow(alpha + (Date.now()-last_fps_time)/550000, 0.9) ,0,1);
     if (!controls_done) {
         camera.position.z = lerp(initCameraDistance, finishCameraDist, alpha);
     }
+    if (alpha >= 0.5 && !controls_done){
+        if (!fetched){
+            fetched = true;
+            fetchQuery("World","Any",1);
+        }
+    }
     if (alpha >= 1 && !controls_done){
         controls_done = true;
+        fetchQuery("World","Any",1);
         const controls = new OrbitControls(camera, renderer.domElement);
     }
     requestAnimationFrame(animate);
@@ -244,13 +318,16 @@ function animate() {
         element.uniforms.time.value = time_val;
         element.uniforms.landMovement.value = 0.05;
     }
+    var infographic = scene.getObjectByName("infographic")
+    if (infographic != undefined) {
+        scene.getObjectByName("infographic").lookAt(camera.position)
+    }
+    
     if (last_fps_time + 1000 <= Date.now()){
         console.log(frame_count);
         frame_count = 0
         last_fps_time = Date.now()
-        if (!controls_done){
-            fetchQuery("World","Any",1);
-        }
+        
     }
     frame_count += 1;
 }
@@ -266,5 +343,7 @@ function onWindowResize() {
 
 window.addEventListener('click', (e) => {
     fetchQuery("World","Any",1);
-    console.log(hoveredMesh)
+    scene.remove(scene.getObjectByName("infographic"))
+    generateText(hoveredMesh.name)
+    //console.log(hoveredMesh)
 });

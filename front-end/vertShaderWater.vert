@@ -5,6 +5,8 @@ uniform float time;
 varying float lerp;
 varying vec3 tempNormal;
 varying vec2 uvMap;
+varying vec3 sumOfSines;
+varying vec3 diffVert;
 
 void main() {
     tempPos = position*0.996;
@@ -17,15 +19,11 @@ void main() {
     
     vColor = tempPos * 1.;
 
-    //tempPos *= 1.005+0.005*sin(tempPos*50.0+(time*0.01));
-
-    vec3 sumOfSines = vec3(0.0,0.0,0.0);
-
+    sumOfSines = vec3(0.0,0.0,0.0);
     for(int i=3;i<10;++i)
     {
         sumOfSines += clamp( (0.00002 * float(i) )*sin( tempPos*20.00*float(i) + ((time* (float(i))/900.0))),-0.3,0.3 );
     }
-
     vec3 sine1 = 0.0008*sin(tempPos*2000.0+(time*0.0052));
     vec3 sine2 = 0.0013*sin(tempPos*900.0+(time*0.0015));
     vec3 sine3 = 0.0013*sin(tempPos*550.0+(time*0.005));
