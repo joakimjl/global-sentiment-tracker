@@ -8,13 +8,13 @@ uniform float givenRandTime;
 uniform float sentiment;
 
 void main() {
-    //vec3 sunLocation = normalize(vec3(0.,0.,10.));
-    vec3 sunLocation = normalize(cameraPosition);
+    vec3 sunLocation = normalize(vec3(0.,0.,10.));
+    //vec3 sunLocation = normalize(cameraPosition);
     vec3 landNormal = normalize(pos);
     vec3 cameraDir = normalize(cameraPosition - pos);
 
     vec3 reflection = reflect(-cameraDir, landNormal);
-    float diffStrength = max(dot(landNormal,sunLocation),0.0);
+    float diffStrength = max(dot(landNormal,sunLocation),0.2);
 
     float missing = sentiment/500.0;
 

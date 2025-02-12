@@ -8,6 +8,9 @@ varying vec2 uvMap;
 varying vec3 sumOfSines;
 varying vec3 diffVert;
 
+varying vec3 vPositionW;
+varying vec3 vNormalW;
+
 void main() {
     tempPos = position*0.996;
 
@@ -37,6 +40,9 @@ void main() {
     tempPos *= 1.005+(sumOfSines*2.15);
 
     pos = tempPos;
+
+    vPositionW = vec3( vec4( pos, 1.0 ) * modelMatrix);
+    vNormalW = normalize( vec3( vec4( tempNormal, 0.0 ) * modelMatrix ));
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(tempPos, 1.);
 }

@@ -8,13 +8,17 @@ import vertWater from './vertShaderWater.vert?raw';
 import vertLand from './vertShaderLand.vert?raw';
 import fragWater from './fragShaderWater.frag?raw';
 import fragLand from './fragShaderLand.frag?raw';
+import vertChart from './vertChartShader.vert?raw';
+import fragChart from './fragChartShader.frag?raw';
+import vertOpacity from './vertOpacityShader.vert?raw';
+import fragOpacity from './fragOpacityShader.frag?raw';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import { TessellateModifier } from 'three/examples/jsm/modifiers/TessellateModifier.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer({antialias : true});
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
@@ -52,11 +56,12 @@ function generateText(displayText, data=null){
             let neg = element1[0] + element2[0];
             let neu = element1[1] + element2[1];
             let pos = element1[2] + element2[2];
-            
-            resArr.push((pos-neg)/neu)
+            let res = (pos-neg)/(neu+(Math.abs(pos-neg)))
+            //console.log('pos: %f,  neu: %f,  neg: %f   res: %f', pos,neu,neg,res)
+            resArr.push(res)
         }
 
-        const hDiv = 8 //Height division
+        const hDiv = 2.3 //Height division
         
         var dataCoords = [];
         for (let index = 0; index < resArr.length-1; index++) {
@@ -96,8 +101,15 @@ function generateText(displayText, data=null){
             dataGeometry.attributes.position.setXYZ(i, x, y, z);
         }
     
-        const dataMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
+        const dataMaterial = new THREE.ShaderMaterial({
+            vertexShader: vertChart,
+            fragmentShader: fragChart,
+            uniforms: {
+                time: {value: (Date.now()/10)%10}
+            }
+        });
         const dataMesh = new THREE.Mesh( dataGeometry, dataMaterial );
+        dataMesh.name = "chart";
 
         infographicScene.add(dataMesh)
 
@@ -105,8 +117,8 @@ function generateText(displayText, data=null){
         //infographicScene.add(cube)
 
         const textMesh = makeTextMesh(displayText,font)
-        textMesh.name = "infographic";
-        infographicScene.name = "infographic";
+        textMesh.name = "_infographic";
+        infographicScene.name = "_infographic";
         textMesh.position.y = 1
         infographicScene.add(textMesh)
 
@@ -126,7 +138,7 @@ function generateText(displayText, data=null){
             for (let index = 0; index < key.length; index++) {
                 const element = key[index];
                 if (element == "-"){
-                    if (count >= 3){
+                    if (count >= 1){
                         if (count_dash == 2){
                             if (day == stringTemp){
                                 day = stringTemp
@@ -142,18 +154,18 @@ function generateText(displayText, data=null){
                         const resText = makeTextMesh(stringTemp,font)
                         resText.position.x += locXArr[parseInt(count)][0]
                         infographicScene.add(resText)
-                        if (count == 0) {
+                        if (count_dash == 0) {
                             year = stringTemp
-                            resText.position.y -= 0.2
+                            resText.position.y -= 0.25
                         }
-                        if (count == 1) {
+                        if (count_dash == 1) {
                             month = stringTemp
-                            resText.position.y -= 0.1
+                            resText.position.y -= 0.125
                         }
-                        if (count >= 2) {
+                        if (count_dash >= 2) {
                             day = stringTemp
+                            count += 1;
                         }
-                        count += 1;
                     }
                     count_dash += 1
                     
@@ -393,11 +405,13 @@ async function fetchQuery(country, query, timeframe) {
                         names.get(ele[0]).set(ele[5], [ele[1],ele[2],ele[3],ele[4]]);
                     }
                 }
-                
+                var prevCountry = []
                 for (let index = 0; index < land_mat_arr.length; index++) {
                     const element = land_mat_arr[index];
                     const countryCode = element.name[0] + element.name[1];
-                    if (names.has(countryCode)) {
+                    if (countryCode == prevCountry[0]) {
+                        element.uniforms.sentiment.value = prevCountry[1]
+                    } else if (names.has(countryCode)) {
                         let cur = names.get(countryCode)
                         const iter = cur.keys();
                         let key = iter.next().value;
@@ -413,13 +427,6 @@ async function fetchQuery(country, query, timeframe) {
                             }
                             key = iter.next().value
                         }
-                        
-                        //Data format is country, vader national, roberta national, vader international, roberta international
-                        
-                        //const national_vader = names.get(countryCode)[0];
-                        //const national_rob = names.get(countryCode)[1];
-                        //const inter_vader = names.get(countryCode)[2];
-                        //const inter_rob = names.get(countryCode)[3];
 
                         let vaderCalc = [0,0,0];
                         let robCalc = [0,0,0];
@@ -444,8 +451,10 @@ async function fetchQuery(country, query, timeframe) {
                         let neg = vaderCalc[0];
                         let neu = vaderCalc[1];
                         let pos = vaderCalc[2];
-                        
-                        element.uniforms.sentiment.value = (pos-neg)/neu;
+
+                        let tempRes = (pos-neg)/(neu+(Math.abs(pos-neg)))
+                        element.uniforms.sentiment.value = tempRes;
+                        prevCountry = [countryCode, tempRes]
                     }
                     else {
                         if (country == "World") {
@@ -476,13 +485,30 @@ var prevName = "";
 var clickChange = false;
 
 
+const outlineSphereMat = new THREE.ShaderMaterial({
+    vertexShader: vertOpacity,
+    fragmentShader: fragOpacity,
+    uniforms: {
+        time: {value: (Date.now()/10)%10}
+    }
+});
+
+outlineSphereMat.needsUpdate = true;
+outlineSphereMat.transparent = true;
+
+const outlineSphere = new THREE.Mesh(new THREE.SphereGeometry(3.2,22,22),outlineSphereMat);
+outlineSphere.scale.z = 0.001;
+outlineSphere.name = "_outlineSphere"
+scene.add(outlineSphere);
+
+
 //TODO: Move planet down when clicking on vertical screen, move to the left on horizontal, background, skybox
 function animate() {
     raycaster.setFromCamera( pointer, camera );
     intersects = raycaster.intersectObjects( scene.children );
     if (intersects.length >= 1){
         if (intersects[0] != undefined) {
-            if (intersects[0].object != "_Water"){
+            if (intersects[0].object[0] != "_"){
                 hoveredMesh = intersects[0].object;
             } else {
                 if (intersects[1] != undefined) {
@@ -510,7 +536,7 @@ function animate() {
     }
     if (clickChange == true && dataFetching != null){
         clickChange = false
-        scene.remove(scene.getObjectByName("infographic"))
+        scene.remove(scene.getObjectByName("_infographic"))
         generateText(hoveredMesh.name, dataFetching)
     }
 
@@ -520,16 +546,19 @@ function animate() {
     water_planet_material.uniforms.time.value = time_val;
     land_planet_material.uniforms.time.value = time_val;
     land_planet_material.uniforms.landMovement.value = 0.05;
+    outlineSphereMat.uniforms.time.value = time_val;
+    scene.getObjectByName("_outlineSphere").lookAt(camera.position)
     for (let index = 0; index < land_mat_arr.length; index++) {
         const element = land_mat_arr[index];
         element.uniforms.time.value = time_val;
         element.uniforms.landMovement.value = 0.05;
     }
-    var infographic = scene.getObjectByName("infographic")
+    var infographic = scene.getObjectByName("_infographic")
     if (infographic != undefined) {
-        scene.getObjectByName("infographic").lookAt(camera.position)
+
+        infographic.getObjectByName("chart").material.uniforms.time.value = time_val;
+        scene.getObjectByName("_infographic").lookAt(camera.position)
     }
-    
     if (last_fps_time + 1000 <= Date.now()){
         console.log(frame_count);
         frame_count = 0
@@ -550,6 +579,7 @@ function onWindowResize() {
 
 window.addEventListener('click', (e) => {
     if (hoveredMesh.name != undefined && hoveredMesh.name[0] != "_" && clickChange == false){
+        hoveredMesh.name = hoveredMesh.name[0] + hoveredMesh.name[1]
         if (hoveredMesh.name != prevName){
             clickChange = true;
             prevName = hoveredMesh.name
