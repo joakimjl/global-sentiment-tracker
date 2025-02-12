@@ -251,49 +251,75 @@ async function fetchQuery(country, query, timeframe) {
             if (land_mat_arr[0] != null){
                 for (let index = 0; index < json.length; index++) {
                     const ele = json[index];
-                    names.set(ele[0], [ele[1],ele[2],ele[3],ele[4]]);
+                    if (names.has(ele[0]) == false){
+                        const in_map = new Map()
+                        names.set(ele[0], in_map.set(ele[5], [ele[1],ele[2],ele[3],ele[4]]) );
+                    } else {
+                        names.get(ele[0]).set(ele[5], [ele[1],ele[2],ele[3],ele[4]]);
+                    }
                 }
-                
                 
                 for (let index = 0; index < land_mat_arr.length; index++) {
                     const element = land_mat_arr[index];
                     const countryCode = element.name[0] + element.name[1];
                     if (names.has(countryCode)) {
-                        //Data format is country, vader national, roberta national, vader international, roberta international
-                        var vader;
-                        var rob
-
-                        if (mode == "international") {
-                            vader = names.get(countryCode)[2];
-                            rob = names.get(countryCode)[3];
-                        } else if (mode == "national") {
-                            vader = names.get(countryCode)[0];
-                            rob = names.get(countryCode)[1];
+                        let cur = names.get(countryCode)
+                        const iter = names.get(countryCode).keys();
+                        let key = iter.next().value;
+                        var vader = [];
+                        var rob = [];
+                        while (key != undefined) {
+                            if (mode == "international") {
+                                vader.push(cur.get(key)[2]);
+                                rob.push(cur.get(key)[3]);
+                            } else if (mode == "national") {
+                                vader.push(cur.get(key)[0]);
+                                rob.push(cur.get(key)[1]);
+                            }
+                            key = iter.next().value
                         }
+                        
+                        //Data format is country, vader national, roberta national, vader international, roberta international
+                        
                         //const national_vader = names.get(countryCode)[0];
                         //const national_rob = names.get(countryCode)[1];
                         //const inter_vader = names.get(countryCode)[2];
                         //const inter_rob = names.get(countryCode)[3];
 
-                        let res = addSentiment(vader);
-                        let temp = addSentiment(rob);
-
-                        for (let index = 0; index < temp.length; index++) {
-                            const element = temp[index];
-                            res[index] += element;
+                        let vaderCalc = [0,0,0];
+                        let robCalc = [0,0,0];
+                        for (let index = 0; index < vader.length; index++) {
+                            const elementVader = vader[index];
+                            const elementRob = rob[index];
+                            let vaderTemp = addSentiment(elementVader);
+                            let robTemp = addSentiment(elementRob);
+                            for (let j = 0; j < 3; j++) {
+                                const eleInVad = vaderTemp[j];
+                                const eleInRob = robTemp[j];
+                                vaderCalc[j] += eleInVad
+                                robCalc[j] += eleInRob
+                            }
                         }
 
-                        let neg = res[0];
-                        let neu = res[1];
-                        let pos = res[2];
+                        for (let index = 0; index < robCalc.length; index++) {
+                            const element = robCalc[index];
+                            vaderCalc[index] += element;
+                        }
+
+                        let neg = vaderCalc[0];
+                        let neu = vaderCalc[1];
+                        let pos = vaderCalc[2];
                         
                         element.uniforms.sentiment.value = (pos-neg)/neu;
                     }
                     else {
-                        element.uniforms.sentiment.value = -500;
+                        if (country == "World") {
+                            element.uniforms.sentiment.value = -500;
+                        }
                     }
                 }
             }
+            console.log(names)
             dataFetching = names
         }
         catch(error){console.log("Land not done yet", error.message);}
@@ -338,7 +364,6 @@ function animate() {
     }
     if (alpha >= 1 && !controls_done){
         controls_done = true;
-        fetchQuery("World","Any",1);
         const controls = new OrbitControls(camera, renderer.domElement);
     }
     if (clickChange == true && dataFetching != null){
@@ -387,7 +412,7 @@ window.addEventListener('click', (e) => {
             clickChange = true;
             prevName = hoveredMesh.name
             dataFetching = null;
-            fetchQuery("World","Any",1);
+            fetchQuery(hoveredMesh.name,"Any",1);
         }
     }
     //console.log(hoveredMesh)
