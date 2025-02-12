@@ -32,11 +32,6 @@ function generateText(displayText, data=null){
     const fontloader = new FontLoader();
     fontloader.load('./Roboto_Regular.json', function(font) {
         const infographicScene = new THREE.Scene();
-        const geometry = new TextGeometry(displayText, {
-            font: font,
-            size: 0.1,
-            depth: 0.02,
-        });
 
         //testing dummy data
         if (data == null){
@@ -61,19 +56,19 @@ function generateText(displayText, data=null){
             resArr.push((pos-neg)/neu)
         }
 
-        data = resArr
+        const hDiv = 8 //Height division
         
         var dataCoords = [];
-        for (let index = 0; index < data.length-1; index++) {
-            const element = data[index];//Should be dates
-            dataCoords.push([(index-parseInt(data.length/2))/5, element/3+0.5])
+        for (let index = 0; index < resArr.length-1; index++) {
+            const element = resArr[index];//Should be dates
+            dataCoords.push([(index-parseInt(resArr.length/2))/5, element/hDiv+0.5])
         }
-
-        for (let index = data.length-1; index >= 0; index--) {
-            const element = data[index];//Should be dates
-            dataCoords.push([(index-parseInt(data.length/2))/5, element/3+0.45])
-        }
-        dataCoords.push([(0-parseInt(data.length/2))/5, data[0]/3+0.3])
+        dataCoords.push([(resArr.length-1-parseInt(resArr.length/2))/5, resArr[resArr.length-1]/hDiv+0.5])
+        for (let index = resArr.length-1; index >= 0; index--) {
+            const element = resArr[index];//Should be dates
+            dataCoords.push([(index-parseInt(resArr.length/2))/5, element/hDiv+0.45])
+        }resArr
+        dataCoords.push([(0-parseInt(resArr.length/2))/5, resArr[0]/hDiv+0.45])
 
         const dataShape = new THREE.Shape();//Needs to make shape into cubes..
         dataShape.moveTo(dataCoords[0][0], dataCoords[0][1]);
@@ -106,20 +101,75 @@ function generateText(displayText, data=null){
 
         infographicScene.add(dataMesh)
 
-        //Move origin of mesh
-        geometry.translate(-0.03*displayText.length,0,0)
+        //const cube = new THREE.BoxGeometry(1,1,1)
+        //infographicScene.add(cube)
 
-        const textMesh = new THREE.Mesh(geometry, [
-            new THREE.MeshBasicMaterial({color: new THREE.Color(0xffffff)}),
-            new THREE.MeshBasicMaterial({color: new THREE.Color(0xffffff)})
-        ]);
-
+        const textMesh = makeTextMesh(displayText,font)
         textMesh.name = "infographic";
         infographicScene.name = "infographic";
-        
         textMesh.position.y = 1
-        //textMesh.position.x = -0.35
         infographicScene.add(textMesh)
+
+        //Making the date label at bottom
+        const dataAtCountrySorted = new Map([...data.get(displayText[0]+displayText[1]).entries()].sort());
+
+        console.log(dataAtCountrySorted)
+
+        const iter = dataAtCountrySorted.keys();
+        let key = iter.next().value;
+        let stringTemp = "";
+        let locXArr = dataCoords;
+        let count = 0;
+        let year = "";
+        let month = "";
+        let day = "";
+        let count_dash = 0;
+        while (key != undefined){
+            for (let index = 0; index < key.length; index++) {
+                const element = key[index];
+                if (element == "-"){
+                    if (count >= 3){
+                        if (count_dash == 2){
+                            if (day == stringTemp){
+                                day = stringTemp
+                            } else{
+                                const resText = makeTextMesh(stringTemp,font)
+                                resText.position.x += locXArr[parseInt(count)][0]
+                                infographicScene.add(resText)
+                            }
+                            day = stringTemp;
+                            count += 1;
+                        }
+                    } else {
+                        const resText = makeTextMesh(stringTemp,font)
+                        resText.position.x += locXArr[parseInt(count)][0]
+                        infographicScene.add(resText)
+                        if (count == 0) {
+                            year = stringTemp
+                            resText.position.y -= 0.2
+                        }
+                        if (count == 1) {
+                            month = stringTemp
+                            resText.position.y -= 0.1
+                        }
+                        if (count >= 2) {
+                            day = stringTemp
+                        }
+                        count += 1;
+                    }
+                    count_dash += 1
+                    
+                    stringTemp = ""
+                    
+                } else {
+                    stringTemp += element
+                }
+            }
+            count_dash = 0
+            key = iter.next().value;
+        }
+
+
         infographicScene.position.y = 2.2
         
         scene.add(infographicScene);
@@ -129,6 +179,23 @@ function generateText(displayText, data=null){
     });
 }
 
+function makeTextMesh(text,font,locX){
+    const geometry = new TextGeometry(text, {
+        font: font,
+        size: 0.1,
+        depth: 0.02,
+    });
+
+    //Move origin of mesh
+    geometry.translate(-0.03*text.length,0,0)
+
+    const textMesh = new THREE.Mesh(geometry, [
+        new THREE.MeshBasicMaterial({color: new THREE.Color(0xffffff)}),
+        new THREE.MeshBasicMaterial({color: new THREE.Color(0xffffff)})
+    ]);
+
+    return textMesh;
+}
 
 var displayText = "1 2 3 4 5 6 7 8 9 10";
 generateText(displayText)
