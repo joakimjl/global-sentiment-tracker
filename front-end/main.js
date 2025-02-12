@@ -113,8 +113,6 @@ function generateText(displayText, data=null){
         //Making the date label at bottom
         const dataAtCountrySorted = new Map([...data.get(displayText[0]+displayText[1]).entries()].sort());
 
-        console.log(dataAtCountrySorted)
-
         const iter = dataAtCountrySorted.keys();
         let key = iter.next().value;
         let stringTemp = "";
@@ -298,7 +296,6 @@ function processData(mode,data,sumOverTime){
     let key = iter.next().value;
     var vader = [];
     var rob = [];
-    console.log(data)
     while (key != undefined) {
         if (mode == "international") {
             vader.push(data.get(key)[2]);
@@ -457,8 +454,13 @@ async function fetchQuery(country, query, timeframe) {
                     }
                 }
             }
-            console.log(names)
-            dataFetching = names
+            if (names.size == 0) {
+                clickChange = false
+                dataFetching = dataFetching
+                console.log("Country not in DB")
+            } else {
+                dataFetching = names   
+            }
         }
         catch(error){console.log("Land not done yet", error.message);}
     } catch (error) {
@@ -547,7 +549,7 @@ function onWindowResize() {
   window.addEventListener("resize", onWindowResize);
 
 window.addEventListener('click', (e) => {
-    if (hoveredMesh.name != undefined && hoveredMesh.name[0] != "_"){
+    if (hoveredMesh.name != undefined && hoveredMesh.name[0] != "_" && clickChange == false){
         if (hoveredMesh.name != prevName){
             clickChange = true;
             prevName = hoveredMesh.name

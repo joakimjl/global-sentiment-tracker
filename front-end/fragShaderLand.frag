@@ -22,7 +22,7 @@ void main() {
     float redPortion = 0.8*abs(clamp(sentiment,-1.0,-0.2))/abs(clamp(sentiment,-500.0,0.0));
     vec3 diffuseColor = vec3(redPortion,0.8*clamp(sentiment,0.2,1.0),0.2) * diffStrength;
 
-    vec3 finalColor = diffuseColor + reflectionColor*0.5 + clamp(missing*vec3(1.0,1.0,1.0),0.0,1.0) + clamp(vec3(1.0,1.0,1.0)*missing*sin(0.2*time*0.006+givenRandTime),0.0,1.0);
+    vec3 finalColor = diffuseColor + reflectionColor*0.5 + clamp(missing*vec3(1.0,1.0,1.0),-0.2,1.0) + clamp(vec3(1.0,1.0,1.0)*missing*sin(0.2*time*0.006+givenRandTime),0.0,1.0);
     
     gl_FragColor = vec4(finalColor,1.0); 
 }
