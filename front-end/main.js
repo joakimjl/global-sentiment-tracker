@@ -41,9 +41,28 @@ function generateText(displayText, data=null){
         //testing dummy data
         if (data == null){
             data = [-1,-0.7,-0,1,-1,-1,-1,-0.5,0,0.1,0.2,1]
+            return
         }
-        console.log(displayText[0]+displayText[1])
-        console.log(data.get(displayText[0]+displayText[1]))
+        var cur = data.get(displayText[0]+displayText[1])
+
+        var processed = processData(mode,cur,false)
+        var resArr = []
+        
+        for (let index = 0; index < processed[0].length; index++) {
+            const element1 = processed[0][index];
+            const element2 = processed[1][index];
+
+
+
+            let neg = element1[0] + element2[0];
+            let neu = element1[1] + element2[1];
+            let pos = element1[2] + element2[2];
+            
+            resArr.push((pos-neg)/neu)
+        }
+
+        data = resArr
+        
         var dataCoords = [];
         for (let index = 0; index < data.length-1; index++) {
             const element = data[index];//Should be dates
@@ -52,7 +71,7 @@ function generateText(displayText, data=null){
 
         for (let index = data.length-1; index >= 0; index--) {
             const element = data[index];//Should be dates
-            dataCoords.push([(index-parseInt(data.length/2))/5, element/3+0.3])
+            dataCoords.push([(index-parseInt(data.length/2))/5, element/3+0.45])
         }
         dataCoords.push([(0-parseInt(data.length/2))/5, data[0]/3+0.3])
 
@@ -207,6 +226,58 @@ var alpha = 0;
 
 var mode = "international";
 
+function processData(mode,data,sumOverTime){
+    const iter = data.keys();
+    let key = iter.next().value;
+    var vader = [];
+    var rob = [];
+    console.log(data)
+    while (key != undefined) {
+        if (mode == "international") {
+            vader.push(data.get(key)[2]);
+            rob.push(data.get(key)[3]);
+        } else if (mode == "national") {
+            vader.push(data.get(key)[0]);
+            rob.push(data.get(key)[1]);
+        }
+        key = iter.next().value
+    }
+
+    if (sumOverTime == false) {
+        let vaderArr = [];
+        let robArr = [];
+        for (let index = 0; index < vader.length; index++) {
+            const elementVader = vader[index];
+            const elementRob = rob[index];
+            vaderArr.push(addSentiment(elementVader));
+            robArr.push(addSentiment(elementRob));
+        }
+        return ([vaderArr, robArr])
+    }
+
+    if (sumOverTime == true) {
+        let vaderCalc = [0,0,0];
+        let robCalc = [0,0,0];
+        for (let index = 0; index < vader.length; index++) {
+            const elementVader = vader[index];
+            const elementRob = rob[index];
+            let vaderTemp = addSentiment(elementVader);
+            let robTemp = addSentiment(elementRob);
+            for (let j = 0; j < 3; j++) {
+                const eleInVad = vaderTemp[j];
+                const eleInRob = robTemp[j];
+                vaderCalc[j] += eleInVad
+                robCalc[j] += eleInRob
+            }
+        }
+        for (let index = 0; index < vaderCalc.length; index++) {
+            const element = vaderCalc[index];
+            robCalc[index] += element
+        }
+        return robCalc
+    }
+}
+
 function addSentiment(checked){
     let tempNum = "";
     let isNum = false;
@@ -264,7 +335,7 @@ async function fetchQuery(country, query, timeframe) {
                     const countryCode = element.name[0] + element.name[1];
                     if (names.has(countryCode)) {
                         let cur = names.get(countryCode)
-                        const iter = names.get(countryCode).keys();
+                        const iter = cur.keys();
                         let key = iter.next().value;
                         var vader = [];
                         var rob = [];
