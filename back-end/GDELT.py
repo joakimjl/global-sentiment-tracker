@@ -952,8 +952,10 @@ if __name__ == "__main__":
     if boolean_map['download_processed'] == True:
         handler = S3BatchHandler(specific_name = None)
         handler.fetch_processed("temp_processed",added_name="processed",day=date_info)
+    start_datetime = datetime(year=year, month=month, day=day, hour=4, minute=0, second=0)
     for i in range(12):
-        on_datetime = [datetime(year=year, month=month, day=day+int( (4+4*i)/24 ), hour=(4+4*i)%24, minute=0, second=0)]
+        cur_datetime = start_datetime+timedelta(hours=4)
+        on_datetime = [cur_datetime]
         run_all(on_datetime, boolean_map)
     if boolean_map['fetch_new'] == True and boolean_map['upload'] == True:
         S3BatchHandler().zip_batch("temp_articles",day=date_info)
