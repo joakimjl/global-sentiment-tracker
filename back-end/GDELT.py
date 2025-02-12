@@ -19,6 +19,7 @@ import boto3
 import random
 import re
 from s3_batch_handler import S3BatchHandler, fix_path
+import sys
 
 
 #Find KPI for display, decide how and when. If opinion changes on subject, should that be covered?
@@ -504,7 +505,7 @@ def get_titles(res,data,syncer,index):
     res[index] = titles
     return titles
 
-def get_gdelt_processed(query="economy", target_country="US", date=date.today(), roberta=None, syncer=None, is_hourly=False):
+def get_gdelt_headlines(query="economy", target_country="US", date=date.today(), is_hourly=False):
     data = fetch_gdelt_headline(query_term=query, source_country=target_country, day=date, is_hourly=is_hourly)
     if data == None:
         return None, None, None, None #Pretty ugly might find better fix.
@@ -752,8 +753,8 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
                 
         if boolean_map["download_processed"] == True:
             target_country = target
-            handler = S3BatchHandler(specific_name = "batch_2025-01-19 22_44_32.666070.zip")
-            handler.fetch_processed("temp_processed",added_name="")
+            #handler = S3BatchHandler(specific_name = "fetched_batch_"+str(date(year=2025, month=1, day=day)))
+            #handler.fetch_processed("temp_processed",added_name="")
             with open( fix_path("back-end/temp_processed/"+str(target_country)+str(on_day)) , "r") as f:
                 temp_map = json.load(f)
                 sentiment_arr_nat = temp_map['sentiment_arr_nat']
@@ -796,10 +797,10 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
         
     try:
         print(f"Starting {target} : remaining: {remain_rows}")
-        data_nat = get_gdelt_processed(
-            query=subject, target_country=target, date=on_day, roberta=roberta, syncer=syncer, is_hourly=is_hourly)
-        data_inter = get_gdelt_processed(
-            query=subject, target_country=str("-"+target), date=on_day, roberta=roberta, syncer=syncer, is_hourly=is_hourly)
+        data_nat = get_gdelt_headlines(
+            query=subject, target_country=target, date=on_day, is_hourly=is_hourly)
+        data_inter = get_gdelt_headlines(
+            query=subject, target_country=str("-"+target), date=on_day, is_hourly=is_hourly)
         title_arr = [None] * 2
         if len(data_nat) == 0 or len(data_inter) == 0:
             print(f"Length of one headline array was 0 for: {target}")
@@ -853,7 +854,10 @@ def run_all(in_datetime, boolean_map = {"dump":True, "insert":False, "fetch_new"
     #lock.disableLock()
     #If parallell is better run with lock on disable ( lock.disableLock() )
     syncer = TranslatorSyncer()
-    roberta = GST_Roberta()
+    if boolean_map['process'] == True or boolean_map['insert'] == True:
+        roberta = GST_Roberta()
+    else:
+        roberta = None
     start_time = time.time()
     count = 0
     max_concurrent = 160
@@ -885,8 +889,8 @@ def run_all(in_datetime, boolean_map = {"dump":True, "insert":False, "fetch_new"
             name_2 = None
             first_string = f"({name} economy OR {name} market)"
 
-            if target in countries_map:
-                name = countries_map[target]
+            #if target in countries_map:
+            #    name = countries_map[target]
 
             """if target in countries_map:
                 name_2 = name
@@ -937,15 +941,22 @@ def run_all(in_datetime, boolean_map = {"dump":True, "insert":False, "fetch_new"
 
 
 if __name__ == "__main__":
-    #boolean_map = {"dump":False, "insert":False, "fetch_new":False, "upload":True, "process":True, "connected":False, "download_processed":False} #For upload and processing
+    boolean_map = {"dump":False, "insert":False, "fetch_new":False, "upload":True, "process":True, "connected":False, "download_processed":False} #For upload and processing
     #boolean_map = {"dump":False, "insert":True, "fetch_new":False, "upload":False, "process":False, "connected":True, "download_processed":True} #Downloading processed
-    boolean_map = {"dump":True, "insert":False, "fetch_new":True, "upload":True, "process":False, "connected":True, "download_processed":False} #Fetch and upload info
+    #boolean_map = {"dump":True, "insert":False, "fetch_new":True, "upload":True, "process":False, "connected":True, "download_processed":False} #Fetch and upload info
+    day = 19
+    month = 1
+    year = 2025
+    date_info = date(year=year, month=month, day=day)
     on_datetime = []
-    for i in range(5):
-        on_datetime.append(datetime(year=2025, month=1, day=16, hour=4+4*i, minute=0, second=0))
-    run_all(on_datetime, boolean_map)
+    if boolean_map['download_processed'] == True:
+        handler = S3BatchHandler(specific_name = None)
+        handler.fetch_processed("temp_processed",added_name="processed",day=date_info)
+    for i in range(12):
+        on_datetime = [datetime(year=year, month=month, day=day+int( (4+4*i)/24 ), hour=(4+4*i)%24, minute=0, second=0)]
+        run_all(on_datetime, boolean_map)
     if boolean_map['fetch_new'] == True and boolean_map['upload'] == True:
-        S3BatchHandler().zip_batch("temp_articles")
+        S3BatchHandler().zip_batch("temp_articles",day=date_info)
     elif boolean_map['upload'] == True and boolean_map['fetch_new'] == False:
-        S3BatchHandler().upload_processed("temp_processed")
+        S3BatchHandler().upload_processed("temp_processed",day=date_info)
     

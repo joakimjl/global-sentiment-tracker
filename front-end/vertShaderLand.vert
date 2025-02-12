@@ -6,6 +6,7 @@ varying float lerp;
 varying vec3 tempNormal;
 varying float landMovement;
 uniform float givenRandTime;
+uniform float sentiment;
 
 void main() {
     tempPos = position;

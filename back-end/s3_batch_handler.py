@@ -20,8 +20,8 @@ class S3BatchHandler():
         self.batch_name = None
         self.specific_name = specific_name
 
-    def zip_batch(self, dir="temp_articles", added_name="fetched"):
-        self.batch_name = added_name+"_batch_"+str(datetime.datetime.now())+".zip"
+    def zip_batch(self, dir="temp_articles", added_name="fetched",day=datetime.datetime.now()):
+        self.batch_name = added_name+"_batch_"+str(day)+".zip"
         self.batch_name = fix_path(self.batch_name)
         ziper = zipfile.ZipFile(self.batch_name, "w")
         if not os.path.isdir(dir):
@@ -39,11 +39,11 @@ class S3BatchHandler():
         print(f"Uploaded: {self.batch_name}")
         return True
     
-    def unzip_batch(self, dir="temp_articles", added_name="fetched"):
+    def unzip_batch(self, dir="temp_articles", added_name="fetched",day=datetime.date.today()):
         if self.specific_name:
             self.batch_name = self.specific_name
         else:
-            self.batch_name = fix_path(added_name+"_batch_"+str(datetime.datetime.now())+".zip")
+            self.batch_name = fix_path(added_name+"_batch_"+str(day)+".zip")
         with zipfile.ZipFile(self.batch_name, 'r') as ziper:
             if not os.path.isdir(dir):
                 dir = "back-end/"+dir
@@ -60,20 +60,20 @@ class S3BatchHandler():
         s3_client = boto3.client('s3')
         s3_client.download_file("gst-batch-process", self.batch_name, self.batch_name)
 
-    def upload_processed(self, path, added_name="processed"):
+    def upload_processed(self, path, added_name="processed",day=None):
         """Path needs to be given as string of path+filename"""
         path = fix_path(path)
-        self.zip_batch("temp_processed",added_name="processed")
+        self.zip_batch("temp_processed",added_name="processed",day=day)
         print(f"Uploaded {path}")
         return True
     
-    def fetch_processed(self, path, added_name="processed"):
+    def fetch_processed(self, path, added_name="processed",day=datetime.date.today()):
         if self.specific_name:
             self.batch_name = self.specific_name
         else:
-            self.batch_name = fix_path(added_name+"_batch_"+str(datetime.datetime.now())+".zip")
+            self.batch_name = fix_path(added_name+"_batch_"+str(day)+".zip")
         self._download_batch()
-        self.unzip_batch("temp_processed",added_name=added_name)
+        self.unzip_batch("temp_processed",added_name=added_name,day=day)
         if not os.path.isfile(path):
             return False
         
