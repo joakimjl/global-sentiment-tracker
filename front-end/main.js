@@ -473,6 +473,8 @@ let fetched = false;
 var prevName = "";
 var clickChange = false;
 
+
+//TODO: Move planet down when clicking on vertical screen, move to the left on horizontal, background, skybox
 function animate() {
     raycaster.setFromCamera( pointer, camera );
     intersects = raycaster.intersectObjects( scene.children );

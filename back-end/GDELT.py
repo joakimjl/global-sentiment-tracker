@@ -944,16 +944,16 @@ if __name__ == "__main__":
     boolean_map = {"dump":False, "insert":False, "fetch_new":False, "upload":True, "process":True, "connected":False, "download_processed":False} #For upload and processing
     #boolean_map = {"dump":False, "insert":True, "fetch_new":False, "upload":False, "process":False, "connected":True, "download_processed":True} #Downloading processed
     #boolean_map = {"dump":True, "insert":False, "fetch_new":True, "upload":True, "process":False, "connected":True, "download_processed":False} #Fetch and upload info
-    day = 30
-    month = 1
+    day = 1
+    month = 2
     year = 2025
     date_info = date(year=year, month=month, day=day)
     on_datetime = []
     if boolean_map['download_processed'] == True:
         handler = S3BatchHandler(specific_name = None)
         handler.fetch_processed("temp_processed",added_name="processed",day=date_info)
-    start_datetime = datetime(year=year, month=month, day=day, hour=4, minute=0, second=0)
-    for i in range(7):
+    start_datetime = datetime(year=year, month=month, day=day, hour=0, minute=0, second=0)
+    for i in range(1):
         cur_datetime = start_datetime+timedelta(hours=4)
         on_datetime = [cur_datetime]
         run_all(on_datetime, boolean_map)
