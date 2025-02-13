@@ -54,7 +54,7 @@ void main() {
     vec3 color = vec3(.58, .74, 1.);
     vec3 viewDirectionW = normalize(cameraPosition - vPositionW);
     float fresnelTerm = dot(viewDirectionW, vNormalW) * (1. - 0.0001/2.);
-    fresnelTerm = clamp(0.8 - fresnelTerm, 0.0, 1.0);
+    fresnelTerm = clamp(0.5 - fresnelTerm, 0.0, 1.0);
 
 
 

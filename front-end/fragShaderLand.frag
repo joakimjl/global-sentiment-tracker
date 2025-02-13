@@ -6,6 +6,10 @@ varying vec3 tempNormal;
 varying float landMovement;
 uniform float givenRandTime;
 uniform float sentiment;
+uniform sampler2D noiseTexture;
+
+varying vec3 vPositionW;
+varying vec3 vNormalW;
 
 void main() {
     vec3 sunLocation = normalize(vec3(0.,0.,10.));
@@ -13,8 +17,14 @@ void main() {
     vec3 landNormal = normalize(pos);
     vec3 cameraDir = normalize(cameraPosition - pos);
 
+    float timeScroll = time * 0.0001;
+
+    float scrollFactor = sin(timeScroll + pos.z + pos.x) + cos(timeScroll + pos.z + pos.x);
+    vec2 uv = 1.005*fract(vec2(scrollFactor, pos.y));
+    vec4 test = texture(noiseTexture, uv);
+
     vec3 reflection = reflect(-cameraDir, landNormal);
-    float diffStrength = max(dot(landNormal,sunLocation),0.2);
+    float diffStrength = max(dot(landNormal,sunLocation),0.6);
 
     float missing = sentiment/500.0;
 
@@ -22,7 +32,17 @@ void main() {
     float redPortion = 0.8*abs(clamp(sentiment,-1.0,-0.2))/abs(clamp(sentiment,-500.0,0.0));
     vec3 diffuseColor = vec3(redPortion,0.8*clamp(sentiment,0.2,1.0),0.2) * diffStrength;
 
-    vec3 finalColor = diffuseColor + reflectionColor*0.5 - (missing*vec3(0.1,0.1,0.1))*sin(pos*time*0.001) - (missing*vec3(0.1,0.1,0.1))*cos(pos*time*0.001);
+    float posAdding = abs(pos.x) + abs(pos.y) + abs(pos.z);
+
+    float texPart = (0.3*test.x+0.7);
+
+    vec3 finalColor = texPart*diffuseColor + reflectionColor*0.5 - (posAdding*texPart*missing*vec3(0.1,0.1,0.1)) - 0.25*(posAdding*texPart*missing*vec3(0.1,0.1,0.1)*pos);
+
+    vec3 color = vec3(.58, .74, 1.);
+    vec3 viewDirectionW = normalize(cameraPosition - vPositionW);
+    float fresnelTerm = dot(viewDirectionW, landNormal) * (1. - 0.0001/2.);
+    fresnelTerm = clamp(0.5 - fresnelTerm, 0.0, 1.0);
+
     
-    gl_FragColor = vec4(finalColor,1.0); 
+    gl_FragColor = vec4(finalColor+fresnelTerm,1.0); 
 }

@@ -25,6 +25,16 @@ document.body.appendChild(renderer.domElement);
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 
+var noiseDone = false;
+
+const noiseTexture = new THREE.TextureLoader().load(
+    "./PernlinNoise.png",
+    (texture) => {
+        noiseTexture = texture;
+        noiseDone = true;
+    }
+);
+
 function onPointerMove( event ) {
 	pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
 	pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
@@ -265,7 +275,8 @@ loader.load(
                     time: {value: (Date.now()/10)%10},
                     landMovement: {value: 0.001},
                     givenRandTime: {value: rand},
-                    sentiment: {value: rand}
+                    sentiment: {value: rand},
+                    noiseTexture: {value: noiseTexture}
                 }
             });
             land_planet_temp.name = element.name
@@ -376,6 +387,7 @@ function addSentiment(checked){
     }
     return numArr;
 }
+
 
 
 async function fetchQuery(country, query, timeframe) {

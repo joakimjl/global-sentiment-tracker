@@ -61,7 +61,7 @@ def fetch_sentiment_timeframe(country,query,timeframe):
     res = cur.fetchall()
     temp_res = []
     for ele in res:
-        temp = [country_codes_map[ele[0]],ele[1],ele[2],ele[3],ele[4],ele[5].strftime("%Y-%m-%d-%H")]
+        temp = [country_codes_map[ele[0]],ele[1],ele[2],ele[3],ele[4],ele[5].strftime("%Y-%m-%d-%H"),ele[0]]
         temp_res.append(temp)
     #Data format is country, vader national, roberta national, vader international, roberta international
     return json.dumps(temp_res)
@@ -79,7 +79,7 @@ def fetch_sentiment(country,query,timeframe):
     res = cur.fetchall()
     temp_res = []
     for ele in res:
-        temp = [country_codes_map[ele[0]],ele[1],ele[2],ele[3],ele[4]]
+        temp = [country_codes_map[ele[0]],ele[1],ele[2],ele[3],ele[4],ele[0]]
         temp_res.append(temp)
     #Data format is country, vader national, roberta national, vader international, roberta international
     return json.dumps(temp_res)
