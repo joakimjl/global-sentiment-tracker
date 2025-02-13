@@ -941,9 +941,10 @@ def run_all(in_datetime, boolean_map = {"dump":True, "insert":False, "fetch_new"
 
 
 if __name__ == "__main__":
-    #boolean_map = {"dump":False, "insert":False, "fetch_new":False, "upload":True, "process":True, "connected":False, "download_processed":False} #For upload and processing
+    start_time_total = time.time()
+    boolean_map = {"dump":False, "insert":False, "fetch_new":False, "upload":True, "process":True, "connected":False, "download_processed":False} #For upload and processing
     #boolean_map = {"dump":False, "insert":True, "fetch_new":False, "upload":False, "process":False, "connected":True, "download_processed":True} #Downloading processed
-    boolean_map = {"dump":True, "insert":False, "fetch_new":True, "upload":True, "process":False, "connected":True, "download_processed":False} #Fetch and upload info
+    #boolean_map = {"dump":True, "insert":False, "fetch_new":True, "upload":True, "process":False, "connected":True, "download_processed":False} #Fetch and upload info
     day = 1
     month = 2
     year = 2025
@@ -952,13 +953,14 @@ if __name__ == "__main__":
     if boolean_map['download_processed'] == True:
         handler = S3BatchHandler(specific_name = None)
         handler.fetch_processed("temp_processed",added_name="processed",day=date_info)
-    start_datetime = datetime(year=year, month=month, day=day, hour=0, minute=0, second=0)
-    for i in range(60):
-        cur_datetime = start_datetime+timedelta(hours=4)
+    start_datetime = datetime(year=year, month=month, day=day, hour=8, minute=0, second=0)
+    for i in range(2):
+        cur_datetime = cur_datetime+timedelta(hours=4)
         on_datetime = [cur_datetime]
         run_all(on_datetime, boolean_map)
     if boolean_map['fetch_new'] == True and boolean_map['upload'] == True:
         S3BatchHandler().zip_batch("temp_articles",day=date_info)
     elif boolean_map['upload'] == True and boolean_map['fetch_new'] == False:
         S3BatchHandler().upload_processed("temp_processed",day=date_info)
+    print(f"Finished all TOTAL, closing, total time: {time.time() - start_time_total}")
     
