@@ -405,7 +405,7 @@ async function fetchQuery(country, query, timeframe) {
                         names.get(ele[0]).set(ele[5], [ele[1],ele[2],ele[3],ele[4]]);
                     }
                 }
-                var prevCountry = []
+                let prevCountry = []
                 for (let index = 0; index < land_mat_arr.length; index++) {
                     const element = land_mat_arr[index];
                     const countryCode = element.name[0] + element.name[1];
@@ -500,7 +500,7 @@ const outlineSphere = new THREE.Mesh(new THREE.SphereGeometry(3.2,22,22),outline
 outlineSphere.scale.z = 0.001;
 outlineSphere.name = "_outlineSphere"
 scene.add(outlineSphere);
-
+fetchQuery("World","Any",1);
 
 //TODO: Move planet down when clicking on vertical screen, move to the left on horizontal, background, skybox
 function animate() {
@@ -540,8 +540,7 @@ function animate() {
         generateText(hoveredMesh.name, dataFetching)
     }
 
-    requestAnimationFrame(animate);
-    renderer.render(scene, camera);
+    
     var time_val = Math.floor( ((Date.now()/100000)%1)*100000 );
     water_planet_material.uniforms.time.value = time_val;
     land_planet_material.uniforms.time.value = time_val;
@@ -559,11 +558,12 @@ function animate() {
         infographic.getObjectByName("chart").material.uniforms.time.value = time_val;
         scene.getObjectByName("_infographic").lookAt(camera.position)
     }
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
     if (last_fps_time + 1000 <= Date.now()){
         console.log(frame_count);
         frame_count = 0
         last_fps_time = Date.now()
-        
     }
     frame_count += 1;
 }
