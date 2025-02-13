@@ -42,7 +42,7 @@ function onPointerMove( event ) {
 
 
 var dataFetching = null;
-function generateText(displayText, data=null){
+function generateText(displayText, data=null, name){
     const fontloader = new FontLoader();
     fontloader.load('./Roboto_Regular.json', function(font) {
         const infographicScene = new THREE.Scene();
@@ -52,7 +52,7 @@ function generateText(displayText, data=null){
             data = [-1,-0.7,-0,1,-1,-1,-1,-0.5,0,0.1,0.2,1]
             return
         }
-        var cur = data.get(displayText[0]+displayText[1])
+        var cur = data.get(name[0]+name[1])
 
         var processed = processData(mode,cur,false)
         var resArr = []
@@ -60,8 +60,6 @@ function generateText(displayText, data=null){
         for (let index = 0; index < processed[0].length; index++) {
             const element1 = processed[0][index];
             const element2 = processed[1][index];
-
-
 
             let neg = element1[0] + element2[0];
             let neu = element1[1] + element2[1];
@@ -71,19 +69,20 @@ function generateText(displayText, data=null){
             resArr.push(res)
         }
 
-        const hDiv = 2.3 //Height division
+        const hDiv = 2.3; //Height division
+        const wDiv = 0.3*resArr.length; 
         
         var dataCoords = [];
         for (let index = 0; index < resArr.length-1; index++) {
             const element = resArr[index];//Should be dates
-            dataCoords.push([(index-parseInt(resArr.length/2))/5, element/hDiv+0.5])
+            dataCoords.push([(index-parseInt(resArr.length/2))/wDiv, element/hDiv+0.5])
         }
-        dataCoords.push([(resArr.length-1-parseInt(resArr.length/2))/5, resArr[resArr.length-1]/hDiv+0.5])
+        dataCoords.push([(resArr.length-1-parseInt(resArr.length/2))/wDiv, resArr[resArr.length-1]/hDiv+0.5])
         for (let index = resArr.length-1; index >= 0; index--) {
             const element = resArr[index];//Should be dates
-            dataCoords.push([(index-parseInt(resArr.length/2))/5, element/hDiv+0.45])
+            dataCoords.push([(index-parseInt(resArr.length/2))/wDiv, element/hDiv+0.45])
         }resArr
-        dataCoords.push([(0-parseInt(resArr.length/2))/5, resArr[0]/hDiv+0.45])
+        dataCoords.push([(0-parseInt(resArr.length/2))/wDiv, resArr[0]/hDiv+0.45])
 
         const dataShape = new THREE.Shape();//Needs to make shape into cubes..
         dataShape.moveTo(dataCoords[0][0], dataCoords[0][1]);
@@ -123,9 +122,6 @@ function generateText(displayText, data=null){
 
         infographicScene.add(dataMesh)
 
-        //const cube = new THREE.BoxGeometry(1,1,1)
-        //infographicScene.add(cube)
-
         const textMesh = makeTextMesh(displayText,font)
         textMesh.name = "_infographic";
         infographicScene.name = "_infographic";
@@ -133,7 +129,7 @@ function generateText(displayText, data=null){
         infographicScene.add(textMesh)
 
         //Making the date label at bottom
-        const dataAtCountrySorted = new Map([...data.get(displayText[0]+displayText[1]).entries()].sort());
+        const dataAtCountrySorted = new Map([...data.get(name[0]+name[1]).entries()].sort());
 
         const iter = dataAtCountrySorted.keys();
         let key = iter.next().value;
@@ -144,58 +140,64 @@ function generateText(displayText, data=null){
         let month = "";
         let day = "";
         let count_dash = 0;
+        let jumpDays = 0;
+        let distAway = 5;
+        let lastDayPlace = 999;
         while (key != undefined){
             for (let index = 0; index < key.length; index++) {
                 const element = key[index];
                 if (element == "-"){
-                    if (count >= 1){
-                        if (count_dash == 2){
-                            if (day == stringTemp){
-                                day = stringTemp
-                            } else{
-                                const resText = makeTextMesh(stringTemp,font)
-                                resText.position.x += locXArr[parseInt(count)][0]
-                                infographicScene.add(resText)
-                            }
-                            day = stringTemp;
-                            count += 1;
-                        }
-                    } else {
-                        const resText = makeTextMesh(stringTemp,font)
-                        resText.position.x += locXArr[parseInt(count)][0]
-                        infographicScene.add(resText)
-                        if (count_dash == 0) {
+                    if (count_dash == 0){
+                        if (stringTemp != year && stringTemp.length == 4){
+                            const resText = makeTextMesh(stringTemp,font)
+                            resText.position.x += locXArr[parseInt(count)][0]
+                            infographicScene.add(resText)
                             year = stringTemp
                             resText.position.y -= 0.25
                         }
-                        if (count_dash == 1) {
+                    }
+                    if (count_dash == 1){
+                        if (stringTemp != month){
+                            const resText = makeTextMesh(stringTemp,font)
+                            resText.position.x += locXArr[parseInt(count)][0]
+                            infographicScene.add(resText)
                             month = stringTemp
                             resText.position.y -= 0.125
                         }
-                        if (count_dash >= 2) {
-                            day = stringTemp
-                            count += 1;
+                    }
+                    if (count_dash == 2){
+                        let dayAwayLogic = (parseInt(day)-jumpDays <= parseInt(stringTemp) && parseInt(day)+jumpDays >= parseInt(stringTemp));
+                        let distAwayLogic = (lastDayPlace >= distAway);
+                        if (!dayAwayLogic && distAwayLogic){
+                            const resText = makeTextMesh(stringTemp,font)
+                            resText.position.x += locXArr[parseInt(count)][0]
+                            infographicScene.add(resText)
+                            lastDayPlace = 0
                         }
+                        day = stringTemp;
+                        count += 1
+                        lastDayPlace += 1
                     }
                     count_dash += 1
-                    
                     stringTemp = ""
                     
                 } else {
                     stringTemp += element
                 }
             }
+            
             count_dash = 0
             key = iter.next().value;
         }
 
 
-        infographicScene.position.y = 2.2
+        infographicScene.position.y = 2.5
         
         scene.add(infographicScene);
         const tempLight = new THREE.PointLight({color: new THREE.Color(0xffffff), intensity: 1000, decay: 0});
         tempLight.position.z = 10;
         scene.add(tempLight);
+        movePlanetAndText()
     });
 }
 
@@ -412,9 +414,9 @@ async function fetchQuery(country, query, timeframe) {
                     const ele = json[index];
                     if (names.has(ele[0]) == false){
                         const in_map = new Map()
-                        names.set(ele[0], in_map.set(ele[5], [ele[1],ele[2],ele[3],ele[4]]) );
+                        names.set(ele[0], in_map.set(ele[5], [ele[1],ele[2],ele[3],ele[4],ele[6]]) );
                     } else {
-                        names.get(ele[0]).set(ele[5], [ele[1],ele[2],ele[3],ele[4]]);
+                        names.get(ele[0]).set(ele[5], [ele[1],ele[2],ele[3],ele[4],ele[6]]);
                     }
                 }
                 let prevCountry = []
@@ -480,7 +482,7 @@ async function fetchQuery(country, query, timeframe) {
                 dataFetching = dataFetching
                 console.log("Country not in DB")
             } else {
-                dataFetching = names   
+                dataFetching = names  
             }
         }
         catch(error){console.log("Land not done yet", error.message);}
@@ -513,6 +515,20 @@ outlineSphere.scale.z = 0.001;
 outlineSphere.name = "_outlineSphere"
 scene.add(outlineSphere);
 fetchQuery("World","Any",1);
+
+function movePlanetAndText(){
+    console.log(scene.children)
+    scene.getObjectByName("_outlineSphere").position.x = -2
+    scene.getObjectByName("Scene").position.x = -2
+    //scene.getObjectByName("_outlineSphere").scale.x = 0.2
+    //scene.getObjectByName("_outlineSphere").scale.y = 0.2
+    //scene.getObjectByName("Scene").scale.x = 0.2
+    //scene.getObjectByName("Scene").scale.y = 0.2
+    //scene.getObjectByName("Scene").scale.z = 0.2
+    scene.getObjectByName("_infographic").position.x = 3
+    scene.getObjectByName("_infographic").position.y = 0
+    console.log(scene.children)
+}
 
 //TODO: Move planet down when clicking on vertical screen, move to the left on horizontal, background, skybox
 function animate() {
@@ -549,7 +565,9 @@ function animate() {
     if (clickChange == true && dataFetching != null){
         clickChange = false
         scene.remove(scene.getObjectByName("_infographic"))
-        generateText(hoveredMesh.name, dataFetching)
+        let name = dataFetching.values().next()['value'].values().next()['value'][4]
+        generateText(name + " " + mode + " sentiment", dataFetching, hoveredMesh.name)
+        
     }
 
     
