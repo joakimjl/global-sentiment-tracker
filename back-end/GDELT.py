@@ -739,10 +739,13 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
         
     if boolean_map['fetch_new'] == False:
         if boolean_map["download_processed"] == False:
-            info_nat = fetch_dumped_info(target_country=target, date=on_day)
-            titles_nat = info_nat['titles']
-            info_inter = fetch_dumped_info(target_country="-"+target, date=on_day)
-            titles_inter = info_inter['titles']
+            try:
+                info_nat = fetch_dumped_info(target_country=target, date=on_day)
+                titles_nat = info_nat['titles']
+                info_inter = fetch_dumped_info(target_country="-"+target, date=on_day)
+                titles_inter = info_inter['titles']
+            except:
+                print(f"Country missing {target} on: {on_day}")
 
         if boolean_map['process'] == True:
             if info_nat != None and info_inter != None:
@@ -953,11 +956,12 @@ if __name__ == "__main__":
     if boolean_map['download_processed'] == True:
         handler = S3BatchHandler(specific_name = None)
         handler.fetch_processed("temp_processed",added_name="processed",day=date_info)
-    start_datetime = datetime(year=year, month=month, day=day, hour=8, minute=0, second=0)
+    start_datetime = datetime(year=year, month=month, day=day, hour=12, minute=0, second=0)
+    cur_datetime = start_datetime
     for i in range(2):
-        cur_datetime = cur_datetime+timedelta(hours=4)
         on_datetime = [cur_datetime]
         run_all(on_datetime, boolean_map)
+        cur_datetime = cur_datetime+timedelta(hours=4)
     if boolean_map['fetch_new'] == True and boolean_map['upload'] == True:
         S3BatchHandler().zip_batch("temp_articles",day=date_info)
     elif boolean_map['upload'] == True and boolean_map['fetch_new'] == False:
