@@ -16,8 +16,11 @@ void main() {
     vec3 waterNormal = tempNormal;
     vec3 cameraDir = normalize(cameraPosition - pos);
 
+    vec3 cameraFrontLightV3 = (waterNormal - cameraDir);
+    float cameraFrontLight = 0.9 - pow((abs(cameraFrontLightV3.x)+abs(cameraFrontLightV3.y)+abs(cameraFrontLightV3.z)), 7.0)/5.0;
+
     vec3 reflection = reflect(-cameraDir, waterNormal);
-    float diffStrength = max(dot(waterNormal,sunLocation),0.0);
+    float diffStrength = max(dot(waterNormal,sunLocation),cameraFrontLight);
 
     vec3 posDir = normalize(pos);
     float distToCenter = (abs(pos.x) + abs(pos.y) + abs(pos.z)) / (abs(posDir.x) + abs(posDir.y) + abs(posDir.z));
@@ -56,8 +59,8 @@ void main() {
     float fresnelTerm = dot(viewDirectionW, vNormalW) * (1. - 0.0001/2.);
     fresnelTerm = clamp(0.5 - fresnelTerm, 0.0, 1.0);
 
+    finalColor += fresnelTerm;
 
-
-    gl_FragColor = vec4(finalColor+fresnelTerm,1.0); 
+    gl_FragColor = vec4(finalColor,1.0); 
 }
 

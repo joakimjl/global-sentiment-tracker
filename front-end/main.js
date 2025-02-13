@@ -517,17 +517,10 @@ scene.add(outlineSphere);
 fetchQuery("World","Any",1);
 
 function movePlanetAndText(){
-    console.log(scene.children)
-    scene.getObjectByName("_outlineSphere").position.x = -2
-    scene.getObjectByName("Scene").position.x = -2
-    //scene.getObjectByName("_outlineSphere").scale.x = 0.2
-    //scene.getObjectByName("_outlineSphere").scale.y = 0.2
-    //scene.getObjectByName("Scene").scale.x = 0.2
-    //scene.getObjectByName("Scene").scale.y = 0.2
-    //scene.getObjectByName("Scene").scale.z = 0.2
+    scene.getObjectByName("_outlineSphere").position.x = -3
+    scene.getObjectByName("Scene").position.x = -3
     scene.getObjectByName("_infographic").position.x = 3
     scene.getObjectByName("_infographic").position.y = 0
-    console.log(scene.children)
 }
 
 //TODO: Move planet down when clicking on vertical screen, move to the left on horizontal, background, skybox
