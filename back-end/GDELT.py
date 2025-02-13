@@ -746,7 +746,7 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
                 titles_inter = info_inter['titles']
             except:
                 print(f"Country missing {target} on: {on_day}")
-                return
+                return None
 
         if boolean_map['process'] == True:
             if info_nat != None and info_inter != None:
