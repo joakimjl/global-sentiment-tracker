@@ -520,6 +520,9 @@ def get_gdelt_headlines(query="economy", target_country="US", date=date.today(),
         idx += 1
 
     print(f'{target_country} kept: {kept} removed: {idx-kept}')
+    if kept == 0:
+        kept_data = data
+        print(f'{target_country} KEPT ANYWAY DUE TO NONE REMAINING')
     
     return kept_data
 
