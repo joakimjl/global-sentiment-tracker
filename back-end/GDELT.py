@@ -326,7 +326,7 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
     prep_queries = ["("]
     for i in range(len(split_terms)):
 
-        if (len(prep_queries[-1]) + len(split_terms[i]) + 4) <= 60:
+        if (len(prep_queries[-1]) + len(split_terms[i]) + 4) <= 45:
             if len(prep_queries[-1]) >= 4:
                 prep_queries[-1] += " OR " + split_terms[i]
             else:
@@ -959,7 +959,7 @@ if __name__ == "__main__":
         handler.fetch_processed("temp_processed",added_name="processed",day=date_info)
     start_datetime = datetime(year=year, month=month, day=day, hour=12, minute=0, second=0)
     cur_datetime = start_datetime
-    for i in range(2):
+    for i in range(58):
         on_datetime = [cur_datetime]
         run_all(on_datetime, boolean_map)
         cur_datetime = cur_datetime+timedelta(hours=4)
