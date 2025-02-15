@@ -18,7 +18,10 @@ import { TessellateModifier } from 'three/examples/jsm/modifiers/TessellateModif
 import { reverse } from 'd3';
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const width = window.innerWidth;
+const height = window.innerHeight;
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+//const camera = new THREE.OrthographicCamera( width / - 2, width / 2, height / 2, height / - 2, 1, 1000 );
 const renderer = new THREE.WebGLRenderer({antialias : true});
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
@@ -26,6 +29,7 @@ document.body.appendChild(renderer.domElement);
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 
+var initMoveUi = false;
 var noiseDone = false;
 
 var noiseTexture = new THREE.TextureLoader().load(
@@ -33,6 +37,13 @@ var noiseTexture = new THREE.TextureLoader().load(
     (texture) => {
         noiseTexture = texture;
         noiseDone = true;
+    }
+);
+
+var noiseTexture2 = new THREE.TextureLoader().load(
+    "./Pernlin2.png",
+    (texture) => {
+        noiseTexture2 = texture;
     }
 );
 
@@ -142,7 +153,7 @@ function generateText(displayText, data=null, name){
         let day = "";
         let count_dash = 0;
         let jumpDays = 0;
-        let distAway = 1;
+        let distAway = 4;
         let lastDayPlace = 999;
         while (key != undefined){
             for (let index = 0; index < key.length; index++) {
@@ -186,19 +197,18 @@ function generateText(displayText, data=null, name){
                     stringTemp += element
                 }
             }
-            
             count_dash = 0
             key = iter.next().value;
         }
 
 
-        infographicScene.position.y = 2.5
+        infographicScene.position.y = 0
         
         scene.add(infographicScene);
         const tempLight = new THREE.PointLight({color: new THREE.Color(0xffffff), intensity: 1000, decay: 0});
         tempLight.position.z = 10;
         scene.add(tempLight);
-        movePlanetAndText()
+        initMoveUi = true;
     });
 }
 
@@ -220,12 +230,9 @@ function makeTextMesh(text,font,locX){
     return textMesh;
 }
 
-var displayText = "1 2 3 4 5 6 7 8 9 10";
-generateText(displayText)
-
 const initCameraDistance = 1000;
 camera.position.z = initCameraDistance;
-const finishCameraDist = 5;
+const finishCameraDist = 7 + clamp( Math.abs( (window.innerHeight -1000)/300 ), 0, 10);
 //const controls = new OrbitControls(camera, renderer.domElement);
 
 var intersects = raycaster.intersectObjects( scene.children );
@@ -238,7 +245,8 @@ const water_planet_material = new THREE.ShaderMaterial({
     fragmentShader: fragWater,
     uniforms: {
         time: {value: (Date.now()/10)%10},
-        relativeCamera: {value: new THREE.Vector3(0,0,0)}
+        relativeCamera: {value: new THREE.Vector3(0,0,0)},
+        noiseTexture: {value: noiseTexture2}
     }
 });
 
@@ -252,6 +260,7 @@ const land_planet_material = new THREE.ShaderMaterial({
         landMovement: {value: 0.001},
         givenRandTime: {value: randFloat(0,1)},
         relativeCamera: {value: new THREE.Vector3(0, 1, 1)},
+        noiseTexture: {value: noiseTexture}
     }
 });
 
@@ -522,11 +531,13 @@ outlineSphere.name = "_outlineSphere"
 scene.add(outlineSphere);
 fetchQuery("World","Any",1);
 
+var moveUILerp = 0;
+var accelUI = 0;
+
 function movePlanetAndText(){
-    scene.getObjectByName("_outlineSphere").position.x = -3
-    scene.getObjectByName("Scene").position.x = -3
-    scene.getObjectByName("_infographic").position.x = 3
-    scene.getObjectByName("_infographic").position.y = 0
+    scene.getObjectByName("_outlineSphere").position.x = lerp(0,-3,moveUILerp)
+    scene.getObjectByName("Scene").position.x = lerp(0,-3,moveUILerp)
+    scene.getObjectByName("_infographic").position.x = lerp(0,3,moveUILerp)
 }
 
 var heldTime = -1;
@@ -552,8 +563,13 @@ function performMeshTrace(){
 }
 
 function checkForMesh(event){
-    pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-	pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+    if (event.targetTouches == undefined) {
+        pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+        pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+    } else {
+        pointer.x = ( event.targetTouches[0].clientX / window.innerWidth ) * 2 - 1;
+        pointer.y = - ( event.targetTouches[0].clientY / window.innerHeight ) * 2 + 1;
+    }
     if (hoveredMesh == "None" || hoveredMesh == undefined) {
         performMeshTrace()
     }
@@ -586,31 +602,34 @@ var eulerPitch = 0;
 var prevSpinYaw = 0;
 var prevSpinPitch = 0;
 
-const pitchSpeedMulti = 2.5;
-const yawSpeedMulti = 3.5;
+const pitchSpeedMulti = 0.0007;
+const yawSpeedMulti = 0.00032;
+let notMobile = false;
 
 var movedLast = false;
+var mouseMovement = new THREE.Vector2(0,0);
 
 function mouseMove(e){
     if (e.targetTouches == undefined) {
         if (!holdingPlanet){
             return
         }
-        pointer.x = ( e.clientX / window.innerWidth ) * 2 - 1;
-        pointer.y = - ( e.clientY / window.innerHeight ) * 2 + 1;
+        mouseMovement.x = e.clientX;
+        mouseMovement.y = - e.clientY;
+        notMobile = true;
     } else {
-        pointer.x = ( e.targetTouches[0].clientX / window.innerWidth ) * 2 - 1;
-	    pointer.y = - ( e.targetTouches[0].clientY / window.innerHeight ) * 2 + 1;
+        mouseMovement.x = e.targetTouches[0].clientX;
+	    mouseMovement.y = - e.targetTouches[0].clientY;
     }
     if (heldTime >= Date.now()-30) {
-        prevMouse = new THREE.Vector2(pointer.x,pointer.y);
+        prevMouse = new THREE.Vector2(mouseMovement.x,mouseMovement.y);
     }
     if (heldTime <= Date.now()-70) {
         movedLast = true;
-        prevSpinPitch = -(prevMouse.y - pointer.y)*pitchSpeedMulti;
-        prevSpinYaw = -(prevMouse.x - pointer.x)*yawSpeedMulti;
+        prevSpinPitch += -(prevMouse.y - mouseMovement.y)*pitchSpeedMulti;
+        prevSpinYaw += -(prevMouse.x - mouseMovement.x)*yawSpeedMulti;
     }
-    prevMouse = new THREE.Vector2(pointer.x,pointer.y);
+    prevMouse = new THREE.Vector2(mouseMovement.x,mouseMovement.y);
 }
 
 function mouseUp(e){
@@ -671,12 +690,29 @@ function animate() {
         scene.remove(scene.getObjectByName("_infographic"))
         let name = dataFetching.values().next()['value'].values().next()['value'][4]
         generateText(name + " " + mode + " sentiment", dataFetching, hoveredMesh.name)
-        
     }
-
+    if (initMoveUi == true){
+        var accel = 0.0001;
+        if (Math.abs(moveUILerp+accelUI / (accel*200)) >= 1) {
+            accelUI = accelUI-accel;
+        } else {
+            accelUI = accelUI+accel;
+        }
+        moveUILerp += accelUI;
+        movePlanetAndText()
+        if (Math.abs(moveUILerp) >= 1){
+            initMoveUi = false;
+        }
+    }
     
-    var time_val = Math.floor( ((Date.now()/100000)%1)*100000 );
-    const eulerVector = new THREE.Vector3(0,0,5).applyEuler(new THREE.Euler(-eulerPitch, -eulerYaw, 0,"ZYX")) //-eulerPitch*Math.sin(tempYaw/1.5)
+    var time_val = Math.floor( ((Date.now()/1000000)%1)*1000000 );
+    let orbLoc;
+    if ( scene.getObjectByName("Scene") != undefined ) {
+        orbLoc = scene.getObjectByName("Scene").position
+    } else {
+        orbLoc = new THREE.Vector3(0,0,0)
+    }
+    const eulerVector = new THREE.Vector3(0-orbLoc.x,0-orbLoc.y,5-orbLoc.z).applyEuler(new THREE.Euler(-eulerPitch, -eulerYaw, 0,"ZYX"));
     water_planet_material.uniforms.time.value = time_val;
     water_planet_material.uniforms.relativeCamera.value = eulerVector;
     outlineSphereMat.uniforms.time.value = time_val;
@@ -689,9 +725,8 @@ function animate() {
     }
     var infographic = scene.getObjectByName("_infographic")
     if (infographic != undefined) {
-
         infographic.getObjectByName("chart").material.uniforms.time.value = time_val;
-        scene.getObjectByName("_infographic").lookAt(camera.position)
+        //scene.getObjectByName("_infographic").lookAt(camera.position)
     }
     requestAnimationFrame(animate);
     renderer.render(scene, camera);

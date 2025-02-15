@@ -24,8 +24,8 @@ void main() {
 
     pos = tempPos;
 
-    vPositionW = vec3( vec4( pos, 1.0 ) * modelMatrix);
-    vNormalW = normalize( vec3( vec4( tempNormal, 0.0 ) * modelMatrix ));
+    vPositionW = vec3( vec4( pos, 1.0 ) );
+    vNormalW = normalize( vec3( vec4( tempNormal, 0.0 )  ));
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(tempPos, 1.);
 }
