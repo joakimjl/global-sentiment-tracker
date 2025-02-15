@@ -15,6 +15,7 @@ import fragOpacity from './fragOpacityShader.frag?raw';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import { TessellateModifier } from 'three/examples/jsm/modifiers/TessellateModifier.js';
+import { reverse } from 'd3';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -27,7 +28,7 @@ const pointer = new THREE.Vector2();
 
 var noiseDone = false;
 
-const noiseTexture = new THREE.TextureLoader().load(
+var noiseTexture = new THREE.TextureLoader().load(
     "./PernlinNoise.png",
     (texture) => {
         noiseTexture = texture;
@@ -236,7 +237,8 @@ const water_planet_material = new THREE.ShaderMaterial({
     vertexShader: vertWater,
     fragmentShader: fragWater,
     uniforms: {
-        time: {value: (Date.now()/10)%10}
+        time: {value: (Date.now()/10)%10},
+        relativeCamera: {value: new THREE.Vector3(0,0,0)}
     }
 });
 
@@ -248,7 +250,8 @@ const land_planet_material = new THREE.ShaderMaterial({
     uniforms: {
         time: {value: (Date.now()/10)%10},
         landMovement: {value: 0.001},
-        givenRandTime: {value: randFloat(0,1)}
+        givenRandTime: {value: randFloat(0,1)},
+        relativeCamera: {value: new THREE.Vector3(0, 1, 1)},
     }
 });
 
@@ -265,6 +268,8 @@ loader.load(
     // called when the resource is loaded
     function ( gltf ) {
 
+        let relativeEuler = new THREE.Vector3(0, 0, 1).applyEuler(new THREE.Euler(eulerPitch,eulerYaw,0));
+
         gltf.scene.children[gltf.scene.children.length-1].material = water_planet_material;
 
         for (let index = 0; index < gltf.scene.children.length-1; index++) {
@@ -278,7 +283,8 @@ loader.load(
                     landMovement: {value: 0.001},
                     givenRandTime: {value: rand},
                     sentiment: {value: rand},
-                    noiseTexture: {value: noiseTexture}
+                    noiseTexture: {value: noiseTexture},
+                    relativeCamera: {value: relativeEuler},
                 }
             });
             land_planet_temp.name = element.name
@@ -523,23 +529,110 @@ function movePlanetAndText(){
     scene.getObjectByName("_infographic").position.y = 0
 }
 
-//TODO: Move planet down when clicking on vertical screen, move to the left on horizontal, background, skybox
-function animate() {
+var heldTime = -1;
+
+function performMeshTrace(){
     raycaster.setFromCamera( pointer, camera );
     intersects = raycaster.intersectObjects( scene.children );
     if (intersects.length >= 1){
         if (intersects[0] != undefined) {
-            if (intersects[0].object[0] != "_"){
+            if (intersects[0].object.name[0] != "_"){
                 hoveredMesh = intersects[0].object;
-            } else {
-                if (intersects[1] != undefined) {
-                    hoveredMesh = intersects[1].object;
-                }
+            } else if (intersects[1] != undefined && intersects[1].object.name[0] != "_") {
+                hoveredMesh = intersects[1].object;
+            } else if (intersects[2] != undefined && intersects[2].object.name[0] != "_") {
+                hoveredMesh = intersects[2].object;
+            } else if (intersects[3] != undefined && intersects[3].object.name[0] != "_") {
+                hoveredMesh = intersects[3].object;
             }
         }
     } else {
         hoveredMesh = "None"
     }
+}
+
+function checkForMesh(event){
+    pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+    if (hoveredMesh == "None" || hoveredMesh == undefined) {
+        performMeshTrace()
+    }
+    if (hoveredMesh == "None" || hoveredMesh == undefined) {
+        return
+    }
+    if (hoveredMesh.name != undefined && hoveredMesh.name[0] != "_" && clickChange == false){
+        hoveredMesh.name = hoveredMesh.name[0] + hoveredMesh.name[1]
+        if (hoveredMesh.name != prevName){
+            clickChange = true;
+            prevName = hoveredMesh.name
+            dataFetching = null;
+            fetchQuery(hoveredMesh.name,"Any",1);
+        }
+    }
+}
+
+
+var holdingPlanet = false;
+
+function mouseDown(e){
+    heldTime = Date.now()
+    holdingPlanet = true;
+}
+
+var prevMouse = new THREE.Vector2(0,0);
+var eulerYaw = 0;
+var eulerPitch = 0;
+
+var prevSpinYaw = 0;
+var prevSpinPitch = 0;
+
+const pitchSpeedMulti = 2.5;
+const yawSpeedMulti = 3.5;
+
+var movedLast = false;
+
+function mouseMove(e){
+    if (e.targetTouches == undefined) {
+        if (!holdingPlanet){
+            return
+        }
+        pointer.x = ( e.clientX / window.innerWidth ) * 2 - 1;
+        pointer.y = - ( e.clientY / window.innerHeight ) * 2 + 1;
+    } else {
+        pointer.x = ( e.targetTouches[0].clientX / window.innerWidth ) * 2 - 1;
+	    pointer.y = - ( e.targetTouches[0].clientY / window.innerHeight ) * 2 + 1;
+    }
+    if (heldTime >= Date.now()-30) {
+        prevMouse = new THREE.Vector2(pointer.x,pointer.y);
+    }
+    if (heldTime <= Date.now()-70) {
+        movedLast = true;
+        prevSpinPitch = -(prevMouse.y - pointer.y)*pitchSpeedMulti;
+        prevSpinYaw = -(prevMouse.x - pointer.x)*yawSpeedMulti;
+    }
+    prevMouse = new THREE.Vector2(pointer.x,pointer.y);
+}
+
+function mouseUp(e){
+    if (heldTime == -1 || heldTime >= Date.now()-500){
+        checkForMesh(e)
+    }
+    holdingPlanet = false;
+}
+
+window.addEventListener("mouseup", (e) => mouseUp(e));
+window.addEventListener("mousemove", (e) => mouseMove(e));
+window.addEventListener("mousedown", (e) => mouseDown(e));
+window.addEventListener("touchstart", (e) => mouseDown(e));
+window.addEventListener("touchmove", (e) => mouseMove(e));
+window.addEventListener("touchend", (e) => mouseUp(e));
+
+
+//TODO: Move planet down when clicking on vertical screen, move to the left on horizontal, background, skybox
+function animate() {
+    raycaster.setFromCamera( pointer, camera );
+    intersects = raycaster.intersectObjects( scene.children );
+    //performMeshTrace()
     //console.log(intersects)
     alpha = clamp( Math.pow(alpha + (Date.now()-last_fps_time)/550000, 0.9) ,0,1);
     if (!controls_done) {
@@ -553,7 +646,25 @@ function animate() {
     }
     if (alpha >= 1 && !controls_done){
         controls_done = true;
-        const controls = new OrbitControls(camera, renderer.domElement);
+        //const controls = new OrbitControls(camera, renderer.domElement);
+    }
+    if (alpha >= 1) {
+        eulerPitch -= prevSpinPitch;
+        eulerYaw += prevSpinYaw;
+        if (Math.abs(eulerPitch) % 3 >= 1.05) {
+            prevSpinPitch *= -1;
+            eulerPitch = clamp(eulerPitch,-1.05,1.05);
+        }
+        if (!holdingPlanet && movedLast == false){
+            prevSpinPitch *= 0.99;
+            prevSpinYaw *= 0.99;
+        }
+        if (holdingPlanet == true) {
+            prevSpinPitch *= 0.89;
+            prevSpinYaw *= 0.89;
+        }
+        movedLast = false;
+        scene.getObjectByName("Scene").setRotationFromEuler(new THREE.Euler(eulerPitch, eulerYaw, 0,"XYZ"))
     }
     if (clickChange == true && dataFetching != null){
         clickChange = false
@@ -565,15 +676,16 @@ function animate() {
 
     
     var time_val = Math.floor( ((Date.now()/100000)%1)*100000 );
+    const eulerVector = new THREE.Vector3(0,0,5).applyEuler(new THREE.Euler(-eulerPitch, -eulerYaw, 0,"ZYX")) //-eulerPitch*Math.sin(tempYaw/1.5)
     water_planet_material.uniforms.time.value = time_val;
-    land_planet_material.uniforms.time.value = time_val;
-    land_planet_material.uniforms.landMovement.value = 0.05;
+    water_planet_material.uniforms.relativeCamera.value = eulerVector;
     outlineSphereMat.uniforms.time.value = time_val;
     scene.getObjectByName("_outlineSphere").lookAt(camera.position)
     for (let index = 0; index < land_mat_arr.length; index++) {
         const element = land_mat_arr[index];
         element.uniforms.time.value = time_val;
         element.uniforms.landMovement.value = 0.05;
+        element.uniforms.relativeCamera.value = eulerVector;
     }
     var infographic = scene.getObjectByName("_infographic")
     if (infographic != undefined) {
@@ -597,18 +709,9 @@ function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
-  }
-  window.addEventListener("resize", onWindowResize);
+}
 
-window.addEventListener('click', (e) => {
-    if (hoveredMesh.name != undefined && hoveredMesh.name[0] != "_" && clickChange == false){
-        hoveredMesh.name = hoveredMesh.name[0] + hoveredMesh.name[1]
-        if (hoveredMesh.name != prevName){
-            clickChange = true;
-            prevName = hoveredMesh.name
-            dataFetching = null;
-            fetchQuery(hoveredMesh.name,"Any",1);
-        }
-    }
-    //console.log(hoveredMesh)
-});
+window.addEventListener("resize", onWindowResize);
+
+
+

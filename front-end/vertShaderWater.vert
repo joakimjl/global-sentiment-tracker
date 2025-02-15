@@ -8,6 +8,7 @@ varying vec2 uvMap;
 varying vec3 sumOfSines;
 varying vec3 diffVert;
 
+uniform vec3 relativeCamera;
 varying vec3 vPositionW;
 varying vec3 vNormalW;
 

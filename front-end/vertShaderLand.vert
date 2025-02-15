@@ -9,6 +9,7 @@ uniform float givenRandTime;
 uniform float sentiment;
 uniform sampler2D noiseTexture;
 
+uniform vec3 relativeCamera;
 varying vec3 vPositionW;
 varying vec3 vNormalW;
 

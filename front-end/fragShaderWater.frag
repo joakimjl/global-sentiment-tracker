@@ -7,14 +7,15 @@ varying vec2 uvMap;
 varying vec3 sumOfSines;
 varying vec3 diffVert;
 
+uniform vec3 relativeCamera;
 varying vec3 vPositionW;
 varying vec3 vNormalW;
 
 void main() {
-    vec3 sunLocation = normalize(vec3(0.,0.,10.));
+    vec3 sunLocation = normalize(relativeCamera);
     //vec3 sunLocation = normalize(cameraPosition);
     vec3 waterNormal = tempNormal;
-    vec3 cameraDir = normalize(cameraPosition - pos);
+    vec3 cameraDir = normalize(relativeCamera - pos);
 
     vec3 cameraFrontLightV3 = (waterNormal - cameraDir);
     float cameraFrontLight = 0.9 - pow((abs(cameraFrontLightV3.x)+abs(cameraFrontLightV3.y)+abs(cameraFrontLightV3.z)), 7.0)/5.0;
@@ -55,11 +56,11 @@ void main() {
 
 
     vec3 color = vec3(.58, .74, 1.);
-    vec3 viewDirectionW = normalize(cameraPosition - vPositionW);
+    vec3 viewDirectionW = normalize(relativeCamera - vPositionW);
     float fresnelTerm = dot(viewDirectionW, vNormalW) * (1. - 0.0001/2.);
     fresnelTerm = clamp(0.5 - fresnelTerm, 0.0, 1.0);
 
-    finalColor += fresnelTerm;
+    //finalColor += fresnelTerm;
 
     gl_FragColor = vec4(finalColor,1.0); 
 }

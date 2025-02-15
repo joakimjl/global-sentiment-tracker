@@ -8,14 +8,15 @@ uniform float givenRandTime;
 uniform float sentiment;
 uniform sampler2D noiseTexture;
 
+uniform vec3 relativeCamera;
 varying vec3 vPositionW;
 varying vec3 vNormalW;
 
 void main() {
-    vec3 sunLocation = normalize(vec3(0.,0.,10.));
+    vec3 sunLocation = normalize(relativeCamera);
     //vec3 sunLocation = normalize(cameraPosition);
     vec3 landNormal = normalize(pos);
-    vec3 cameraDir = normalize(cameraPosition - pos);
+    vec3 cameraDir = normalize(relativeCamera - pos);
 
     vec3 cameraFrontLightV3 = (landNormal - cameraDir);
 
@@ -49,11 +50,11 @@ void main() {
     vec3 finalColor = texPart * baseColor + diffuseColor*0.7 + reflectionColor*0.5 - (posAdding*texPart*missing*vec3(0.1,0.1,0.1)) - 0.25*(posAdding*texPart*missing*vec3(0.1,0.1,0.1)*pos);
 
     vec3 color = vec3(.58, .74, 1.);
-    vec3 viewDirectionW = normalize(cameraPosition - vPositionW);
+    vec3 viewDirectionW = normalize(relativeCamera - vPositionW);
     float fresnelTerm = dot(viewDirectionW, landNormal) * (1. - 0.0001/2.);
     fresnelTerm = clamp(0.5 - fresnelTerm, 0.0, 1.0);
 
-    finalColor += fresnelTerm;
+    //finalColor += fresnelTerm;
     
-    gl_FragColor = vec4(finalColor,1.0); 
+    gl_FragColor = vec4(reflectionColor,1.0); 
 }
