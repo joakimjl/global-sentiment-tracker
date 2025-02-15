@@ -54,7 +54,7 @@ void main() {
     float fresnelTerm = dot(viewDirectionW, landNormal) * (1. - 0.0001/2.);
     fresnelTerm = clamp(0.5 - fresnelTerm, 0.0, 1.0);
 
-    //finalColor += fresnelTerm;
+    finalColor += fresnelTerm;
     
-    gl_FragColor = vec4(reflectionColor,1.0); 
+    gl_FragColor = vec4(finalColor,1.0); 
 }
