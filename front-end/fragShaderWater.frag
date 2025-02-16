@@ -32,27 +32,6 @@ void main() {
     vec3 reflectionColor = vec3(0.4,0.4,0.4) * pow(max(dot(reflection,sunLocation), 0.0), 16.0);
     vec3 diffuseColor = baseDiffuse * diffStrength;
 
-    float timeMulti = 9.0;
-    timeMulti = timeMulti*timeMulti;
-    
-    vec3 testSine = vec3(0.0,0.0,0.0);
-    for(int i=3;i<10;++i)
-    {
-        testSine += clamp( (0.00002 * float(i) )*sin( pos*20.00*float(i) + ((0.5*time* (float(i))/900.0))),-0.3,0.3 );
-    }
-    vec3 sine1 = 0.0008*sin(timeMulti*pos*2000.0+(0.5*time*0.0052));
-    vec3 sine2 = 0.0013*sin(timeMulti*pos*900.0+(0.5*time*0.0015));
-    vec3 sine3 = 0.0013*sin(timeMulti*pos*550.0+(0.5*time*0.005));
-    vec3 sine4 = 0.0015*sin(timeMulti*pos*200.0+(0.5*time*0.0012));
-
-    testSine += sine4;
-
-    float waveMagnitude = 0.0;
-
-    float test = abs(testSine.x)+abs(testSine.y)+abs(testSine.z);
-    test *= test*100.0;
-    vec3 waveTops = vec3(test,test,test)*4.0;
-
     float timeScroll = time * 0.0001;
     float scrollFactor = sin(timeScroll + pos.z*1.5 + pos.x*0.8) + cos(timeScroll + pos.z*1.2 + pos.y*0.5);
     vec2 size = vec2(textureSize(noiseTexture, 0));
@@ -60,7 +39,6 @@ void main() {
     vec4 testTexture = texture(noiseTexture, uv);
     
     vec3 finalColor = diffuseColor + reflectionColor -0.2;//+ (testTexture.x/2.0);
-
 
     vec3 color = vec3(.58, .74, 1.);
     vec3 viewDirectionW = normalize(relativeCamera - vPositionW);

@@ -24,21 +24,6 @@ void main() {
     
     vColor = tempPos * 0.001;
 
-    float timeMulti = 9.0;
-    timeMulti = timeMulti*timeMulti;
-
-    sumOfSines = vec3(0.0,0.0,0.0);
-    for(int i=3;i<10;++i)
-    {
-        sumOfSines += clamp( (0.00002 * float(i) )*sin( tempPos*20.00*float(i) + ((0.5*time* (float(i))/900.0))),-0.3,0.3 );
-    }
-    vec3 sine1 = 0.0008*sin(timeMulti*tempPos*2000.0+(0.5*time*0.0052));
-    vec3 sine2 = 0.0013*sin(timeMulti*tempPos*900.0+(0.5*time*0.0015));
-    vec3 sine3 = 0.0013*sin(timeMulti*tempPos*550.0+(0.5*time*0.005));
-    vec3 sine4 = 0.0015*sin(timeMulti*tempPos*200.0+(0.5*time*0.0012));
-
-    sumOfSines += sine1 + sine2 + sine3 + sine4;
-
     pos = tempPos;
 
     float timeScroll = time * 0.0001;
