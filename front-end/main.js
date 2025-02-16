@@ -40,6 +40,8 @@ const pmremGenerator = new THREE.PMREMGenerator( renderer );
 scene.background = new THREE.Color( 0x0f0f0f );
 scene.environment = pmremGenerator.fromScene( environment ).texture;
 
+var deltaSeconds = Date.now()
+
 var initMoveUi = false;
 var initMoveReturnUi = false;
 var noiseDone = false;
@@ -780,6 +782,7 @@ window.addEventListener("touchend", (e) => mouseUp(e));
 //Height for count, color for intensity
 //Relative name scoring on sentiment? aka more positive than x:%?
 function animate() {
+    var deltaBefore = Date.now()
     raycaster.setFromCamera( pointer, camera );
     intersects = raycaster.intersectObjects( scene.children );
     //performMeshTrace()
@@ -825,7 +828,8 @@ function animate() {
         generateText(name + " " + mode + " sentiment", dataFetching, hoveredMesh.name)
     }
     if (initMoveUi == true){
-        var accel = 0.00008 * -(initMoveReturnUi*2-1);
+        var accel = 0.06 * -(initMoveReturnUi*2-1);
+        accel *= deltaSeconds/1000
         if (Math.abs(moveUILerp + accelUI/Math.abs(accel*157)) >= 1) {
             accelUI = accelUI-accel;
         } else {
@@ -879,6 +883,7 @@ function animate() {
         last_fps_time = Date.now()
     }
     frame_count += 1;
+    deltaSeconds = Date.now() - deltaBefore;
 }
 animate();
 window.addEventListener( 'pointermove', onPointerMove );
