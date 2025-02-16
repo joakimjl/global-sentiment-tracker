@@ -19,12 +19,13 @@ import fragBoxWater from './fragShaderWaterBox.frag?raw';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import { TessellateModifier } from 'three/examples/jsm/modifiers/TessellateModifier.js';
-import { count, reverse } from 'd3';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { text } from 'd3';
 
 const scene = new THREE.Scene();
 const width = window.innerWidth;
 const height = window.innerHeight;
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
 //const camera = new THREE.OrthographicCamera( width / - 2, width / 2, height / 2, height / - 2, 1, 1000 );
 const renderer = new THREE.WebGLRenderer({antialias : true});
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -32,6 +33,12 @@ document.body.appendChild(renderer.domElement);
 
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
+
+const environment = new RoomEnvironment();
+const pmremGenerator = new THREE.PMREMGenerator( renderer );
+
+scene.background = new THREE.Color( 0x0f0f0f );
+scene.environment = pmremGenerator.fromScene( environment ).texture;
 
 var initMoveUi = false;
 var initMoveReturnUi = false;
@@ -89,21 +96,57 @@ box_water_material.transparent = true;
 
 var infographicMats = [];
 
+function boxGen( width, height, depth, radius0, smoothness){
+    let shape = new THREE.Shape();
+    let eps = 0.00001;
+    let radius = radius0 - eps;
+    shape.absarc( eps, eps, eps, -Math.PI / 2, -Math.PI, true );
+    shape.absarc( eps, height -  radius * 2, eps, Math.PI, Math.PI / 2, true );
+    shape.absarc( width - radius * 2, height -  radius * 2, eps, Math.PI / 2, 0, true );
+    shape.absarc( width - radius * 2, eps, eps, 0, -Math.PI / 2, true );
+    let geometry = new THREE.ExtrudeGeometry( shape, {
+        depth: depth - radius0 * 2,
+        bevelEnabled: true,
+        bevelSegments: smoothness * 2,
+        steps: 1,
+        bevelSize: radius,
+        bevelThickness: radius0,
+        curveSegments: smoothness
+    });
+    
+    geometry.center();
+    
+    return geometry;
+}
+
+function scaleUniform(inScene, val){
+    inScene.scale.x = val
+    inScene.scale.y = val
+    inScene.scale.z = val
+
+    return inScene
+}
+
 var dataFetching = null;
 function generateText(displayText, data=null, name){
     const fontloader = new FontLoader();
     fontloader.load('./Roboto_Regular.json', function(font) {
         const infographicScene = new THREE.Scene();
 
+        //Making the date label at bottom
+        const dataAtCountrySorted = new Map([...data.get(name[0]+name[1]).entries()].sort());
+
         //testing dummy data
         if (data == null){
             data = [-1,-0.7,-0,1,-1,-1,-1,-0.5,0,0.1,0.2,1]
             return
         }
-        var cur = data.get(name[0]+name[1])
+        var cur = dataAtCountrySorted
 
         var processed = processData(mode,cur,false)
         var resArr = []
+        var countArr = []
+        var maxCount = 0;
         
         for (let index = 0; index < processed[0].length; index++) {
             const element1 = processed[0][index];
@@ -115,11 +158,37 @@ function generateText(displayText, data=null, name){
             let res = (pos-neg)/(neu+(Math.abs(pos-neg)))
             //console.log('pos: %f,  neu: %f,  neg: %f   res: %f', pos,neu,neg,res)
             resArr.push(res)
+            let amount = neg+neu+pos;
+            if (amount > maxCount){
+                maxCount = amount
+            }
+            countArr.push(neg+neu+pos)
         }
 
-        const hDiv = 2.3; //Height division
-        const wDiv = 0.3*resArr.length; 
-        
+        const wConst = 7.2*(window.innerWidth/1920)
+        const hConst = 4*(window.innerHeight/1080)
+        var dataCoords = [];
+        const lengthScale = resArr.length/0.9
+        for (let i = 0; i < resArr.length; i++) {
+            const element = resArr[i];
+            //const xLoc = ((wConst/3.2)*(1+i))/wDiv - 2
+            const xLoc = (i*wConst)/(resArr.length-1) - wConst/2
+            dataCoords.push([xLoc, element]);
+            const meshMat = new THREE.MeshPhysicalMaterial({
+                color: new THREE.Color(Math.abs( clamp(element,-1,0) ),clamp(element,0,1),0.0),
+                roughness: 0.2,
+                metalness: 0.5
+            });
+            //const meshGeometry = new THREE.BoxGeometry(3.5/resArr.length, 1, 0.88, 1, 1, 1);
+            const meshGeometry = boxGen(wConst/lengthScale, (hConst)*countArr[i]/(maxCount), wConst/lengthScale, (wConst*0.1)/lengthScale, 1)
+            const mesh = new THREE.Mesh(meshGeometry,meshMat);
+            mesh.position.x = xLoc;
+            mesh.position.z = -(wConst/(lengthScale*2));
+            mesh.position.y = 0.5+((hConst)*countArr[i])/(maxCount*2);
+            infographicScene.add(mesh);
+        }
+
+        /* 
         var dataCoords = [];
         for (let index = 0; index < resArr.length-1; index++) {
             const element = resArr[index];//Should be dates
@@ -166,20 +235,20 @@ function generateText(displayText, data=null, name){
             }
         });
         const dataMesh = new THREE.Mesh( dataGeometry, dataMaterial );
-        dataMesh.name = "chart";
+        dataMesh.name = "chart"; 
 
-        infographicScene.add(dataMesh)
+        infographicScene.add(dataMesh) */
 
         const textMesh = makeTextMesh(displayText,font)
         textMesh.name = "_infographic";
         infographicScene.name = "_infographic";
-        textMesh.position.y = 1
+        textMesh.position.y = 2+(hConst)
+        textMesh.scale.x = 2
+        textMesh.scale.z = 2
+        textMesh.scale.y = 2
         infographicScene.add(textMesh)
-
-        //Making the date label at bottom
-        const dataAtCountrySorted = new Map([...data.get(name[0]+name[1]).entries()].sort());
-
-        infographicMats = []
+        
+        /* infographicMats = []
         for (let index = 0; index < 2; index++) {
             let infoBoxGeometry = new THREE.BoxGeometry(5.2,5.0,0.05,1,1,1);
             let infoBoxMaterial = box_material;
@@ -191,9 +260,11 @@ function generateText(displayText, data=null, name){
         }
         //UpDownBoxes
         for (let index = 0; index < 2; index++) {
-            let infoBoxGeometry = new THREE.BoxGeometry(5.3,0.1,1,1,1,1);
+            let infoBoxGeometry = new THREE.BoxGeometry(5.1,0.1,1,1,1,1);
             let infoBoxMaterial = new THREE.MeshPhysicalMaterial({
-                color: 0xffffff
+                color: 0xf0f0f0,
+                roughness: 0.1,
+                metalness: 0.9
             });
             const infoBox = new THREE.Mesh(infoBoxGeometry,infoBoxMaterial)
             infoBox.position.z = 0;
@@ -206,7 +277,9 @@ function generateText(displayText, data=null, name){
         for (let index = 0; index < 2; index++) {
             let infoBoxGeometry = new THREE.BoxGeometry(0.1,5.1,1,1,1,1);
             let infoBoxMaterial = new THREE.MeshPhysicalMaterial({
-                color: 0xffffff
+                color: 0xf0f0f0,
+                roughness: 0.1,
+                metalness: 0.9
             });
             const infoBox = new THREE.Mesh(infoBoxGeometry,infoBoxMaterial)
             infoBox.position.z = 0;
@@ -222,7 +295,7 @@ function generateText(displayText, data=null, name){
         infoWaterBox.position.z = -0.01;
         infoWaterBox.position.y = 0.5;
         infographicScene.add(infoWaterBox)
-        box_water_material.needsUpdate = true;
+        box_water_material.needsUpdate = true; */
 
         //Insert data text
         const iter = dataAtCountrySorted.keys();
@@ -235,8 +308,11 @@ function generateText(displayText, data=null, name){
         let day = "";
         let count_dash = 0;
         let jumpDays = 0;
-        let distAway = 4;
+        let distAway = parseInt((dataCoords.length/10));
         let lastDayPlace = 999;
+        let wTextScalar = 0.7+(wConst/(dataCoords.length/3));
+        let labelOffset = -0.5*(wTextScalar)
+        let putOnSame = false
         while (key != undefined){
             for (let index = 0; index < key.length; index++) {
                 const element = key[index];
@@ -245,42 +321,50 @@ function generateText(displayText, data=null, name){
                         if (stringTemp != year && stringTemp.length == 4){
                             const resText = makeTextMesh(stringTemp,font)
                             resText.position.x += locXArr[parseInt(count)][0]
+                            scaleUniform(resText,wTextScalar)
                             infographicScene.add(resText)
+                            putOnSame = true
                             if (year == "") {
                                 const infoYear = makeTextMesh("Year:",font)
-                                infoYear.position.x += locXArr[parseInt(count)][0] - 0.5;
+                                scaleUniform(infoYear,wTextScalar)
+                                infoYear.position.x += locXArr[parseInt(count)][0] + labelOffset;
                                 infographicScene.add(infoYear)
-                                infoYear.position.y -= 0.25
+                                infoYear.position.y -= 0.3*wTextScalar
                             }
                             year = stringTemp
-                            resText.position.y -= 0.25
+                            resText.position.y -= 0.3*(wTextScalar)
                         }
                     }
                     if (count_dash == 1){
-                        if (stringTemp != month){
+                        if (stringTemp != month || putOnSame){
                             const resText = makeTextMesh(stringTemp,font)
                             resText.position.x += locXArr[parseInt(count)][0]
+                            scaleUniform(resText,wTextScalar)
                             infographicScene.add(resText)
+                            putOnSame = true
                             if (month == "") {
                                 const infoMonth = makeTextMesh("Month:",font)
-                                infoMonth.position.x += locXArr[parseInt(count)][0] - 0.5;
+                                scaleUniform(infoMonth,wTextScalar)
+                                infoMonth.position.x += locXArr[parseInt(count)][0] + labelOffset;
                                 infographicScene.add(infoMonth)
-                                infoMonth.position.y -= 0.125
+                                infoMonth.position.y -= 0.15*(wTextScalar)
                             }
                             month = stringTemp
-                            resText.position.y -= 0.125
+                            resText.position.y -= 0.15*(wTextScalar)
                         }
                     }
                     if (count_dash == 2){
                         let dayAwayLogic = (parseInt(day)-jumpDays <= parseInt(stringTemp) && parseInt(day)+jumpDays >= parseInt(stringTemp));
                         let distAwayLogic = (lastDayPlace >= distAway);
-                        if (!dayAwayLogic && distAwayLogic){
+                        if ((!dayAwayLogic && distAwayLogic) || putOnSame){
                             if (day == "") {
                                 const infoDay = makeTextMesh("Day:",font)
-                                infoDay.position.x += locXArr[parseInt(count)][0] - 0.5;
+                                scaleUniform(infoDay,wTextScalar)
+                                infoDay.position.x += locXArr[parseInt(count)][0] + labelOffset;
                                 infographicScene.add(infoDay)
                             }
                             const resText = makeTextMesh(stringTemp,font)
+                            scaleUniform(resText,wTextScalar)
                             resText.position.x += locXArr[parseInt(count)][0]
                             infographicScene.add(resText)
                             lastDayPlace = 0
@@ -296,12 +380,13 @@ function generateText(displayText, data=null, name){
                     stringTemp += element
                 }
             }
+            putOnSame = false;
             count_dash = 0
             key = iter.next().value;
         }
 
 
-        infographicScene.position.y = 0
+        infographicScene.position.y = -0.5-0.5*hConst;
         
         scene.add(infographicScene);
         const tempLight = new THREE.PointLight( 0xffffff, 1, 1000, 0.001 );
@@ -332,7 +417,7 @@ function makeTextMesh(text,font,locX){
 const initCameraDistance = 1000;
 camera.position.z = initCameraDistance;
 const finishCameraDist = 7 + clamp( Math.abs( (window.innerHeight -1000)/300 ), 0, 10);
-const controls = new OrbitControls(camera, renderer.domElement); //In case of controls for testing
+//const controls = new OrbitControls(camera, renderer.domElement); //In case of controls for testing
 
 var intersects = raycaster.intersectObjects( scene.children );
 var hoveredMesh;
@@ -636,11 +721,11 @@ var accelUI = 0;
 
 function movePlanetAndText(){
     let moveUILerpChange = 0.5+moveUILerp/2;
-    scene.getObjectByName("_outlineSphere").position.x = lerp(0,-3,moveUILerpChange)
-    scene.getObjectByName("Scene").position.x = lerp(0,-3,moveUILerpChange)
+    scene.getObjectByName("_outlineSphere").position.x = lerp(0,-9*(window.innerWidth/1080),moveUILerpChange)
+    scene.getObjectByName("Scene").position.x = lerp(0,-9*(window.innerWidth/1080),moveUILerpChange)
     if (scene.getObjectByName("_infographic") != undefined){
-        scene.getObjectByName("_infographic").position.x = lerp(0,3,moveUILerpChange)
-        scene.getObjectByName("_infographic").position.z = lerp(-20,0,moveUILerpChange)
+        scene.getObjectByName("_infographic").position.x = lerp(0,0,moveUILerpChange)
+        scene.getObjectByName("_infographic").position.z = lerp(-40,-4,moveUILerpChange)
     }
 }
 
@@ -667,7 +752,6 @@ function performMeshTrace(){
 }
 
 function checkForMesh(event){
-    console.log(event)
     if (event.targetTouches == undefined) {
         pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
         pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
@@ -820,7 +904,9 @@ function animate() {
         movePlanetAndText()
         if (Math.abs(moveUILerp) >= 1){
             if (moveUILerp <= -0.999){
-                scene.getObjectByName("_infographic").remove()
+                if (scene.getObjectByName("_infographic") != undefined){
+                    scene.getObjectByName("_infographic").remove()
+                }
             }
             moveUILerp = clamp(moveUILerp,-0.999,0.999);
             accelUI = 0;
@@ -851,7 +937,7 @@ function animate() {
     }
     var infographic = scene.getObjectByName("_infographic")
     if (infographic != undefined) {
-        infographic.getObjectByName("chart").material.uniforms.time.value = time_val;
+        //infographic.getObjectByName("chart").material.uniforms.time.value = time_val;
         //scene.getObjectByName("_infographic").lookAt(camera.position)
     }
     requestAnimationFrame(animate);

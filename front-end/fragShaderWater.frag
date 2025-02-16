@@ -29,7 +29,7 @@ void main() {
 
     vec3 baseDiffuse = vec3(0.2,0.2,0.8)+clamp(pow(distToCenter,50.2)*0.00000000000000032*(vec3(0.8,0.8,0.2))-0.3, 0.0,1.0);
 
-    vec3 reflectionColor = vec3(0.8,0.8,0.8) * pow(max(dot(reflection,sunLocation), 0.0), 16.0);
+    vec3 reflectionColor = vec3(0.4,0.4,0.4) * pow(max(dot(reflection,sunLocation), 0.0), 16.0);
     vec3 diffuseColor = baseDiffuse * diffStrength;
 
     float timeMulti = 9.0;
@@ -59,7 +59,7 @@ void main() {
     vec2 uv = vec2(mod(scrollFactor*(0.1+pos.x/30.0),1.0),mod(scrollFactor*(0.1+pos.y/30.0),1.0));
     vec4 testTexture = texture(noiseTexture, uv);
     
-    vec3 finalColor = diffuseColor + reflectionColor -0.2+ (testTexture.x/2.0);
+    vec3 finalColor = diffuseColor + reflectionColor -0.2;//+ (testTexture.x/2.0);
 
 
     vec3 color = vec3(.58, .74, 1.);
@@ -69,6 +69,6 @@ void main() {
 
     finalColor += fresnelTerm;
 
-    gl_FragColor = vec4(finalColor,1.0); 
+    gl_FragColor = vec4((finalColor*0.8)+0.1,1.0); 
 }
 

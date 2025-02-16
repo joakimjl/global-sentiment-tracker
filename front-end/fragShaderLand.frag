@@ -43,7 +43,7 @@ void main() {
     float greenPortion = abs(clamp(sentiment,0.01,1.0))/abs(clamp(sentiment,-500.0,-1.0));
     
     float texPart = (0.3*test.x+0.1) * diffStrength;
-    vec3 colorPortion = vec3(redPortion, greenPortion, 0.0) * (clamp(2.6*test.x-1.15, 0.0,1.0));
+    vec3 colorPortion = vec3( 3.5*(redPortion-greenPortion), 3.5*(greenPortion-redPortion), 0.0) * (clamp(2.6*test.x-1.15, 0.0,1.0));
 
     vec3 diffuseColor = clamp(colorPortion, -0.8,0.8) * diffStrength;
 
