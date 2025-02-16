@@ -12,6 +12,10 @@ import vertChart from './vertChartShader.vert?raw';
 import fragChart from './fragChartShader.frag?raw';
 import vertOpacity from './vertOpacityShader.vert?raw';
 import fragOpacity from './fragOpacityShader.frag?raw';
+import vertBox from './vertBoxShader.vert?raw';
+import fragBox from './fragBoxShader.frag?raw';
+import vertBoxWater from './vertShaderWaterBox.vert?raw';
+import fragBoxWater from './fragShaderWaterBox.frag?raw';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import { TessellateModifier } from 'three/examples/jsm/modifiers/TessellateModifier.js';
@@ -40,6 +44,12 @@ var noiseTexture = new THREE.TextureLoader().load(
         noiseDone = true;
     }
 );
+var metallicTextureRough = new THREE.TextureLoader().load(
+    "./rounded-metal-cubes_roughness.png",
+    (texture) => {
+        metallicTextureRough = texture;
+    }
+);
 
 var noiseTexture2 = new THREE.TextureLoader().load(
     "./Pernlin2.png",
@@ -53,6 +63,31 @@ function onPointerMove( event ) {
 	pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 }
 
+
+const box_material = new THREE.ShaderMaterial({
+    vertexShader: vertBox,
+    fragmentShader: fragBox,
+    uniforms: {
+        time: {value: (Date.now()/10)%10},
+        relativeCamera: {value: new THREE.Vector3(0,0,0)},
+        roughness: {value: metallicTextureRough},
+        fadeLine: {value: 0.5}
+    }
+});
+box_material.transparent = true;
+const box_water_material = new THREE.ShaderMaterial({
+    vertexShader: vertBoxWater,
+    fragmentShader: fragBoxWater,
+    uniforms: {
+        time: {value: (Date.now()/10)%10},
+        relativeCamera: {value: new THREE.Vector3(0,0,0)},
+        noiseTexture: {value: noiseTexture2},
+        fadeLine: {value: 0.5}
+    }
+});
+box_water_material.transparent = true;
+
+var infographicMats = [];
 
 var dataFetching = null;
 function generateText(displayText, data=null, name){
@@ -144,6 +179,52 @@ function generateText(displayText, data=null, name){
         //Making the date label at bottom
         const dataAtCountrySorted = new Map([...data.get(name[0]+name[1]).entries()].sort());
 
+        infographicMats = []
+        for (let index = 0; index < 2; index++) {
+            let infoBoxGeometry = new THREE.BoxGeometry(5.2,5.0,0.05,1,1,1);
+            let infoBoxMaterial = box_material;
+            const infoBox = new THREE.Mesh(infoBoxGeometry,infoBoxMaterial)
+            infoBox.position.z = 0.5-1*index;
+            infoBox.position.y = 0.5;
+            infographicScene.add(infoBox);
+            infographicMats.push(infoBoxMaterial);
+        }
+        //UpDownBoxes
+        for (let index = 0; index < 2; index++) {
+            let infoBoxGeometry = new THREE.BoxGeometry(5.3,0.1,1,1,1,1);
+            let infoBoxMaterial = new THREE.MeshPhysicalMaterial({
+                color: 0xffffff
+            });
+            const infoBox = new THREE.Mesh(infoBoxGeometry,infoBoxMaterial)
+            infoBox.position.z = 0;
+            infoBox.position.y = 0.5+(5.0*0.5)-5.0*index;
+            infoBox.position.x = 0;
+            infographicScene.add(infoBox);
+            //infographicMats.push(infoBoxMaterial);
+        }
+        //LeftRightBoxes
+        for (let index = 0; index < 2; index++) {
+            let infoBoxGeometry = new THREE.BoxGeometry(0.1,5.1,1,1,1,1);
+            let infoBoxMaterial = new THREE.MeshPhysicalMaterial({
+                color: 0xffffff
+            });
+            const infoBox = new THREE.Mesh(infoBoxGeometry,infoBoxMaterial)
+            infoBox.position.z = 0;
+            infoBox.position.x = (5.2*0.5)-5.2*index;
+            infoBox.position.y = 0.5;
+            infographicScene.add(infoBox);
+            //infographicMats.push(infoBoxMaterial);
+        }
+        
+
+        let infoWaterBoxGeometry = new THREE.BoxGeometry(5.2,5,0.98,1,1,1);
+        const infoWaterBox = new THREE.Mesh(infoWaterBoxGeometry,box_water_material)
+        infoWaterBox.position.z = -0.01;
+        infoWaterBox.position.y = 0.5;
+        infographicScene.add(infoWaterBox)
+        box_water_material.needsUpdate = true;
+
+        //Insert data text
         const iter = dataAtCountrySorted.keys();
         let key = iter.next().value;
         let stringTemp = "";
@@ -165,6 +246,12 @@ function generateText(displayText, data=null, name){
                             const resText = makeTextMesh(stringTemp,font)
                             resText.position.x += locXArr[parseInt(count)][0]
                             infographicScene.add(resText)
+                            if (year == "") {
+                                const infoYear = makeTextMesh("Year:",font)
+                                infoYear.position.x += locXArr[parseInt(count)][0] - 0.5;
+                                infographicScene.add(infoYear)
+                                infoYear.position.y -= 0.25
+                            }
                             year = stringTemp
                             resText.position.y -= 0.25
                         }
@@ -174,6 +261,12 @@ function generateText(displayText, data=null, name){
                             const resText = makeTextMesh(stringTemp,font)
                             resText.position.x += locXArr[parseInt(count)][0]
                             infographicScene.add(resText)
+                            if (month == "") {
+                                const infoMonth = makeTextMesh("Month:",font)
+                                infoMonth.position.x += locXArr[parseInt(count)][0] - 0.5;
+                                infographicScene.add(infoMonth)
+                                infoMonth.position.y -= 0.125
+                            }
                             month = stringTemp
                             resText.position.y -= 0.125
                         }
@@ -182,6 +275,11 @@ function generateText(displayText, data=null, name){
                         let dayAwayLogic = (parseInt(day)-jumpDays <= parseInt(stringTemp) && parseInt(day)+jumpDays >= parseInt(stringTemp));
                         let distAwayLogic = (lastDayPlace >= distAway);
                         if (!dayAwayLogic && distAwayLogic){
+                            if (day == "") {
+                                const infoDay = makeTextMesh("Day:",font)
+                                infoDay.position.x += locXArr[parseInt(count)][0] - 0.5;
+                                infographicScene.add(infoDay)
+                            }
                             const resText = makeTextMesh(stringTemp,font)
                             resText.position.x += locXArr[parseInt(count)][0]
                             infographicScene.add(resText)
@@ -206,7 +304,7 @@ function generateText(displayText, data=null, name){
         infographicScene.position.y = 0
         
         scene.add(infographicScene);
-        const tempLight = new THREE.PointLight({color: new THREE.Color(0xffffff), intensity: 1000, decay: 0});
+        const tempLight = new THREE.PointLight( 0xffffff, 1, 1000, 0.001 );
         tempLight.position.z = 10;
         scene.add(tempLight);
         initMoveUi = true;
@@ -234,7 +332,7 @@ function makeTextMesh(text,font,locX){
 const initCameraDistance = 1000;
 camera.position.z = initCameraDistance;
 const finishCameraDist = 7 + clamp( Math.abs( (window.innerHeight -1000)/300 ), 0, 10);
-//const controls = new OrbitControls(camera, renderer.domElement);
+const controls = new OrbitControls(camera, renderer.domElement); //In case of controls for testing
 
 var intersects = raycaster.intersectObjects( scene.children );
 var hoveredMesh;
@@ -499,7 +597,7 @@ async function fetchQuery(country, query, timeframe) {
                 dataFetching = dataFetching
                 console.log("Country not in DB")
             } else {
-                dataFetching = names  
+                dataFetching = names
             }
         }
         catch(error){console.log("Land not done yet", error.message);}
@@ -533,7 +631,7 @@ outlineSphere.name = "_outlineSphere"
 scene.add(outlineSphere);
 fetchQuery("World","Any",1);
 
-var moveUILerp = -1;
+var moveUILerp = -0.999;
 var accelUI = 0;
 
 function movePlanetAndText(){
@@ -542,6 +640,7 @@ function movePlanetAndText(){
     scene.getObjectByName("Scene").position.x = lerp(0,-3,moveUILerpChange)
     if (scene.getObjectByName("_infographic") != undefined){
         scene.getObjectByName("_infographic").position.x = lerp(0,3,moveUILerpChange)
+        scene.getObjectByName("_infographic").position.z = lerp(-20,0,moveUILerpChange)
     }
 }
 
@@ -568,6 +667,7 @@ function performMeshTrace(){
 }
 
 function checkForMesh(event){
+    console.log(event)
     if (event.targetTouches == undefined) {
         pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
         pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
@@ -577,6 +677,7 @@ function checkForMesh(event){
     }
     performMeshTrace()
     if (hoveredMesh == "None" || hoveredMesh == undefined) {
+        
         initMoveUi = true;
         initMoveReturnUi = true;
         return
@@ -641,7 +742,7 @@ function mouseMove(e){
 }
 
 function mouseUp(e){
-    if (heldTime == -1 || heldTime >= Date.now()-150){
+    if (heldTime >= Date.now()-150){
         checkForMesh(e)
     }
     holdingPlanet = false;
@@ -660,6 +761,9 @@ window.addEventListener("touchend", (e) => mouseUp(e));
 
 //TODO: Skybox reflection, 3D chart box, closure of box("Inside showing amount of green&red? floating emotive faces (procederual mouth)? thumbs?"), improved controls for mobile, 
 //allow switching country, clearer graph, more data, vertex offset on land(high noise), small wave effect, remove dupe headlines
+//Relative camera on chart
+//Add most included words in larger sentiment changes, click on data to go into it?
+//Height for count, color for intensity
 function animate() {
     raycaster.setFromCamera( pointer, camera );
     intersects = raycaster.intersectObjects( scene.children );
@@ -699,14 +803,15 @@ function animate() {
     }
     if (clickChange == true && dataFetching != null){
         clickChange = false
-        scene.remove(scene.getObjectByName("_infographic"))
-        console.log(dataFetching)
+        if (scene.getObjectByName("_infographic") != undefined){
+            scene.remove(scene.getObjectByName("_infographic"))
+        }
         let name = dataFetching.values().next()['value'].values().next()['value'][4]
         generateText(name + " " + mode + " sentiment", dataFetching, hoveredMesh.name)
     }
     if (initMoveUi == true){
-        var accel = 0.0001 * -(initMoveReturnUi*2-1);
-        if (Math.abs(moveUILerp+accelUI / Math.abs(accel*200)) >= 1) {
+        var accel = 0.00008 * -(initMoveReturnUi*2-1);
+        if (Math.abs(moveUILerp + accelUI/Math.abs(accel*157)) >= 1) {
             accelUI = accelUI-accel;
         } else {
             accelUI = accelUI+accel;
@@ -714,7 +819,10 @@ function animate() {
         moveUILerp += accelUI;
         movePlanetAndText()
         if (Math.abs(moveUILerp) >= 1){
-            moveUILerp = clamp(moveUILerp,-0.9999,0.9999);
+            if (moveUILerp <= -0.999){
+                scene.getObjectByName("_infographic").remove()
+            }
+            moveUILerp = clamp(moveUILerp,-0.999,0.999);
             accelUI = 0;
             initMoveReturnUi = false;
             initMoveUi = false;
@@ -731,6 +839,8 @@ function animate() {
     const eulerVector = new THREE.Vector3(0-orbLoc.x,0-orbLoc.y,5-orbLoc.z).applyEuler(new THREE.Euler(-eulerPitch, -eulerYaw, 0,"ZYX"));
     water_planet_material.uniforms.time.value = time_val;
     water_planet_material.uniforms.relativeCamera.value = eulerVector;
+    box_water_material.uniforms.relativeCamera.value = eulerVector;
+    box_water_material.uniforms.time.value = time_val;
     outlineSphereMat.uniforms.time.value = time_val;
     scene.getObjectByName("_outlineSphere").lookAt(camera.position)
     for (let index = 0; index < land_mat_arr.length; index++) {
