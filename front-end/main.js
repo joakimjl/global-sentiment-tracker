@@ -15,7 +15,7 @@ import fragOpacity from './fragOpacityShader.frag?raw';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import { TessellateModifier } from 'three/examples/jsm/modifiers/TessellateModifier.js';
-import { reverse } from 'd3';
+import { count, reverse } from 'd3';
 
 const scene = new THREE.Scene();
 const width = window.innerWidth;
@@ -30,6 +30,7 @@ const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 
 var initMoveUi = false;
+var initMoveReturnUi = false;
 var noiseDone = false;
 
 var noiseTexture = new THREE.TextureLoader().load(
@@ -422,6 +423,7 @@ async function fetchQuery(country, query, timeframe) {
         });
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const json = await response.json();
+        //console.log("Fetching: %s", country);
         try{
             const names = new Map();
             if (land_mat_arr[0] != null){
@@ -531,13 +533,16 @@ outlineSphere.name = "_outlineSphere"
 scene.add(outlineSphere);
 fetchQuery("World","Any",1);
 
-var moveUILerp = 0;
+var moveUILerp = -1;
 var accelUI = 0;
 
 function movePlanetAndText(){
-    scene.getObjectByName("_outlineSphere").position.x = lerp(0,-3,moveUILerp)
-    scene.getObjectByName("Scene").position.x = lerp(0,-3,moveUILerp)
-    scene.getObjectByName("_infographic").position.x = lerp(0,3,moveUILerp)
+    let moveUILerpChange = 0.5+moveUILerp/2;
+    scene.getObjectByName("_outlineSphere").position.x = lerp(0,-3,moveUILerpChange)
+    scene.getObjectByName("Scene").position.x = lerp(0,-3,moveUILerpChange)
+    if (scene.getObjectByName("_infographic") != undefined){
+        scene.getObjectByName("_infographic").position.x = lerp(0,3,moveUILerpChange)
+    }
 }
 
 var heldTime = -1;
@@ -572,17 +577,17 @@ function checkForMesh(event){
     }
     performMeshTrace()
     if (hoveredMesh == "None" || hoveredMesh == undefined) {
+        initMoveUi = true;
+        initMoveReturnUi = true;
         return
     }
-    console.log(clickChange)
     if (hoveredMesh.name != undefined && hoveredMesh.name[0] != "_" && clickChange == false){
         let tempName = hoveredMesh.name[0] + hoveredMesh.name[1];
-        console.log("%s and %s", prevName, tempName);
         if (hoveredMesh.name != prevName){
             clickChange = true;
             prevName = tempName;
             dataFetching = null;
-            fetchQuery(hoveredMesh.name,"Any",1);
+            fetchQuery(tempName,"Any",1);
         }
     }
 }
@@ -636,7 +641,6 @@ function mouseMove(e){
 }
 
 function mouseUp(e){
-    console.log(e)
     if (heldTime == -1 || heldTime >= Date.now()-150){
         checkForMesh(e)
     }
@@ -696,12 +700,13 @@ function animate() {
     if (clickChange == true && dataFetching != null){
         clickChange = false
         scene.remove(scene.getObjectByName("_infographic"))
+        console.log(dataFetching)
         let name = dataFetching.values().next()['value'].values().next()['value'][4]
         generateText(name + " " + mode + " sentiment", dataFetching, hoveredMesh.name)
     }
     if (initMoveUi == true){
-        var accel = 0.0001;
-        if (Math.abs(moveUILerp+accelUI / (accel*200)) >= 1) {
+        var accel = 0.0001 * -(initMoveReturnUi*2-1);
+        if (Math.abs(moveUILerp+accelUI / Math.abs(accel*200)) >= 1) {
             accelUI = accelUI-accel;
         } else {
             accelUI = accelUI+accel;
@@ -709,6 +714,9 @@ function animate() {
         moveUILerp += accelUI;
         movePlanetAndText()
         if (Math.abs(moveUILerp) >= 1){
+            moveUILerp = clamp(moveUILerp,-0.9999,0.9999);
+            accelUI = 0;
+            initMoveReturnUi = false;
             initMoveUi = false;
         }
     }
