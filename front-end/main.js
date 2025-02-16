@@ -188,57 +188,6 @@ function generateText(displayText, data=null, name){
             infographicScene.add(mesh);
         }
 
-        /* 
-        var dataCoords = [];
-        for (let index = 0; index < resArr.length-1; index++) {
-            const element = resArr[index];//Should be dates
-            dataCoords.push([(index-parseInt(resArr.length/2))/wDiv, element/hDiv+0.5])
-        }
-        dataCoords.push([(resArr.length-1-parseInt(resArr.length/2))/wDiv, resArr[resArr.length-1]/hDiv+0.5])
-        for (let index = resArr.length-1; index >= 0; index--) {
-            const element = resArr[index];//Should be dates
-            dataCoords.push([(index-parseInt(resArr.length/2))/wDiv, element/hDiv+0.45])
-        }resArr
-        dataCoords.push([(0-parseInt(resArr.length/2))/wDiv, resArr[0]/hDiv+0.45])
-
-        const dataShape = new THREE.Shape();//Needs to make shape into cubes..
-        dataShape.moveTo(dataCoords[0][0], dataCoords[0][1]);
-        for (let i = 0; i < dataCoords.length; i++) {
-            dataShape.lineTo(dataCoords[i][0], dataCoords[i][1]);
-        }
-
-        const extrudeSettings = {
-            steps: 1,
-            depth: 0.0001,
-            bevelEnabled: false
-        };
-
-        let dataGeometry = new THREE.ExtrudeGeometry(dataShape, extrudeSettings);
-
-        let dataTesselateAmount = clamp(dataCoords.length/2,5,100);
-        const tessellateModifier = new TessellateModifier(3,dataTesselateAmount);
-        dataGeometry = tessellateModifier.modify(dataGeometry);
-
-        for (let i = 0; i < dataGeometry.attributes.position.count; i++) {
-            const x = dataGeometry.attributes.position.getX(i);
-            const y = dataGeometry.attributes.position.getY(i);
-            const z = dataGeometry.attributes.position.getZ(i);
-
-            dataGeometry.attributes.position.setXYZ(i, x, y, z);
-        }
-    
-        const dataMaterial = new THREE.ShaderMaterial({
-            vertexShader: vertChart,
-            fragmentShader: fragChart,
-            uniforms: {
-                time: {value: (Date.now()/10)%10}
-            }
-        });
-        const dataMesh = new THREE.Mesh( dataGeometry, dataMaterial );
-        dataMesh.name = "chart"; 
-
-        infographicScene.add(dataMesh) */
-
         const textMesh = makeTextMesh(displayText,font)
         textMesh.name = "_infographic";
         infographicScene.name = "_infographic";
@@ -248,54 +197,6 @@ function generateText(displayText, data=null, name){
         textMesh.scale.y = 2
         infographicScene.add(textMesh)
         
-        /* infographicMats = []
-        for (let index = 0; index < 2; index++) {
-            let infoBoxGeometry = new THREE.BoxGeometry(5.2,5.0,0.05,1,1,1);
-            let infoBoxMaterial = box_material;
-            const infoBox = new THREE.Mesh(infoBoxGeometry,infoBoxMaterial)
-            infoBox.position.z = 0.5-1*index;
-            infoBox.position.y = 0.5;
-            infographicScene.add(infoBox);
-            infographicMats.push(infoBoxMaterial);
-        }
-        //UpDownBoxes
-        for (let index = 0; index < 2; index++) {
-            let infoBoxGeometry = new THREE.BoxGeometry(5.1,0.1,1,1,1,1);
-            let infoBoxMaterial = new THREE.MeshPhysicalMaterial({
-                color: 0xf0f0f0,
-                roughness: 0.1,
-                metalness: 0.9
-            });
-            const infoBox = new THREE.Mesh(infoBoxGeometry,infoBoxMaterial)
-            infoBox.position.z = 0;
-            infoBox.position.y = 0.5+(5.0*0.5)-5.0*index;
-            infoBox.position.x = 0;
-            infographicScene.add(infoBox);
-            //infographicMats.push(infoBoxMaterial);
-        }
-        //LeftRightBoxes
-        for (let index = 0; index < 2; index++) {
-            let infoBoxGeometry = new THREE.BoxGeometry(0.1,5.1,1,1,1,1);
-            let infoBoxMaterial = new THREE.MeshPhysicalMaterial({
-                color: 0xf0f0f0,
-                roughness: 0.1,
-                metalness: 0.9
-            });
-            const infoBox = new THREE.Mesh(infoBoxGeometry,infoBoxMaterial)
-            infoBox.position.z = 0;
-            infoBox.position.x = (5.2*0.5)-5.2*index;
-            infoBox.position.y = 0.5;
-            infographicScene.add(infoBox);
-            //infographicMats.push(infoBoxMaterial);
-        }
-        
-
-        let infoWaterBoxGeometry = new THREE.BoxGeometry(5.2,5,0.98,1,1,1);
-        const infoWaterBox = new THREE.Mesh(infoWaterBoxGeometry,box_water_material)
-        infoWaterBox.position.z = -0.01;
-        infoWaterBox.position.y = 0.5;
-        infographicScene.add(infoWaterBox)
-        box_water_material.needsUpdate = true; */
 
         //Insert data text
         const iter = dataAtCountrySorted.keys();
