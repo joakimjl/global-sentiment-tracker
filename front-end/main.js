@@ -570,17 +570,17 @@ function checkForMesh(event){
         pointer.x = ( event.targetTouches[0].clientX / window.innerWidth ) * 2 - 1;
         pointer.y = - ( event.targetTouches[0].clientY / window.innerHeight ) * 2 + 1;
     }
-    if (hoveredMesh == "None" || hoveredMesh == undefined) {
-        performMeshTrace()
-    }
+    performMeshTrace()
     if (hoveredMesh == "None" || hoveredMesh == undefined) {
         return
     }
+    console.log(clickChange)
     if (hoveredMesh.name != undefined && hoveredMesh.name[0] != "_" && clickChange == false){
-        hoveredMesh.name = hoveredMesh.name[0] + hoveredMesh.name[1]
+        let tempName = hoveredMesh.name[0] + hoveredMesh.name[1];
+        console.log("%s and %s", prevName, tempName);
         if (hoveredMesh.name != prevName){
             clickChange = true;
-            prevName = hoveredMesh.name
+            prevName = tempName;
             dataFetching = null;
             fetchQuery(hoveredMesh.name,"Any",1);
         }
@@ -589,10 +589,12 @@ function checkForMesh(event){
 
 
 var holdingPlanet = false;
+var initialMousePos = false;
 
 function mouseDown(e){
     heldTime = Date.now()
     holdingPlanet = true;
+    initialMousePos = false;
 }
 
 var prevMouse = new THREE.Vector2(0,0);
@@ -621,22 +623,25 @@ function mouseMove(e){
         mouseMovement.x = e.targetTouches[0].clientX;
 	    mouseMovement.y = - e.targetTouches[0].clientY;
     }
-    if (heldTime >= Date.now()-30) {
-        prevMouse = new THREE.Vector2(mouseMovement.x,mouseMovement.y);
-    }
-    if (heldTime <= Date.now()-70) {
+    if (initialMousePos == true) {
         movedLast = true;
         prevSpinPitch += -(prevMouse.y - mouseMovement.y)*pitchSpeedMulti;
         prevSpinYaw += -(prevMouse.x - mouseMovement.x)*yawSpeedMulti;
+    }
+    if (initialMousePos == false) {
+        prevMouse = new THREE.Vector2(mouseMovement.x,mouseMovement.y);
+        initialMousePos = true;
     }
     prevMouse = new THREE.Vector2(mouseMovement.x,mouseMovement.y);
 }
 
 function mouseUp(e){
-    if (heldTime == -1 || heldTime >= Date.now()-500){
+    console.log(e)
+    if (heldTime == -1 || heldTime >= Date.now()-150){
         checkForMesh(e)
     }
     holdingPlanet = false;
+    initialMousePos = false;
 }
 
 window.addEventListener("mouseup", (e) => mouseUp(e));
@@ -647,7 +652,10 @@ window.addEventListener("touchmove", (e) => mouseMove(e));
 window.addEventListener("touchend", (e) => mouseUp(e));
 
 
-//TODO: Move planet down when clicking on vertical screen, move to the left on horizontal, background, skybox
+
+
+//TODO: Skybox reflection, 3D chart box, closure of box("Inside showing amount of green&red? floating emotive faces (procederual mouth)? thumbs?"), improved controls for mobile, 
+//allow switching country, clearer graph, more data, vertex offset on land(high noise), small wave effect, remove dupe headlines
 function animate() {
     raycaster.setFromCamera( pointer, camera );
     intersects = raycaster.intersectObjects( scene.children );
