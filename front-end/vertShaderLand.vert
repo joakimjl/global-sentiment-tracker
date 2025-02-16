@@ -7,6 +7,11 @@ varying vec3 tempNormal;
 varying float landMovement;
 uniform float givenRandTime;
 uniform float sentiment;
+uniform sampler2D noiseTexture;
+
+uniform vec3 relativeCamera;
+varying vec3 vPositionW;
+varying vec3 vNormalW;
 
 void main() {
     tempPos = position;
@@ -18,6 +23,9 @@ void main() {
     vColor = tempPos * 1.;
 
     pos = tempPos;
+
+    vPositionW = vec3( vec4( pos, 1.0 ) );
+    vNormalW = normalize( vec3( vec4( tempNormal, 0.0 )  ));
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(tempPos, 1.);
 }
