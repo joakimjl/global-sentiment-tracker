@@ -147,18 +147,27 @@ function generateText(displayText, data=null, name){
         var resArr = []
         var countArr = []
         var maxCount = 0;
+        var sentimentInfo = new Map();
+        sentimentInfo.set("total",0)
+        sentimentInfo.set("countAmount",0)
         
         for (let index = 0; index < processed[0].length; index++) {
             const element1 = processed[0][index];
             const element2 = processed[1][index];
-
+            
             let neg = element1[0] + element2[0];
             let neu = element1[1] + element2[1];
             let pos = element1[2] + element2[2];
             let res = (pos-neg)/(neu+(Math.abs(pos-neg)))
+
+            sentimentInfo.set("total", sentimentInfo.get("total")+pos);
+            sentimentInfo.set("total", sentimentInfo.get("total")-neg);
+            let amount = neg+neu+pos;
+            sentimentInfo.set("countAmount",sentimentInfo.get("countAmount") + amount);
+
             //console.log('pos: %f,  neu: %f,  neg: %f   res: %f', pos,neu,neg,res)
             resArr.push(res)
-            let amount = neg+neu+pos;
+            
             if (amount > maxCount){
                 maxCount = amount
             }
@@ -188,7 +197,27 @@ function generateText(displayText, data=null, name){
             infographicScene.add(mesh);
         }
 
-        const textMesh = makeTextMesh(displayText,font)
+        let sentimentGrouping = ""
+
+        let sentPercent = parseFloat(sentimentInfo.get("total")/sentimentInfo.get("countAmount"));
+
+        if (sentPercent <= -0.5) {
+            sentimentGrouping = " Significantly Negative"
+        } else if (sentPercent <= -0.1) {
+            sentimentGrouping = " Negative"
+        } else if (sentPercent <= 0.1) {
+            sentimentGrouping = " Neutral"
+        } else if (sentPercent <= 0.5) {
+            sentimentGrouping = " Positive"
+        } else if (sentPercent <= 0.9) {
+            sentimentGrouping = " Significantly Positive"
+        } else {
+            sentimentGrouping = " Impossibly positive"
+        }
+
+        console.log(sentPercent)
+
+        const textMesh = makeTextMesh(displayText + sentimentGrouping,font)
         textMesh.name = "_infographic";
         infographicScene.name = "_infographic";
         textMesh.position.y = 2+(hConst)
@@ -749,6 +778,7 @@ window.addEventListener("touchend", (e) => mouseUp(e));
 //Relative camera on chart
 //Add most included words in larger sentiment changes, click on data to go into it?
 //Height for count, color for intensity
+//Relative name scoring on sentiment? aka more positive than x:%?
 function animate() {
     raycaster.setFromCamera( pointer, camera );
     intersects = raycaster.intersectObjects( scene.children );
