@@ -881,8 +881,8 @@ window.addEventListener("touchend", (e) => mouseUp(e));
 //Relative name scoring on sentiment? aka more positive than x:%?
 function animate() {
     var deltaBefore = Date.now()
-    raycaster.setFromCamera( pointer, camera );
-    intersects = raycaster.intersectObjects( scene.children );
+    //raycaster.setFromCamera( pointer, camera );
+    //intersects = raycaster.intersectObjects( scene.children );
     //performMeshTrace()
     //console.log(intersects)
     alpha = clamp( Math.pow(alpha + (Date.now()-last_fps_time)/550000, 0.9) ,0,1);
@@ -900,22 +900,25 @@ function animate() {
         //const controls = new OrbitControls(camera, renderer.domElement);
     }
     if (alpha >= 1) {
-        eulerPitch -= prevSpinPitch;
-        eulerYaw += prevSpinYaw;
-        if (Math.abs(eulerPitch) % 3 >= 1.05) {
-            prevSpinPitch *= -1;
-            eulerPitch = clamp(eulerPitch,-1.05,1.05);
-        }
-        if (!holdingPlanet && movedLast == false){
-            prevSpinPitch *= 0.99;
-            prevSpinYaw *= 0.99;
-        }
-        if (holdingPlanet == true) {
-            prevSpinPitch *= 0.89;
-            prevSpinYaw *= 0.89;
+        if(Math.abs(prevSpinPitch)+Math.abs(prevSpinYaw) >= 0.0001){
+            eulerPitch -= prevSpinPitch;
+            eulerYaw += prevSpinYaw;
+            if (Math.abs(eulerPitch) % 3 >= 1.05) {
+                prevSpinPitch *= -1;
+                eulerPitch = clamp(eulerPitch,-1.05,1.05);
+            }
+            if (!holdingPlanet && movedLast == false){
+                prevSpinPitch *= 0.99;
+                prevSpinYaw *= 0.99;
+            }
+            if (holdingPlanet == true) {
+                prevSpinPitch *= 0.89;
+                prevSpinYaw *= 0.89;
+            }
+            movedLast = false;
+            scene.getObjectByName("Scene").setRotationFromEuler(new THREE.Euler(eulerPitch, eulerYaw, 0,"XYZ"))
         }
         movedLast = false;
-        scene.getObjectByName("Scene").setRotationFromEuler(new THREE.Euler(eulerPitch, eulerYaw, 0,"XYZ"))
     }
     if (clickChange == true && dataFetching != null){
         clickChange = false
@@ -948,6 +951,8 @@ function animate() {
         }
     }
     
+
+
     var time_val = Math.floor( ((Date.now()/1000000)%1)*1000000 );
     let orbLoc;
     if ( scene.getObjectByName("Scene") != undefined ) {
@@ -966,18 +971,13 @@ function animate() {
         element.uniforms.landMovement.value = 0.05;
         element.uniforms.relativeCamera.value = eulerVector;
     }
-    var infographic = scene.getObjectByName("_infographic")
-    if (infographic != undefined) {
-        //infographic.getObjectByName("chart").material.uniforms.time.value = time_val;
-        //scene.getObjectByName("_infographic").lookAt(camera.position)
-    }
     if (separateOngoing) {
         separateDataGraphic(-1,false)
     }
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
     if (last_fps_time + 1000 <= Date.now()){
-        console.log(frame_count);
+        //console.log(frame_count);
         frame_count = 0
         last_fps_time = Date.now()
     }
@@ -985,7 +985,6 @@ function animate() {
     deltaSeconds = Date.now() - deltaBefore;
 }
 animate();
-window.addEventListener( 'pointermove', onPointerMove );
 
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
