@@ -102,10 +102,9 @@ def fetch_word_data():
     cur = conn.cursor()
     country = str(country)
     try:
-        day = datetime.datetime(day)
-    except:
         day = datetime.datetime.fromtimestamp(day)
-        day = datetime.datetime.timestamp(day)
+    except:
+        print(day)
 
     cur.execute("SELECT target_country,\
     UNNEST(headline_inter) \
