@@ -4,6 +4,7 @@ from data_form_querying import connect
 from flask_cors import CORS, cross_origin
 import json
 from country_codes import country_codes_map
+import datetime as datetime
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -86,19 +87,32 @@ def fetch_sentiment(country,query,timeframe):
 
 @app.route("/word_info", methods=["GET"])
 @cross_origin()
-def fetch_word_data(country,on_day):
+def fetch_word_data():
+    try:
+        country_code = request.headers.get('country')
+        country = next(key for key, value in country_codes_map.items() if value == country_code)
+    except:
+        country = "World"
+    try:
+        day = request.headers.get('day')
+    except:
+        day = "Any"
+
     conn = connect()
     cur = conn.cursor()
     country = str(country)
-    query = str(query)
-    timeframe = int(timeframe)
+    try:
+        day = datetime.datetime(day)
+    except:
+        day = datetime.datetime.fromtimestamp(day)
+        day = datetime.datetime.timestamp(day)
 
     cur.execute("SELECT target_country,\
     UNNEST(headline_inter) \
     on_time \
     FROM global_info_hourly \
     WHERE target_country = %s AND on_time >= %s AND on_time <= %s\
-    GROUP BY target_country, on_time",(str(country),"none"))
+    GROUP BY target_country, on_time",(str(country),day))
 
     res = cur.fetchall()
     temp_res = []
@@ -106,7 +120,7 @@ def fetch_word_data(country,on_day):
         temp = [country_codes_map[ele[0]],ele[1],ele[2],ele[3],ele[4],ele[5].strftime("%Y-%m-%d-%H"),ele[0]]
         temp_res.append(temp)
     #Data format is country, vader national, roberta national, vader international, roberta international
-    return json.dumps(temp_res)
+    return json.dumps([res])
 
 def create_server():
     return app
