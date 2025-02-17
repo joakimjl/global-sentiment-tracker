@@ -106,12 +106,14 @@ def fetch_word_data():
     except:
         print(day)
 
+    dayAfter = day+datetime.timedelta(day=1)
+
     cur.execute("SELECT target_country,\
     UNNEST(headline_inter) \
     on_time \
     FROM global_info_hourly \
     WHERE target_country = %s AND on_time >= %s AND on_time <= %s\
-    GROUP BY target_country, on_time",(str(country),day,day))
+    GROUP BY target_country, on_time",(str(country),day,dayAfter))
 
     res = cur.fetchall()
     temp_res = []
