@@ -106,7 +106,7 @@ def fetch_word_data():
     except:
         print(day)
     print(type(day))
-    dayAfter = day+datetime.timedelta(days=1)
+    dayAfter = datetime.datetime.strptime(day, "%Y-%m-%d-%H")+datetime.timedelta(days=1)
 
     cur.execute("SELECT target_country,\
     UNNEST(headline_inter) \
