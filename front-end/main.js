@@ -158,7 +158,7 @@ function generateText(displayText, data=null, name){
         const wConst = 7.2*(window.innerWidth/1920)
         lastWConst = wConst
         const hConst = 4*(window.innerHeight/1080)
-        lasthConst = wConst
+        lasthConst = hConst
         var dataCoords = [];
         const lengthScale = resArr.length/0.9
         for (let i = 0; i < resArr.length; i++) {
@@ -329,7 +329,7 @@ function generateImportantWords(number,locX){
                 const textMesh = makeTextMesh(line, textFont,undefined,color)
                 textMesh.position.z = -0.01
                 textMesh.position.x = (arrayIndex*2 - 1)*2
-                textMesh.position.y = (lasthConst)*(0.75-(0.1*index))
+                textMesh.position.y = ((lasthConst/5)+0.2)*(4.20-(0.5*index))
                 scaleUniform(textMesh,2)
                 dataGrapicScene.add(textMesh)
             }
