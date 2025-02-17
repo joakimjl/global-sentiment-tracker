@@ -20,7 +20,7 @@ import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import { TessellateModifier } from 'three/examples/jsm/modifiers/TessellateModifier.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { text } from 'd3';
+import { index, text } from 'd3';
 
 const scene = new THREE.Scene();
 const width = window.innerWidth;
@@ -72,30 +72,6 @@ function onPointerMove( event ) {
 	pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 }
 
-
-const box_material = new THREE.ShaderMaterial({
-    vertexShader: vertBox,
-    fragmentShader: fragBox,
-    uniforms: {
-        time: {value: (Date.now()/10)%10},
-        relativeCamera: {value: new THREE.Vector3(0,0,0)},
-        roughness: {value: metallicTextureRough},
-        fadeLine: {value: 0.5}
-    }
-});
-box_material.transparent = true;
-const box_water_material = new THREE.ShaderMaterial({
-    vertexShader: vertBoxWater,
-    fragmentShader: fragBoxWater,
-    uniforms: {
-        time: {value: (Date.now()/10)%10},
-        relativeCamera: {value: new THREE.Vector3(0,0,0)},
-        noiseTexture: {value: noiseTexture2},
-        fadeLine: {value: 0.5}
-    }
-});
-box_water_material.transparent = true;
-
 var infographicMats = [];
 
 function boxGen( width, height, depth, radius0, smoothness){
@@ -129,12 +105,15 @@ function scaleUniform(inScene, val){
     return inScene
 }
 
+const fontloader = new FontLoader();
+var textFont;
 var dataFetching = null;
+var lastWConst;
+var lasthConst;
 function generateText(displayText, data=null, name){
-    const fontloader = new FontLoader();
     fontloader.load('./Roboto_Regular.json', function(font) {
         const infographicScene = new THREE.Scene();
-
+        textFont = font
         //Making the date label at bottom
         const dataAtCountrySorted = new Map([...data.get(name[0]+name[1]).entries()].sort());
 
@@ -177,7 +156,9 @@ function generateText(displayText, data=null, name){
         }
 
         const wConst = 7.2*(window.innerWidth/1920)
+        lastWConst = wConst
         const hConst = 4*(window.innerHeight/1080)
+        lasthConst = wConst
         var dataCoords = [];
         const lengthScale = resArr.length/0.9
         for (let i = 0; i < resArr.length; i++) {
@@ -196,6 +177,7 @@ function generateText(displayText, data=null, name){
             mesh.position.x = xLoc;
             mesh.position.z = -(wConst/(lengthScale*2));
             mesh.position.y = 0.5+((hConst)*countArr[i])/(maxCount*2);
+            mesh.name = "@" + i
             infographicScene.add(mesh);
         }
 
@@ -217,15 +199,13 @@ function generateText(displayText, data=null, name){
             sentimentGrouping = " Impossibly positive"
         }
 
-        console.log(sentPercent)
-
         const textMesh = makeTextMesh(displayText + sentimentGrouping,font)
         textMesh.name = "_infographic";
         infographicScene.name = "_infographic";
-        textMesh.position.y = 2+(hConst)
-        textMesh.scale.x = 2
-        textMesh.scale.z = 2
-        textMesh.scale.y = 2
+        textMesh.position.y = 3+(hConst)
+        textMesh.scale.x = 3
+        textMesh.scale.z = 3
+        textMesh.scale.y = 3
         infographicScene.add(textMesh)
         
 
@@ -242,7 +222,7 @@ function generateText(displayText, data=null, name){
         let jumpDays = 0;
         let distAway = parseInt((dataCoords.length/10));
         let lastDayPlace = 999;
-        let wTextScalar = 0.7+(wConst/(dataCoords.length/3));
+        let wTextScalar = 0.7+((wConst*hConst)/(dataCoords.length));
         let labelOffset = -0.5*(wTextScalar)
         let putOnSame = false
         while (key != undefined){
@@ -321,26 +301,61 @@ function generateText(displayText, data=null, name){
         infographicScene.position.y = -0.5-0.5*hConst;
         
         scene.add(infographicScene);
-        const tempLight = new THREE.PointLight( 0xffffff, 1, 1000, 0.001 );
+        const tempLight = new THREE.PointLight( 0xffffff, 0.7, 300, 0.2 );
         tempLight.position.z = 10;
         scene.add(tempLight);
+        const tempLightSecondary = new THREE.PointLight( 0xff1f1f, 2, 300, 0.2 );
+        tempLightSecondary.position.z = 10;
+        tempLightSecondary.position.x = 2;
         initMoveUi = true;
     });
 }
 
-function makeTextMesh(text,font,locX){
+function generateImportantWords(number,locX){
+    if (separateActive == false && separateOngoing == false) {
+        const dataGrapicScene = new THREE.Scene()
+        dataGrapicScene.name = "_dataGraphic"
+        let wordData = []
+        let colorArr = [new THREE.Color(0x00f000), new THREE.Color(0xf00000)]
+        let dataLinesPos = ["Positive:", "TempTest (100%)", "TempTest (100%)", "TempTest (100%)", "TempTest (100%)", "TempTest (100%)", "TempTest (100%)"]
+        let dataLinesNeg = ["Negative:", "AntiTempTest (100%)", "AntiTempTest (100%)", "AntiTempTest (100%)", "AntiTempTest (100%)", "AntiTempTest (100%)", "AntiTempTest (100%)"]
+        wordData.push(dataLinesPos)
+        wordData.push(dataLinesNeg)
+        for (let arrayIndex = 0; arrayIndex < wordData.length; arrayIndex++) {
+            const dataArr = wordData[arrayIndex];
+            const color = colorArr[arrayIndex]
+            for (let index = 0; index < dataArr.length; index++) {
+                const line = dataArr[index];
+                const textMesh = makeTextMesh(line, textFont,undefined,color)
+                textMesh.position.z = -0.01
+                textMesh.position.x = (arrayIndex*2 - 1)*2
+                textMesh.position.y = (lasthConst)*(0.75-(0.1*index))
+                scaleUniform(textMesh,2)
+                dataGrapicScene.add(textMesh)
+            }
+        }
+        scene.getObjectByName("_infographic").add(dataGrapicScene)
+        separateDataGraphic(number,true)
+    }
+}
+
+function makeTextMesh(text,font,locX,color){
     const geometry = new TextGeometry(text, {
         font: font,
         size: 0.1,
         depth: 0.02,
     });
 
+    if (color == undefined){
+        color = new THREE.Color(0xffffff)
+    }
+
     //Move origin of mesh
     geometry.translate(-0.03*text.length,0,0)
 
     const textMesh = new THREE.Mesh(geometry, [
-        new THREE.MeshBasicMaterial({color: new THREE.Color(0xffffff)}),
-        new THREE.MeshBasicMaterial({color: new THREE.Color(0xffffff)})
+        new THREE.MeshPhysicalMaterial({color: color, roughness: 0.2, metalness:0.5}),
+        new THREE.MeshPhysicalMaterial({color: color, roughness: 0.2, metalness:0.5})
     ]);
 
     return textMesh;
@@ -661,25 +676,99 @@ function movePlanetAndText(){
     }
 }
 
+
+var separateUILerp = -0.999;
+var separateAccelUI = 0;
+var separateIndex = -1;
+var separateOngoing = false;
+var old_loc = [];
+var returnSeparate = false;
+var separateDist = 1;
+var separateActive = false;
+
+function separateDataGraphic(index, bInitial){
+    if (scene.getObjectByName("_infographic") == undefined) return
+    const infographic = scene.getObjectByName("_infographic")
+    let curIndex = 0;
+    let infoObject = infographic.getObjectByName("@"+curIndex);
+    if (bInitial) {
+        if (separateActive == false || separateOngoing == false) {
+            separateActive = !separateActive;
+            if (separateActive) {
+                old_loc = [];
+                separateIndex = index;
+            } else {
+                returnSeparate = true
+                let infoGraphicScene = scene.getObjectByName("_infographic")
+                if (infoGraphicScene.getObjectByName("_dataGraphic") != undefined){
+                    infoGraphicScene.remove(infoGraphicScene.getObjectByName("_dataGraphic"))
+                }
+            }
+            separateOngoing = true;
+        }
+    } else {
+        var accel = 0.12 * -(returnSeparate*2-1);
+        accel *= deltaSeconds/1000
+        if (Math.abs(separateUILerp + separateAccelUI/Math.abs(accel*157)) >= 1.03) {
+            separateAccelUI = separateAccelUI-accel;
+        } else {
+            separateAccelUI = separateAccelUI+accel;
+        }
+        separateUILerp += separateAccelUI;
+        if (Math.abs(separateUILerp) >= 1.001){
+            separateOngoing = false;
+            if (returnSeparate == true){
+                separateActive = false;
+            }
+            returnSeparate = false;
+            separateUILerp = clamp(separateUILerp,-1,1)
+            separateAccelUI = 0;
+        }
+    }
+    let separateUILerpChange = 0.5+separateUILerp/2;
+    while (infoObject != undefined) {
+        if (bInitial && returnSeparate == false) {
+            old_loc.push(infoObject.position.x)
+        }
+        if (curIndex < separateIndex) {
+            infoObject.position.x = lerp(old_loc[curIndex], old_loc[curIndex]-separateDist*lastWConst, separateUILerpChange)
+        }
+        if (curIndex == separateIndex) {
+            infoObject.position.x = lerp(old_loc[curIndex], 0, separateUILerpChange)
+        }
+        if (curIndex > separateIndex){
+            infoObject.position.x = lerp(old_loc[curIndex], old_loc[curIndex]+separateDist*lastWConst, separateUILerpChange)
+        }
+        curIndex += 1;
+        infoObject = infographic.getObjectByName("@"+curIndex)
+    }
+    curIndex = 0;
+}
+
 var heldTime = -1;
 
 function performMeshTrace(){
     raycaster.setFromCamera( pointer, camera );
     intersects = raycaster.intersectObjects( scene.children );
-    if (intersects.length >= 1){
-        if (intersects[0] != undefined) {
-            if (intersects[0].object.name[0] != "_"){
-                hoveredMesh = intersects[0].object;
-            } else if (intersects[1] != undefined && intersects[1].object.name[0] != "_") {
-                hoveredMesh = intersects[1].object;
-            } else if (intersects[2] != undefined && intersects[2].object.name[0] != "_") {
-                hoveredMesh = intersects[2].object;
-            } else if (intersects[3] != undefined && intersects[3].object.name[0] != "_") {
-                hoveredMesh = intersects[3].object;
-            }
+    if (intersects.length < 1) {
+        if (intersects[0] == undefined) {
+            hoveredMesh = "None"
+            return
         }
-    } else {
-        hoveredMesh = "None"
+    }
+    if (intersects[0].object.name[0] == "@"){
+        hoveredMesh = intersects[0].object
+        return
+    }
+
+    if (intersects[0].object.name[0] != "_"){
+        hoveredMesh = intersects[0].object;
+    } else if (intersects[1] != undefined && intersects[1].object.name[0] != "_") {
+        hoveredMesh = intersects[1].object;
+    } else if (intersects[2] != undefined && intersects[2].object.name[0] != "_") {
+        hoveredMesh = intersects[2].object;
+    } else if (intersects[3] != undefined && intersects[3].object.name[0] != "_") {
+        hoveredMesh = intersects[3].object;
     }
 }
 
@@ -693,12 +782,23 @@ function checkForMesh(event){
     }
     performMeshTrace()
     if (hoveredMesh == "None" || hoveredMesh == undefined) {
-        
+        let infoGraphicScene = scene.getObjectByName("_infographic")
+        if (separateActive) {
+            separateDataGraphic(separateIndex,true)
+            return
+        }
         initMoveUi = true;
         initMoveReturnUi = true;
         return
     }
-    if (hoveredMesh.name != undefined && hoveredMesh.name[0] != "_" && clickChange == false){
+    if (hoveredMesh.name[0] == "@"){
+        let tempString = ""
+        for (let index = 1; index < hoveredMesh.name.length; index++) {
+            const element = hoveredMesh.name[index];
+            tempString += element
+        }
+        generateImportantWords(tempString, hoveredMesh.position.x)
+    } else if (hoveredMesh.name != undefined && hoveredMesh.name[0] != "_" && clickChange == false){
         let tempName = hoveredMesh.name[0] + hoveredMesh.name[1];
         if (hoveredMesh.name != prevName){
             clickChange = true;
@@ -775,11 +875,9 @@ window.addEventListener("touchend", (e) => mouseUp(e));
 
 
 
-//TODO: Skybox reflection, 3D chart box, closure of box("Inside showing amount of green&red? floating emotive faces (procederual mouth)? thumbs?"), improved controls for mobile, 
-//allow switching country, clearer graph, more data, vertex offset on land(high noise), small wave effect, remove dupe headlines
-//Relative camera on chart
+//TODO:
+//Remove dupe headlines
 //Add most included words in larger sentiment changes, click on data to go into it?
-//Height for count, color for intensity
 //Relative name scoring on sentiment? aka more positive than x:%?
 function animate() {
     var deltaBefore = Date.now()
@@ -830,20 +928,20 @@ function animate() {
     if (initMoveUi == true){
         var accel = 0.06 * -(initMoveReturnUi*2-1);
         accel *= deltaSeconds/1000
-        if (Math.abs(moveUILerp + accelUI/Math.abs(accel*157)) >= 1) {
+        if (Math.abs(moveUILerp + accelUI/Math.abs(accel*157)) >= 1.03) {
             accelUI = accelUI-accel;
         } else {
             accelUI = accelUI+accel;
         }
         moveUILerp += accelUI;
         movePlanetAndText()
-        if (Math.abs(moveUILerp) >= 1){
+        if (Math.abs(moveUILerp) >= 1.001){
             if (moveUILerp <= -0.999){
                 if (scene.getObjectByName("_infographic") != undefined){
                     scene.getObjectByName("_infographic").remove()
                 }
             }
-            moveUILerp = clamp(moveUILerp,-0.999,0.999);
+            moveUILerp = clamp(moveUILerp,-1,1);
             accelUI = 0;
             initMoveReturnUi = false;
             initMoveUi = false;
@@ -860,8 +958,6 @@ function animate() {
     const eulerVector = new THREE.Vector3(0-orbLoc.x,0-orbLoc.y,5-orbLoc.z).applyEuler(new THREE.Euler(-eulerPitch, -eulerYaw, 0,"ZYX"));
     water_planet_material.uniforms.time.value = time_val;
     water_planet_material.uniforms.relativeCamera.value = eulerVector;
-    box_water_material.uniforms.relativeCamera.value = eulerVector;
-    box_water_material.uniforms.time.value = time_val;
     outlineSphereMat.uniforms.time.value = time_val;
     scene.getObjectByName("_outlineSphere").lookAt(camera.position)
     for (let index = 0; index < land_mat_arr.length; index++) {
@@ -874,6 +970,9 @@ function animate() {
     if (infographic != undefined) {
         //infographic.getObjectByName("chart").material.uniforms.time.value = time_val;
         //scene.getObjectByName("_infographic").lookAt(camera.position)
+    }
+    if (separateOngoing) {
+        separateDataGraphic(-1,false)
     }
     requestAnimationFrame(animate);
     renderer.render(scene, camera);

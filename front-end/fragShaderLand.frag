@@ -14,31 +14,22 @@ varying vec3 vNormalW;
 
 void main() {
     vec3 sunLocation = normalize(relativeCamera);
-    //vec3 sunLocation = normalize(cameraPosition);
     vec3 landNormal = normalize(pos);
     vec3 cameraDir = normalize(relativeCamera - pos);
 
-    vec3 cameraFrontLightV3 = (landNormal - cameraDir);
-
-    float cameraFrontLight = 0.9 - pow((abs(cameraFrontLightV3.x)+abs(cameraFrontLightV3.y)+abs(cameraFrontLightV3.z)), 7.0)/5.0;
-
-
     float timeScroll = time * 0.0001;
     float scrollFactor = sin(timeScroll  -pos.z + pos.x) + cos(timeScroll -pos.z + pos.x);
-    vec2 size = vec2(textureSize(noiseTexture, 0));
     vec2 uv = vec2(mod(scrollFactor*(0.2+pos.x/20.0),1.0),mod(scrollFactor*(0.2+pos.y/20.0),1.0));
-    vec2 dx = dFdx(uv * size);
-    vec2 dy = dFdy(uv * size);
     vec4 test = texture(noiseTexture, uv);
 
     vec3 reflection = reflect(-cameraDir, landNormal);
-    float diffStrength = max(dot(landNormal,sunLocation),cameraFrontLight);
+    float diffStrength = max(dot(landNormal,sunLocation),0.2);
 
     float missing = sentiment/500.0;
 
     vec3 baseColor = vec3(0.4,0.4,0.4) * diffStrength;
 
-    vec3 reflectionColor = vec3(0.8,0.8,0.8) * pow(max(dot(reflection,sunLocation), 0.0), 32.0);
+    vec3 reflectionColor = vec3(0.3,0.3,0.3) * pow(max(dot(reflection,sunLocation), 0.0), 32.0);
     float redPortion = abs(clamp(sentiment,-1.0,-0.01))/abs(clamp(sentiment,-500.0,-1.0));
     float greenPortion = abs(clamp(sentiment,0.01,1.0))/abs(clamp(sentiment,-500.0,-1.0));
     

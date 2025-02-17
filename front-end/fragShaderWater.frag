@@ -14,15 +14,10 @@ varying vec3 vNormalW;
 
 void main() {
     vec3 sunLocation = normalize(relativeCamera);
-    //vec3 sunLocation = normalize(cameraPosition);
-    vec3 waterNormal = tempNormal;
     vec3 cameraDir = normalize(relativeCamera - pos);
 
-    vec3 cameraFrontLightV3 = (waterNormal - cameraDir);
-    float cameraFrontLight = 0.9 - pow((abs(cameraFrontLightV3.x)+abs(cameraFrontLightV3.y)+abs(cameraFrontLightV3.z)), 7.0)/5.0;
-
-    vec3 reflection = reflect(-cameraDir, waterNormal);
-    float diffStrength = max(dot(waterNormal,sunLocation),cameraFrontLight);
+    vec3 reflection = reflect(-cameraDir, tempNormal);
+    float diffStrength = max(dot(tempNormal,sunLocation),0.1);
 
     vec3 posDir = normalize(pos);
     float distToCenter = (abs(pos.x) + abs(pos.y) + abs(pos.z)) / (abs(posDir.x) + abs(posDir.y) + abs(posDir.z));
@@ -42,7 +37,7 @@ void main() {
 
     vec3 color = vec3(.58, .74, 1.);
     vec3 viewDirectionW = normalize(relativeCamera - vPositionW);
-    float fresnelTerm = dot(viewDirectionW, waterNormal) * (1. - 0.0001/2.);
+    float fresnelTerm = dot(viewDirectionW, tempNormal) * (1. - 0.0001/2.);
     fresnelTerm = clamp(0.5 - fresnelTerm, 0.0, 1.0);
 
     finalColor += fresnelTerm;
