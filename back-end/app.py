@@ -109,9 +109,9 @@ def fetch_word_data():
     dayAfter = day+datetime.timedelta(days=1)
 
     cur.execute("SELECT target_country,\
-    UNNEST(headline_inter) \
-    UNNEST(senti_count_int) \
-    on_time \
+    UNNEST(headline_inter), \
+    UNNEST(senti_count_int), \
+    on_time, \
     FROM global_info_hourly \
     WHERE target_country = %s AND on_time >= %s AND on_time <= %s\
     GROUP BY target_country, on_time",(str(country),day,dayAfter))
