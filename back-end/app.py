@@ -102,7 +102,7 @@ def fetch_word_data():
     cur = conn.cursor()
     country = str(country)
     try:
-        day = datetime.datetime.fromtimestamp(day)
+        day = datetime.datetime.strptime(day, "%Y-%m-%d-%H")
     except:
         print(day)
 
