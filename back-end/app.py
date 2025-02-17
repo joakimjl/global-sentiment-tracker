@@ -111,7 +111,7 @@ def fetch_word_data():
     on_time \
     FROM global_info_hourly \
     WHERE target_country = %s AND on_time >= %s AND on_time <= %s\
-    GROUP BY target_country, on_time",(str(country),day))
+    GROUP BY target_country, on_time",(str(country),day,day))
 
     res = cur.fetchall()
     temp_res = []
