@@ -207,6 +207,8 @@ function generateText(displayText, data=null, name){
         textMesh.scale.z = 3
         textMesh.scale.y = 3
         infographicScene.add(textMesh)
+
+        infographicDayArr = []
         
 
         //Insert data text
@@ -226,6 +228,7 @@ function generateText(displayText, data=null, name){
         let labelOffset = -0.5*(wTextScalar)
         let putOnSame = false
         while (key != undefined){
+            infographicDayArr.push(key)
             for (let index = 0; index < key.length; index++) {
                 const element = key[index];
                 if (element == "-"){
@@ -311,14 +314,26 @@ function generateText(displayText, data=null, name){
     });
 }
 
-function generateImportantWords(number,locX){
+function generateImportantWords(number,locX,wordDataFetch){
     if (separateActive == false && separateOngoing == false) {
         const dataGrapicScene = new THREE.Scene()
         dataGrapicScene.name = "_dataGraphic"
-        let wordData = []
         let colorArr = [new THREE.Color(0x00f000), new THREE.Color(0xf00000)]
-        let dataLinesPos = ["Positive:", "TempTest (100%)", "TempTest (100%)", "TempTest (100%)", "TempTest (100%)", "TempTest (100%)", "TempTest (100%)"]
-        let dataLinesNeg = ["Negative:", "AntiTempTest (100%)", "AntiTempTest (100%)", "AntiTempTest (100%)", "AntiTempTest (100%)", "AntiTempTest (100%)", "AntiTempTest (100%)"]
+
+        let wordData = []
+
+        console.log(wordDataFetch)
+
+        let dataLinesPos = ["Most Positive words"]
+        for (let index = wordDataFetch[1].length-3; index >= 0; index--) {
+            const element = wordDataFetch[1][index];
+            dataLinesPos.push(element[0] + ": " + element[1][1].toFixed(3))
+        }
+        let dataLinesNeg = ["Most Negative words"]
+        for (let index = 0; index < wordDataFetch[0].length-2; index++) {
+            const element = wordDataFetch[0][index];
+            dataLinesNeg.push(element[0] + ": " + element[1][1].toFixed(3))
+        }
         wordData.push(dataLinesPos)
         wordData.push(dataLinesNeg)
         for (let arrayIndex = 0; arrayIndex < wordData.length; arrayIndex++) {
@@ -616,6 +631,7 @@ async function fetchQuery(country, query, timeframe) {
                         let tempRes = (pos-neg)/(neu+(Math.abs(pos-neg)))
                         element.uniforms.sentiment.value = tempRes;
                         prevCountry = [countryCode, tempRes]
+                        curCountry = countryCode
                     }
                     else {
                         if (country == "World") {
@@ -772,6 +788,32 @@ function performMeshTrace(){
     }
 }
 
+var wordDataFetch;
+async function fetchWordData(country, day, posX, number){
+    const url = `https://6x8t077c58.execute-api.eu-west-1.amazonaws.com/gst-prod/gst-fetch-words?country=${country}&day=${day}`;
+    try {
+        const response = await fetch(url, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin" : '*',
+                "Access-Control-Allow-Credentials": "true",
+                "Access-Control-Allow-Methods": "GET,HEAD,OPTIONS,POST,PUT",
+                "Access-Control-Allow-Headers": "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers",
+            },
+        });
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        const json = await response.json();
+        wordDataFetch = json;
+        generateImportantWords(number,posX,json)
+    } catch (error) {
+        console.error("Fetch error:", error.message);
+    }
+}
+
+var fetchWords = false;
+var curCountry;
+var infographicDayArr;
 function checkForMesh(event){
     if (event.targetTouches == undefined) {
         pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
@@ -797,7 +839,7 @@ function checkForMesh(event){
             const element = hoveredMesh.name[index];
             tempString += element
         }
-        generateImportantWords(tempString, hoveredMesh.position.x)
+        fetchWordData(curCountry,infographicDayArr[parseInt(tempString)],hoveredMesh.position.x,tempString)
     } else if (hoveredMesh.name != undefined && hoveredMesh.name[0] != "_" && clickChange == false){
         let tempName = hoveredMesh.name[0] + hoveredMesh.name[1];
         if (hoveredMesh.name != prevName){
