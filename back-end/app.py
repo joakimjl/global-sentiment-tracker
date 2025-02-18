@@ -140,7 +140,11 @@ def impact_words(jsonInfo):
         stringFix = "[" + loadJson[i][2][1:-1] + "]"
         sentiment = json.loads(stringFix)[2] - json.loads(stringFix)[0]
         processed = loadJson[i][1].split('"')
-        sentence = tokenizer.tokenize(processed[1])
+        try:
+            sentence = tokenizer.tokenize(processed[1])
+        except:
+            processed = loadJson[i][1].split(',')
+            sentence = tokenizer.tokenize(processed[0])
 
         for pair in nltk.pos_tag(sentence):
             if pair[1] == "NNP" and len(pair[0]) >= 2:
@@ -163,8 +167,8 @@ def impact_words(jsonInfo):
         if i+8 >= len(allWords):
             negWords.append([ele, allWords[ele]])
         i+=1
-    print(negWords)
-    print(posWords)
+    #print(negWords)
+    #print(posWords)
     return[posWords,negWords]
 
 
