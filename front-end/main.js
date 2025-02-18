@@ -53,13 +53,6 @@ var noiseTexture = new THREE.TextureLoader().load(
         noiseDone = true;
     }
 );
-var metallicTextureRough = new THREE.TextureLoader().load(
-    "./rounded-metal-cubes_roughness.png",
-    (texture) => {
-        metallicTextureRough = texture;
-    }
-);
-
 var noiseTexture2 = new THREE.TextureLoader().load(
     "./Pernlin2.png",
     (texture) => {
