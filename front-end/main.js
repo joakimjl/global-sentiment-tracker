@@ -322,8 +322,6 @@ function generateImportantWords(number,locX,wordDataFetch){
 
         let wordData = []
 
-        console.log(wordDataFetch)
-
         let dataLinesPos = ["Most Positive words"]
         for (let index = wordDataFetch[1].length-3; index >= 0; index--) {
             const element = wordDataFetch[1][index];
