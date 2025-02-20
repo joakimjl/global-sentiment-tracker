@@ -526,6 +526,7 @@ def get_gdelt_headlines(query="economy", target_country="US", date=date.today(),
         if not hashString in dataCheck:
             kept_data.append(article)
             dataCheck[hashString] = 1
+            kept+=1
         idx += 1
 
     print(f'{target_country} kept: {kept} removed: {idx-kept}')
@@ -960,13 +961,13 @@ if __name__ == "__main__":
     start_time_total = time.time()
 
     #GPU Processing and upload
-    boolean_map = {"dump":False, "insert":False, "fetch_new":False, "upload":True, "process":True, "connected":False, "download_processed":False}
+    #boolean_map = {"dump":False, "insert":False, "fetch_new":False, "upload":True, "process":True, "connected":False, "download_processed":False}
 
     #Insert processed from S3
     #boolean_map = {"dump":False, "insert":True, "fetch_new":False, "upload":False, "process":False, "connected":True, "download_processed":True}
 
     #Fetch, translate and upload info
-    #boolean_map = {"dump":True, "insert":False, "fetch_new":True, "upload":True, "process":False, "connected":True, "download_processed":False} 
+    boolean_map = {"dump":True, "insert":False, "fetch_new":True, "upload":True, "process":False, "connected":True, "download_processed":False} 
 
     day = 19
     month = 2
