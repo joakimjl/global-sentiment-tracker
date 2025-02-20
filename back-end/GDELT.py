@@ -513,10 +513,19 @@ def get_gdelt_headlines(query="economy", target_country="US", date=date.today(),
     idx = 0
     kept = 0
     kept_data = []
-    for article in data:
+    """ for article in data:
         if article['domain'] in valid_domains:
             kept_data.append(article)
             kept += 1
+        idx += 1 """
+    
+    dataCheck = {}
+
+    for article in data:
+        hashString = article['headline'][0:10]
+        if not hashString in dataCheck:
+            kept_data.append(article)
+            dataCheck[hashString] = 1
         idx += 1
 
     print(f'{target_country} kept: {kept} removed: {idx-kept}')
