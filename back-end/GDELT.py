@@ -522,7 +522,7 @@ def get_gdelt_headlines(query="economy", target_country="US", date=date.today(),
     dataCheck = {}
 
     for article in data:
-        hashString = article['headline'][0:10]
+        hashString = article['title'][0:10]
         if not hashString in dataCheck:
             kept_data.append(article)
             dataCheck[hashString] = 1
