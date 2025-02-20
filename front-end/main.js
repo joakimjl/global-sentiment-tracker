@@ -65,6 +65,10 @@ function onPointerMove( event ) {
 	pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 }
 
+function addBackgroundStars(){
+
+}
+
 var infographicMats = [];
 
 function boxGen( width, height, depth, radius0, smoothness){
@@ -293,6 +297,19 @@ function generateText(displayText, data=null, name){
             key = iter.next().value;
         }
 
+        const behindMeshMat = new THREE.MeshPhysicalMaterial({
+            color: new THREE.Color(0,0,0.0),
+            roughness: 0.2,
+            metalness: 0.5
+        });
+        //const meshGeometry = new THREE.BoxGeometry(3.5/resArr.length, 1, 0.88, 1, 1, 1);
+        const behindMeshGeometry = boxGen((1.8*wConst), 1.5*(hConst), wConst/lengthScale, (wConst*0.1)/lengthScale, 1)
+        const behindMesh = new THREE.Mesh(behindMeshGeometry,behindMeshMat);
+        behindMesh.position.z = -1
+        behindMesh.position.y = 1.2*hConst-(hConst*0.5)
+        behindMesh.name = "_infographicBackground"
+        infographicScene.add(behindMesh)
+
 
         infographicScene.position.y = -0.5-0.5*hConst;
         
@@ -369,7 +386,7 @@ function makeTextMesh(text,font,locX,color){
 
 const initCameraDistance = 1000;
 camera.position.z = initCameraDistance;
-const finishCameraDist = 7 + clamp( Math.abs( (window.innerHeight -1000)/300 ), 0, 10);
+const finishCameraDist = 7 + clamp( 7000/window.innerWidth, 0, 20);
 //const controls = new OrbitControls(camera, renderer.domElement); //In case of controls for testing
 
 var intersects = raycaster.intersectObjects( scene.children );
@@ -699,6 +716,11 @@ function separateDataGraphic(index, bInitial){
     let curIndex = 0;
     let infoObject = infographic.getObjectByName("@"+curIndex);
     if (bInitial) {
+        if (moveUILerp <= -0.95){
+            separateUILerp = -0.999
+            separateActive = false;
+            separateOngoing = false;
+        }
         if (separateActive == false || separateOngoing == false) {
             separateActive = !separateActive;
             if (separateActive) {
@@ -708,13 +730,14 @@ function separateDataGraphic(index, bInitial){
                 returnSeparate = true
                 let infoGraphicScene = scene.getObjectByName("_infographic")
                 if (infoGraphicScene.getObjectByName("_dataGraphic") != undefined){
+                    
                     infoGraphicScene.remove(infoGraphicScene.getObjectByName("_dataGraphic"))
                 }
             }
             separateOngoing = true;
         }
     } else {
-        var accel = 0.12 * -(returnSeparate*2-1);
+        var accel = 0.22 * -(returnSeparate*2-1);
         accel *= deltaSeconds/1000
         if (Math.abs(separateUILerp + separateAccelUI/Math.abs(accel*157)) >= 1.03) {
             separateAccelUI = separateAccelUI-accel;
@@ -974,7 +997,7 @@ function animate() {
         if (Math.abs(moveUILerp) >= 1.001){
             if (moveUILerp <= -0.999){
                 if (scene.getObjectByName("_infographic") != undefined){
-                    scene.getObjectByName("_infographic").remove()
+                    scene.remove(scene.getObjectByName("_infographic"))
                 }
             }
             moveUILerp = clamp(moveUILerp,-1,1);
