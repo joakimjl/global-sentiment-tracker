@@ -341,7 +341,7 @@ def fetch_gdelt_headline(query_term="Morale", source_country=None, source_lang=N
 
         start_day = day-timedelta(days=1)
         if is_hourly:
-            start_day = day-timedelta(hours=4)
+            start_day = day-timedelta(days=1)
         end_day = day
         
         params = {
@@ -978,7 +978,7 @@ if __name__ == "__main__":
         handler.fetch_processed("temp_processed",added_name="processed",day=date_info)
     start_datetime = datetime(year=year, month=month, day=day, hour=0, minute=0, second=0)
     cur_datetime = start_datetime
-    for i in range(1):
+    for i in range(2):
         on_datetime = [cur_datetime]
         run_all(on_datetime, boolean_map)
         cur_datetime = cur_datetime - timedelta(days=1)#Currently minus 1 day starting from 19th
