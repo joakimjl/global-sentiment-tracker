@@ -981,10 +981,17 @@ if __name__ == "__main__":
         handler.fetch_processed("temp_processed",added_name="processed",day=date_info.strftime("%Y-%m-%d"))
     start_datetime = datetime(year=year, month=month, day=day, hour=0, minute=0, second=0)
     cur_datetime = start_datetime
-    for i in range(2):
-        on_datetime = [cur_datetime]
+    if boolean_map['upload'] == False and boolean_map['fetch_new'] == True:
+        for i in range(2):
+            on_datetime = [cur_datetime]
+            run_all(on_datetime, boolean_map)
+            cur_datetime = cur_datetime - timedelta(days=1)#Currently minus 1 day starting from 19th
+    else:
+        on_datetime = []
+        for i in range(2):
+            on_datetime.append(cur_datetime)
+            cur_datetime = cur_datetime - timedelta(days=1)#Currently minus 1 day starting from 19th
         run_all(on_datetime, boolean_map)
-        cur_datetime = cur_datetime - timedelta(days=1)#Currently minus 1 day starting from 19th
     if boolean_map['fetch_new'] == True and boolean_map['upload'] == True:
         S3BatchHandler().zip_batch("temp_articles",day=date_info)
     elif boolean_map['upload'] == True and boolean_map['fetch_new'] == False:
