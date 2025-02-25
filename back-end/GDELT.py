@@ -774,7 +774,7 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
             target_country = target
             #handler = S3BatchHandler(specific_name = "fetched_batch_"+str(date(year=2025, month=1, day=day)))
             #handler.fetch_processed("temp_processed",added_name="")
-            with open( fix_path("back-end/temp_processed/"+str(target_country)+str(on_day)) , "r") as f:
+            with open( fix_path("back-end/temp_processed/"+str(target_country)+on_day.strftime("%Y-%m-%d")) , "r") as f:
                 temp_map = json.load(f)
                 sentiment_arr_nat = temp_map['sentiment_arr_nat']
                 titles_nat = temp_map['titles_nat']
@@ -794,7 +794,7 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
             for ele in sentiment_arr_inter[1]:
                 part_temp_inter.append(ele.tolist())
             sentiment_arr_inter[1] = part_temp_inter
-            with open( fix_path("back-end/temp_processed/"+str(target_country)+str(on_day)) , "w") as f:
+            with open( fix_path("back-end/temp_processed/"+str(target_country)+on_day.strftime("%Y-%m-%d")) , "w") as f:
                 temp_map = {
                     "sentiment_arr_nat" : sentiment_arr_nat,
                     "titles_nat" : titles_nat,
@@ -963,15 +963,15 @@ if __name__ == "__main__":
     start_time_total = time.time()
 
     #GPU Processing and upload
-    #boolean_map = {"dump":False, "insert":False, "fetch_new":False, "upload":True, "process":True, "connected":False, "download_processed":False}
+    boolean_map = {"dump":False, "insert":False, "fetch_new":False, "upload":True, "process":True, "connected":False, "download_processed":False}
 
     #Insert processed from S3
     #boolean_map = {"dump":False, "insert":True, "fetch_new":False, "upload":False, "process":False, "connected":True, "download_processed":True}
 
     #Fetch, translate and upload info
-    boolean_map = {"dump":True, "insert":False, "fetch_new":True, "upload":True, "process":False, "connected":True, "download_processed":False} 
+    #boolean_map = {"dump":True, "insert":False, "fetch_new":True, "upload":True, "process":False, "connected":True, "download_processed":False} 
 
-    day = 18
+    day = 19
     month = 2
     year = 2025
     date_info = date(year=year, month=month, day=day)
@@ -981,7 +981,7 @@ if __name__ == "__main__":
         handler.fetch_processed("temp_processed",added_name="processed",day=date_info)
     start_datetime = datetime(year=year, month=month, day=day, hour=0, minute=0, second=0)
     cur_datetime = start_datetime
-    for i in range(1):
+    for i in range(2):
         on_datetime = [cur_datetime]
         run_all(on_datetime, boolean_map)
         cur_datetime = cur_datetime - timedelta(days=1)#Currently minus 1 day starting from 19th
