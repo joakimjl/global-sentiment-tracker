@@ -571,7 +571,7 @@ def process_titles(query="economy", target_country="US", date=None, roberta=None
         allowed = True
 
     while allowed == False:
-        time.sleep(random.random() * (200 / max(1,lock.allowed_amount)))
+        time.sleep(random.random() * (10 / max(1,lock.allowed_amount)))
         if lock.attemptLock() == True:
             allowed = True
     print(f"Working on insert for {target_country} at {datetime.now()}")
@@ -753,6 +753,8 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
     if boolean_map['fetch_new'] == False:
         if boolean_map["download_processed"] == False:
             try:
+                handler = S3BatchHandler(specific_name = "fetched_batch_"+on_day.strftime("%Y-%m-%d"))
+                handler.fetch_processed("temp_articles",added_name="",zip=True)
                 info_nat = fetch_dumped_info(target_country=target, date=on_day)
                 titles_nat = info_nat['titles']
                 info_inter = fetch_dumped_info(target_country="-"+target, date=on_day)
@@ -969,7 +971,7 @@ if __name__ == "__main__":
     #Fetch, translate and upload info
     boolean_map = {"dump":True, "insert":False, "fetch_new":True, "upload":True, "process":False, "connected":True, "download_processed":False} 
 
-    day = 19
+    day = 18
     month = 2
     year = 2025
     date_info = date(year=year, month=month, day=day)
@@ -979,7 +981,7 @@ if __name__ == "__main__":
         handler.fetch_processed("temp_processed",added_name="processed",day=date_info)
     start_datetime = datetime(year=year, month=month, day=day, hour=0, minute=0, second=0)
     cur_datetime = start_datetime
-    for i in range(2):
+    for i in range(1):
         on_datetime = [cur_datetime]
         run_all(on_datetime, boolean_map)
         cur_datetime = cur_datetime - timedelta(days=1)#Currently minus 1 day starting from 19th

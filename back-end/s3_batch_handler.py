@@ -56,9 +56,15 @@ class S3BatchHandler():
         s3_client = boto3.client('s3')
         s3_client.upload_file(self.batch_name, "gst-batch-process", self.batch_name)
 
-    def _download_batch(self):
+    def _download_batch(self, path="", zip=False):
         s3_client = boto3.client('s3')
-        s3_client.download_file("gst-batch-process", self.batch_name, self.batch_name)
+        extension = ""
+        if zip == True:
+            extension = ".zip"
+        self.batch_name = self.batch_name+extension
+        if os.path.isfile(self.batch_name):
+            return "Done"
+        s3_client.download_file("gst-batch-process", self.batch_name, path+self.batch_name)
 
     def upload_processed(self, path, added_name="processed",day=None):
         """Path needs to be given as string of path+filename"""
@@ -67,17 +73,18 @@ class S3BatchHandler():
         print(f"Uploaded {path}")
         return True
     
-    def fetch_processed(self, path, added_name="processed",day=datetime.date.today()):
+    def fetch_processed(self, path, added_name="processed",day=datetime.date.today(),zip=False):
         if self.specific_name:
             self.batch_name = self.specific_name
         else:
             self.batch_name = fix_path(added_name+"_batch_"+str(day)+".zip")
-        self._download_batch()
+        if self._download_batch(zip=zip) == "Done":
+            return
         self.unzip_batch("temp_processed",added_name=added_name,day=day)
         if not os.path.isfile(path):
             return False
         
-        print(f"Uploaded {path}")
+        print(f"Downloaded {path}")
         return True
 
 if __name__ == "__main__":
