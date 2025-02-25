@@ -753,8 +753,9 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
     if boolean_map['fetch_new'] == False:
         if boolean_map["download_processed"] == False:
             try:
-                handler = S3BatchHandler(specific_name = "fetched_batch_"+on_day.strftime("%Y-%m-%d"))
-                handler.fetch_processed("temp_articles",added_name="",zip=True)
+                if boolean_map["first"] == True:
+                    handler = S3BatchHandler(specific_name = "fetched_batch_"+on_day.strftime("%Y-%m-%d"))
+                    handler.fetch_processed("temp_articles",added_name="",zip=True)
                 info_nat = fetch_dumped_info(target_country=target, date=on_day)
                 titles_nat = info_nat['titles']
                 info_inter = fetch_dumped_info(target_country="-"+target, date=on_day)
@@ -963,15 +964,15 @@ if __name__ == "__main__":
     start_time_total = time.time()
 
     #GPU Processing and upload
-    boolean_map = {"dump":False, "insert":False, "fetch_new":False, "upload":True, "process":True, "connected":False, "download_processed":False}
+    boolean_map = {"dump":False, "insert":False, "fetch_new":False, "upload":True, "process":True, "connected":False, "download_processed":False, "first":False}
 
     #Insert processed from S3
-    #boolean_map = {"dump":False, "insert":True, "fetch_new":False, "upload":False, "process":False, "connected":True, "download_processed":True}
+    #boolean_map = {"dump":False, "insert":True, "fetch_new":False, "upload":False, "process":False, "connected":True, "download_processed":True, "first":True}
 
     #Fetch, translate and upload info
-    #boolean_map = {"dump":True, "insert":False, "fetch_new":True, "upload":True, "process":False, "connected":True, "download_processed":False} 
+    #boolean_map = {"dump":True, "insert":False, "fetch_new":True, "upload":True, "process":False, "connected":True, "download_processed":False, "first":True} 
 
-    day = 19
+    day = 18
     month = 2
     year = 2025
     date_info = date(year=year, month=month, day=day)
@@ -981,14 +982,15 @@ if __name__ == "__main__":
         handler.fetch_processed("temp_processed",added_name="processed",day=date_info.strftime("%Y-%m-%d"))
     start_datetime = datetime(year=year, month=month, day=day, hour=0, minute=0, second=0)
     cur_datetime = start_datetime
+    run_amount = 1
     if boolean_map['upload'] == False and boolean_map['fetch_new'] == True:
-        for i in range(2):
+        for i in range(run_amount):
             on_datetime = [cur_datetime]
             run_all(on_datetime, boolean_map)
             cur_datetime = cur_datetime - timedelta(days=1)#Currently minus 1 day starting from 19th
     else:
         on_datetime = []
-        for i in range(2):
+        for i in range(run_amount):
             on_datetime.append(cur_datetime)
             cur_datetime = cur_datetime - timedelta(days=1)#Currently minus 1 day starting from 19th
         run_all(on_datetime, boolean_map)
