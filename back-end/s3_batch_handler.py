@@ -30,6 +30,7 @@ class S3BatchHandler():
                 raise NameError(f"Dir name '{dir}' not found")
         
         for filename in os.listdir(dir):
+            #if filename.endswith(str(day)+" 00_00_00")
             f = os.path.join(dir,filename)
             if os.path.isfile(f):
                 ziper.write(f)
@@ -37,10 +38,17 @@ class S3BatchHandler():
         ziper.close()
         self._upload_batch()
         print(f"Uploaded: {self.batch_name}")
+        for filename in os.listdir(dir):
+            #if filename.endswith(str(day)+" 00_00_00")
+            f = os.path.join(dir,filename)
+            if os.path.isfile(f):
+                os.remove(f)
         return True
     
     def unzip_batch(self, dir="temp_articles", added_name="fetched",day=datetime.date.today()):
         if self.specific_name:
+            if self.specific_name.endswith(".zip") == False:
+                self.specific_name = self.specific_name+".zip"
             self.batch_name = self.specific_name
         else:
             self.batch_name = fix_path(added_name+"_batch_"+str(day)+".zip")
