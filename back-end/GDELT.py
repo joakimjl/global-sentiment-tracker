@@ -978,7 +978,7 @@ if __name__ == "__main__":
     on_datetime = []
     if boolean_map['download_processed'] == True:
         handler = S3BatchHandler(specific_name = None)
-        handler.fetch_processed("temp_processed",added_name="processed",day=date_info)
+        handler.fetch_processed("temp_processed",added_name="processed",day=date_info.strftime("%Y-%m-%d"))
     start_datetime = datetime(year=year, month=month, day=day, hour=0, minute=0, second=0)
     cur_datetime = start_datetime
     for i in range(2):
