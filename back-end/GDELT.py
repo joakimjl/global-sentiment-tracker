@@ -774,7 +774,7 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
             target_country = target
             #handler = S3BatchHandler(specific_name = "fetched_batch_"+str(date(year=2025, month=1, day=day)))
             #handler.fetch_processed("temp_processed",added_name="")
-            with open( fix_path("back-end/temp_processed/"+str(target_country)+on_day.strftime("%Y-%m-%d")) , "r") as f:
+            with open( fix_path("back-end/temp_processed/"+str(target_country)+on_day.strftime("%Y-%m-%d %H_%M_%S")) , "r") as f:
                 temp_map = json.load(f)
                 sentiment_arr_nat = temp_map['sentiment_arr_nat']
                 titles_nat = temp_map['titles_nat']
@@ -794,7 +794,7 @@ def fetch_and_insert_one(target, subject, remain_rows, roberta, syncer, on_day=d
             for ele in sentiment_arr_inter[1]:
                 part_temp_inter.append(ele.tolist())
             sentiment_arr_inter[1] = part_temp_inter
-            with open( fix_path("back-end/temp_processed/"+str(target_country)+on_day.strftime("%Y-%m-%d")) , "w") as f:
+            with open( fix_path("back-end/temp_processed/"+str(target_country)+on_day.strftime("%Y-%m-%d %H_%M_%S")) , "w") as f:
                 temp_map = {
                     "sentiment_arr_nat" : sentiment_arr_nat,
                     "titles_nat" : titles_nat,
